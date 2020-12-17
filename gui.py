@@ -1273,13 +1273,14 @@ Standard Binding Free Energy:\n\
 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':                
                     iGenerator.generateGromacsGeometricFiles(
-                        path,
-                        self.topLineEdit.text(),
-                        self.gromacsPdbLineEdit.text(),
-                        self.gromacsLigandOnlyTopLineEdit.text(),
-                        self.gromacsLigandOnlyPdbLineEdit.text(),
-                        self.selectProteineLineEdit.text(),
-                        self.selectLigandLineEdit.text()
+                        path=path,
+                        topFile=self.topLineEdit.text(),
+                        pdbFile=self.gromacsPdbLineEdit.text(),
+                        ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
+                        ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
+                        selectionPro=self.selectProteineLineEdit.text(),
+                        selectionLig=self.selectLigandLineEdit.text(),
+                        temperature=float(self.temperatureLineEdit.text())
                     )
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
                     QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')

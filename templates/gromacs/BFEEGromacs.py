@@ -258,6 +258,8 @@ class BFEEGromacs:
     solvent : MDAnalysis.core.groups.AtomGroup
         selected atoms of the solvents in the protein-ligand binding complex.
         This attribute does not exist until the call of setSolventAtomsGroup.
+    temperature : float
+        the temperature of simulations (default : 300.0)
 
     Methods
     -------
@@ -273,6 +275,8 @@ class BFEEGromacs:
         and the ligand-only systems
     setSolventAtomsGroup(selection)
         select the solvent atoms
+    setTemperature(float)
+        set the temperature
     generateGromacsIndex(outputFile)
         generate a GROMACS index file for atom selection in Colvars
     generate001()
@@ -314,6 +318,8 @@ class BFEEGromacs:
         self.baseDirectory = baseDirectory
         self.ligandOnlyStructureFile = ligandOnlyStructureFile
         self.ligandOnlyTopologyFile = ligandOnlyTopologyFile
+        # set default temperature to 300.0 K
+        self.temperature = 300.0
         if self.baseDirectory is not None:
             self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
             if not posixpath.exists(self.baseDirectory):
@@ -411,6 +417,15 @@ class BFEEGromacs:
         self.logger.info(f'Setup the atoms group of the solvent molecule by selection: {selection}')
         self.solvent = self.system.select_atoms(selection)
 
+    def setTemperature(self, newTemperature):
+        """
+        Parameters
+        ----------
+        newTemperature : float
+            new value of the temperature
+        """
+        self.temperature = newTemperature
+
     def generateGromacsIndex(self, outputFile):
         self.system.select_atoms('all').write(outputFile, name='BFEE_all')
         if hasattr(self, 'ligand'):
@@ -434,7 +449,7 @@ class BFEEGromacs:
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -494,7 +509,7 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '002_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand and protein is selected
@@ -557,7 +572,7 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '003_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand and protein is selected
@@ -621,7 +636,7 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '004_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand and protein is selected
@@ -686,7 +701,7 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '005_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand and protein is selected
@@ -760,7 +775,7 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '006_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand and protein is selected
@@ -835,14 +850,14 @@ class BFEEGromacs:
                     posixpath.join(generate_basename, '007_Minimize'),
                     timeStep=0.002,
                     numSteps=100000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         generateMDP(f'{sys.path[0]}/templates/gromacs/007.mdp.template',
                     posixpath.join(generate_basename, '007_PMF'),
                     timeStep=0.002,
                     numSteps=80000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
         # check if the ligand, protein and solvent is selected
@@ -948,7 +963,7 @@ class BFEEGromacs:
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
-                    temperature=300,
+                    temperature=self.temperature,
                     pressure=1.01325)
         # generate the index file
         if hasattr(self, 'ligandOnly'):
@@ -993,6 +1008,7 @@ if __name__ == "__main__":
     bfee.setProteinHeavyAtomsGroup('segid SH3D and not (name H*)')
     bfee.setLigandHeavyAtomsGroup('segid PPRO and not (name H*)')
     bfee.setSolventAtomsGroup('resname TIP3*')
+    bfee.setTemperature(350.0)
     bfee.generate001()
     bfee.generate002()
     bfee.generate003()
