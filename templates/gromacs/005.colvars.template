@@ -1,0 +1,166 @@
+colvarsTrajFrequency    500
+colvarsRestartFrequency 50000
+indexFile               colvars.ndx
+
+colvar {
+    name RMSD
+    rmsd {
+        atoms {
+            indexGroup $ligand_selection
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                eulerTheta
+    eulerTheta {
+        atoms {
+            indexGroup          $ligand_selection
+            centerReference     on
+            rotateReference     on
+            enableFitGradients  on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                eulerPhi
+    eulerPhi {
+        atoms {
+            indexGroup          $ligand_selection
+            centerReference     on
+            rotateReference     on
+            enableFitGradients  on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                eulerPsi
+    eulerPsi {
+        atoms {
+            indexGroup          $ligand_selection
+            centerReference     on
+            rotateReference     on
+            enableFitGradients  on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                    polarTheta
+    width                   $polarTheta_width
+    lowerboundary           $polarTheta_lower_boundary
+    upperboundary           $polarTheta_upper_boundary
+    subtractAppliedForce    on
+    extendedLagrangian      on
+    extendedFluctuation     $polarTheta_width
+    polarTheta {
+        atoms {
+            indexGroup      $ligand_selection
+            centerReference on
+            rotateReference on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+    }
+}
+
+harmonicWalls {
+    colvars             polarTheta
+    lowerWalls          $polarTheta_lower_boundary
+    upperWalls          $polarTheta_upper_boundary
+    lowerWallConstant   $polarTheta_wall_constant
+    upperWallConstant   $polarTheta_wall_constant
+}
+
+abf {
+    colvars             polarTheta
+    FullSamples         10000
+    historyfreq         50000
+    writeCZARwindowFile
+}
+
+metadynamics {
+    colvars             polarTheta
+    hillWidth           3.0
+    hillWeight          0.2092
+    wellTempered        on
+    biasTemperature     4000
+}
+
+harmonic {
+   colvars              eulerPsi
+   forceConstant        0.4184
+   centers              004_pmf_argmin
+}
+
+harmonic {
+    colvars             eulerPhi
+    forceConstant       0.4184
+    centers             003_pmf_argmin
+}
+
+harmonic {
+    colvars             eulerTheta
+    forceConstant       0.4184
+    centers             002_pmf_argmin
+}
+
+harmonic {
+    colvars             RMSD
+    forceConstant       41.84
+    centers             0
+}
+
+colvar {
+    name translation
+    distance {
+        group1 {
+            indexGroup $protein_selection
+        }
+        group2 {
+            dummyAtom $protein_center
+        }
+    }
+}
+
+harmonic { 
+    colvars         translation 
+    centers         0.0 
+    forceConstant   41.84 
+}
+
+colvar {
+    name orientation
+    orientation {
+        atoms {
+            indexGroup $protein_selection
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+harmonic { 
+    colvars         orientation
+    centers         (1.0, 0.0, 0.0, 0.0)
+    forceConstant   836.8
+}

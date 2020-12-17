@@ -1,0 +1,42 @@
+colvarsTrajFrequency    500
+colvarsRestartFrequency 50000
+indexFile               colvars_ligand_only.ndx
+
+colvar {
+    name                    RMSD
+    width                   $rmsd_bin_width
+    lowerboundary           $rmsd_lower_boundary
+    upperboundary           $rmsd_upper_boundary
+    subtractAppliedForce    on
+    extendedLagrangian      on
+    extendedFluctuation     $rmsd_bin_width
+    rmsd {
+        atoms {
+            indexGroup $ligand_selection
+        }
+        refPositionsfile reference_ligand_only.xyz
+    }
+}
+
+harmonicWalls {
+    colvars             RMSD
+    lowerWalls          $rmsd_lower_boundary
+    upperWalls          $rmsd_upper_boundary
+    lowerWallConstant   $rmsd_wall_constant
+    upperWallConstant   $rmsd_wall_constant
+}
+
+abf {
+    colvars             RMSD
+    FullSamples         10000
+    historyfreq         50000
+    writeCZARwindowFile
+}
+
+metadynamics {
+    colvars             RMSD
+    hillWidth           3.0
+    hillWeight          0.2092
+    wellTempered        on
+    biasTemperature     4000
+}

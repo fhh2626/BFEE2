@@ -1,0 +1,123 @@
+colvarsTrajFrequency    500
+colvarsRestartFrequency 50000
+indexFile               colvars.ndx
+
+colvar {
+    name RMSD
+    rmsd {
+        atoms {
+            indexGroup $ligand_selection
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                eulerTheta
+    eulerTheta {
+        atoms {
+            indexGroup          $ligand_selection
+            centerReference     on
+            rotateReference     on
+            enableFitGradients  on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+colvar {
+    name                    eulerPhi
+    width                   $eulerPhi_width 
+    lowerboundary           $eulerPhi_lower_boundary 
+    upperboundary           $eulerPhi_upper_boundary
+    subtractAppliedForce    on
+    extendedLagrangian      on
+    extendedFluctuation     $eulerPhi_width
+    eulerPhi {
+        atoms {
+            indexGroup          $ligand_selection
+            centerReference     on
+            rotateReference     on
+            enableFitGradients  on
+            fittingGroup {
+                indexGroup $protein_selection
+            }
+            refPositionsfile reference.xyz
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+harmonicWalls {
+    colvars             eulerPhi
+    lowerWalls          $eulerPhi_lower_boundary
+    upperWalls          $eulerPhi_upper_boundary
+    lowerWallConstant   $eulerPhi_wall_constant
+    upperWallConstant   $eulerPhi_wall_constant
+}
+
+abf {
+    colvars             eulerPhi
+    FullSamples         10000
+    historyfreq         50000
+    writeCZARwindowFile
+}
+
+metadynamics {
+    colvars             eulerPhi
+    hillWidth           3.0
+    hillWeight          0.2092
+    wellTempered        on
+    biasTemperature     4000
+}
+
+harmonic {
+   colvars          eulerTheta
+   forceConstant    0.4184
+   centers          002_pmf_argmin
+}
+
+
+harmonic {
+   colvars          RMSD
+   forceConstant    41.84
+   centers          0
+}
+
+colvar {
+    name translation
+    distance {
+        group1 {
+            indexGroup $protein_selection
+        }
+        group2 {
+            dummyAtom $protein_center
+        }
+    }
+}
+
+harmonic { 
+    colvars         translation 
+    centers         0.0 
+    forceConstant   41.84 
+}
+
+colvar {
+    name orientation
+    orientation {
+        atoms {
+            indexGroup $protein_selection
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+harmonic { 
+    colvars         orientation
+    centers         (1.0, 0.0, 0.0, 0.0)
+    forceConstant   836.8
+}

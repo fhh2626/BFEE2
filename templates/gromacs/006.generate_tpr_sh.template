@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# define the binary of gromacs
+if which gmx_mpi &> /dev/null; then
+    GMX_BIN=$(which gmx_mpi)
+else which gmx &> /dev/null;
+    GMX_BIN=$(which gmx)
+fi
+echo "Will use the gromacs executable binary at $GMX_BIN"
+
+# input (.gro, .top and .mdp) and output (.tpr)
+# MDP_FILE: running parameters
+# GRO_FILE: atom positions
+# TOP_FILE: topology
+MDP_FILE=$MDP_FILE_TEMPLATE
+GRO_FILE=$GRO_FILE_TEMPLATE
+TOP_FILE=$TOP_FILE_TEMPLATE
+
+# generate the tpr file
+OUTPUT_BASENAME=$(basename $(pwd))
+TPR_FILE="$OUTPUT_BASENAME.tpr"
+NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
+echo "Making gromacs tpr file ($TPR_FILE)..."
+$GMX_BIN grompp -f $MDP_FILE -c $GRO_FILE -p $TOP_FILE -o $TPR_FILE -po $NEW_MDP_FILE
+
+# modify the colvars input file using the PMF minima in previous stages
+ARGMIN_002=$(awk -f ./find_min_max.awk ../$BASENAME_002/output/$BASENAME_002.out.abf1.czar.pmf)
+ARGMIN_003=$(awk -f ./find_min_max.awk ../$BASENAME_003/output/$BASENAME_003.out.abf1.czar.pmf)
+ARGMIN_004=$(awk -f ./find_min_max.awk ../$BASENAME_004/output/$BASENAME_004.out.abf1.czar.pmf)
+ARGMIN_005=$(awk -f ./find_min_max.awk ../$BASENAME_005/output/$BASENAME_005.out.abf1.czar.pmf)
+sed -i.orig "s/002_pmf_argmin/$ARGMIN_002/g; s/003_pmf_argmin/$ARGMIN_003/g; s/004_pmf_argmin/$ARGMIN_004/g; s/005_pmf_margin/$ARGMIN_005/g" $COLVARS_INPUT_TEMPLATE
+rm -f $COLVARS_INPUT_TEMPLATE.orig
+
+# run the PMF calculation
+mkdir -p output
+DEFAULT_OUTPUT_FILENAME="output/$OUTPUT_BASENAME.out"
+# $GMX_BIN mdrun -ntmpi 1 -ntomp 4 -nb gpu -pme gpu -gpu_id 0 -s $TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME -colvars colvar.dat
+echo "You can now run gromacs by the following example:"
+echo "$GMX_BIN mdrun -ntmpi 1 -ntomp 4 -nb gpu -pme gpu -gpu_id 0 -s $TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME -colvars $COLVARS_INPUT_TEMPLATE"
