@@ -43,8 +43,9 @@ $GMX_BIN mdrun -s $MIN_TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME
 OUTPUT_BASENAME=$(basename $(pwd))
 TPR_FILE="$OUTPUT_BASENAME.tpr"
 NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
+NEW_GRO_FILE="$DEFAULT_OUTPUT_FILENAME.gro"
 echo "Making gromacs tpr file ($TPR_FILE)..."
-$GMX_BIN grompp -f $MDP_FILE -c $GRO_FILE -p $TOP_FILE -o $TPR_FILE -po $NEW_MDP_FILE
+$GMX_BIN grompp -f $MDP_FILE -c $NEW_GRO_FILE -p $NEW_TOP_FILE -o $TPR_FILE -po $NEW_MDP_FILE
 
 # modify the colvars input file using the PMF minima in previous stages
 ARGMIN_002=$(awk -f ./find_min_max.awk ../$BASENAME_002/output/$BASENAME_002.out.abf1.czar.pmf)
