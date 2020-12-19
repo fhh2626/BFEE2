@@ -45,7 +45,7 @@ DispCorr            = no
 ;Bonds (for minimization)
 constraint-algorithm    = LINCS
 constraints             = h-bonds
-continuation            = yes
+continuation            = no
 morse                   = no
 
 ;Implicit solvent
@@ -66,4 +66,4 @@ tau_t               = 0.1
 ref_t               = $temperature
 
 ;Velocity generation
-gen-vel             = no
+gen-vel             = yes
