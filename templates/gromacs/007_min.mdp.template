@@ -44,7 +44,7 @@ DispCorr            = no
 
 ;Bonds (for minimization)
 constraint-algorithm    = LINCS
-constraints             = h-bonds
+constraints             = none
 continuation            = no
 morse                   = no
 
