@@ -898,7 +898,7 @@ class BFEEGromacs:
                         r_width=r_width,
                         r_lower_boundary=r_lower_boundary,
                         r_upper_boundary=r_upper_boundary,
-                        r_wall_constant=0.8368,
+                        r_wall_constant=0.5*4.184,
                         ligand_selection='BFEE_Ligand',
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
@@ -907,9 +907,10 @@ class BFEEGromacs:
         # write the solvent molecules
         self.solvent.write(posixpath.join(generate_basename, 'solvent.gro'))
         # generate the shell script for making the tpr file
-        new_box_x = np.around(convert(self.system.dimensions[0], 'angstrom', 'nm'), 2) + r_upper_shift
-        new_box_y = np.around(convert(self.system.dimensions[1], 'angstrom', 'nm'), 2) + r_upper_shift
-        new_box_z = np.around(convert(self.system.dimensions[2], 'angstrom', 'nm'), 2) + r_upper_shift
+        # further enlarge the water box by 10% since the size of box may be compressed under NPT
+        new_box_x = np.around(convert(self.system.dimensions[0], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
+        new_box_y = np.around(convert(self.system.dimensions[1], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
+        new_box_z = np.around(convert(self.system.dimensions[2], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         generateShellScript(f'{sys.path[0]}/templates/gromacs/007.generate_tpr_sh.template',
                             posixpath.join(generate_basename, '007_generate_tpr'),
                             logger=self.logger,
