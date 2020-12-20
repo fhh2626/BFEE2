@@ -102,7 +102,6 @@ colvar {
     extendedLagrangian      on
     extendedFluctuation     $r_width
     distance {
-        forceNoPBC          yes
         group1 { 
             indexGroup      $protein_selection
         }
