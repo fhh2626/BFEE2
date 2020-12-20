@@ -5,6 +5,11 @@ import math
 
 # Boltazann constant for NAMD unit convention
 BOLTZMANN = 0.0019872041
+BOLTZMANN_GMX = 0.0019872041 * 4.184
+
+# standard concentration
+CSTAR = 1661
+CSTAR_GMX = 1.661
 
 class postTreatment:
     ''' the post-treatment of BFEE outputs '''
@@ -17,7 +22,15 @@ class postTreatment:
                 unit (string): unit convention used by MD engine, 'namd' or 'gromacs'
                 jobType (string): 'geometric' or 'alchemical' '''
 
-        self.beta = 1 / (BOLTZMANN * temperature)
+        if unit == 'namd':
+            self.BOLTZMANN = BOLTZMANN
+            self.CSTAR = CSTAR
+        elif unit == 'gromacs':
+            self.BOLTZMANN = BOLTZMANN_GMX
+            self.CSTAR = CSTAR_GMX
+
+        self.unit = unit
+        self.beta = 1 / (self.BOLTZMANN * temperature)
         self.temperature = float(temperature)
 
     def _readPMF(self, filePath):
@@ -113,7 +126,7 @@ class postTreatment:
                 pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf '''
         
         for i in range(len(pmf[0])):
-            pmf[1][i] += 2 * BOLTZMANN * self.temperature * math.log(pmf[0][i])
+            pmf[1][i] += 2 * self.BOLTZMANN * self.temperature * math.log(pmf[0][i])
 
         pmf[1] -= np.min(pmf[1])
 
@@ -167,7 +180,7 @@ class postTreatment:
             if x >= rStar:
                 break
         
-        return -1 / self.beta * math.log(S * I / 1661)
+        return -1 / self.beta * math.log(S * I / self.CSTAR)
 
     def geometricBindingFreeEnergy(self, filePathes, parameters):
         ''' calculate binding free energy for geometric route
@@ -203,7 +216,10 @@ class postTreatment:
 
         contributions[9] = np.sum(contributions[:9])
 
-        return contributions
+        if self.unit == 'namd':
+            return contributions
+        elif self.unit == 'gromacs':
+            return contributions / 4.184
 
     def _alchemicalRestraintContributionBulk(
         self, eulerTheta, polarTheta, R, 
@@ -234,10 +250,10 @@ class postTreatment:
         forceConstanttheta *= (180 / math.pi)**2
         forceConstantphi *= (180 / math.pi)**2
 
-        contribution = BOLTZMANN * self.temperature * math.log(
-            8 * (math.pi**2) * 1661 / ((R**2) * math.sin(eulerTheta) * math.sin(polarTheta)) * \
+        contribution = self.BOLTZMANN * self.temperature * math.log(
+            8 * (math.pi**2) * self.CSTAR / ((R**2) * math.sin(eulerTheta) * math.sin(polarTheta)) * \
             math.sqrt(forceConstantTheta * forceConstantPhi * forceConstantPsi * forceConstanttheta * \
-            forceConstantphi * forceConstantR ) / ((2 * math.pi * BOLTZMANN * self.temperature)**3)
+            forceConstantphi * forceConstantR ) / ((2 * math.pi * self.BOLTZMANN * self.temperature)**3)
         )
         return contribution
 
