@@ -56,7 +56,7 @@ colvar {
 harmonic {
     colvars         translation
     centers         0.0
-    forceConstant   41.84
+    forceConstant   4184
 }
 
 colvar {
