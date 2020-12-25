@@ -141,13 +141,13 @@ class geometricAdvancedSettings(QWidget):
         self.userDefinedDirection.setLayout(self.userDefinedDirectionLayout)
 
         # non-standard solvent
-        self.nonStandardSolvent = QGroupBox('Non-standard solvent')
+        self.nonStandardSolvent = QGroupBox('User-provided large box')
         self.nonStandardSolventLayout = QGridLayout()
 
-        self.nonStandardSolventPsfLabel = QLabel('psf/parm/top file:')
+        self.nonStandardSolventPsfLabel = QLabel('psf/parm file:')
         self.nonStandardSolventPsfLineEdit = QLineEdit()
         self.nonStandardSolventPsfButton = QPushButton('Browse')
-        self.nonStandardSolventPdbLabel = QLabel('pdb/gro file:')
+        self.nonStandardSolventPdbLabel = QLabel('pdb file:')
         self.nonStandardSolventPdbLineEdit = QLineEdit()
         self.nonStandardSolventPdbButton = QPushButton('Browse')
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPsfLabel, 0, 0)
