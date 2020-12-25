@@ -147,7 +147,7 @@ class geometricAdvancedSettings(QWidget):
         self.nonStandardSolventPsfLabel = QLabel('psf/parm file:')
         self.nonStandardSolventPsfLineEdit = QLineEdit()
         self.nonStandardSolventPsfButton = QPushButton('Browse')
-        self.nonStandardSolventPdbLabel = QLabel('pdb file:')
+        self.nonStandardSolventPdbLabel = QLabel('pdb/rst7 file:')
         self.nonStandardSolventPdbLineEdit = QLineEdit()
         self.nonStandardSolventPdbButton = QPushButton('Browse')
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPsfLabel, 0, 0)
@@ -1227,6 +1227,22 @@ Standard Binding Free Energy:\n\
                     forceFieldType = 'amber'
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
+
+                    # for the amber force field, files of large box must be provided
+                    if forceFieldType == 'amber':
+
+                        if self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text() == '' or \
+                            self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text() == '':
+                            QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Coordinate and topology files of large box must be \
+provided in "Advanced Settings"when using the Amber \
+force fields!'
+                            )
+                            return
+
                     iGenerator.generateNAMDGeometricFiles(
                         path,
                         self.psfLineEdit.text(),
