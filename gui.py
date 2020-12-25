@@ -330,7 +330,7 @@ class mainUI(QMainWindow):
         # exit
         self.exitAction = QAction('&Exit', self)        
         self.exitAction.setStatusTip('Exit application')
-        self.exitAction.triggered.connect(qApp.quit)
+        self.exitAction.triggered.connect(QApplication.quit)
 
         # help
         self.helpAction = QAction('&Help', self)
