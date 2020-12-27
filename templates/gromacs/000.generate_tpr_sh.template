@@ -23,15 +23,6 @@ NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
 echo "Making gromacs tpr file ($TPR_FILE)..."
 $GMX_BIN grompp -f $MDP_FILE -c $GRO_FILE -p $TOP_FILE -o $TPR_FILE -po $NEW_MDP_FILE
 
-# modify the colvars input file using the PMF minima in previous stages
-ARGMIN_002=$(awk -f ./find_min_max.awk ../$BASENAME_002/output/$BASENAME_002.out.abf1.czar.pmf)
-ARGMIN_003=$(awk -f ./find_min_max.awk ../$BASENAME_003/output/$BASENAME_003.out.abf1.czar.pmf)
-ARGMIN_004=$(awk -f ./find_min_max.awk ../$BASENAME_004/output/$BASENAME_004.out.abf1.czar.pmf)
-ARGMIN_005=$(awk -f ./find_min_max.awk ../$BASENAME_005/output/$BASENAME_005.out.abf1.czar.pmf)
-ARGMIN_006=$(awk -f ./find_min_max.awk ../$BASENAME_006/output/$BASENAME_006.out.abf1.czar.pmf)
-sed -i.orig "s/002_pmf_argmin/$ARGMIN_002/g; s/003_pmf_argmin/$ARGMIN_003/g; s/004_pmf_argmin/$ARGMIN_004/g; s/005_pmf_argmin/$ARGMIN_005/g; s/006_pmf_argmin/$ARGMIN_006/g" $COLVARS_INPUT_TEMPLATE
-rm -f $COLVARS_INPUT_TEMPLATE.orig
-
 # run the PMF calculation
 mkdir -p output
 DEFAULT_OUTPUT_FILENAME="output/$OUTPUT_BASENAME.out"

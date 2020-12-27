@@ -170,6 +170,7 @@ class inputGenerator():
         bfee.setLigandHeavyAtomsGroup(f'{selectionLig} and not (name H*)')
         bfee.setSolventAtomsGroup(selectionSol)
         bfee.setTemperature(temperature)
+        bfee.generate000()
         bfee.generate001()
         bfee.generate002()
         bfee.generate003()

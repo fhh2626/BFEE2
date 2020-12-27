@@ -360,14 +360,17 @@ class BFEEGromacs:
             newBasename = posixpath.splitext(self.ligandOnlyStructureFile)[0]
             self.ligandOnlyStructureFile = newBasename + '.new.gro'
             self.saveStructure(self.ligandOnlyStructureFile)
-        self.basenames = ['001_RMSD_bound',
+        self.basenames = [
+                          '000_eq',
+                          '001_RMSD_bound',
                           '002_euler_theta',
                           '003_euler_phi',
                           '004_euler_psi',
                           '005_polar_theta',
                           '006_polar_phi',
                           '007_r',
-                          '008_RMSD_unbound']
+                          '008_RMSD_unbound'
+                        ]
         self.stepnames = self.basenames.copy()
         if self.baseDirectory is not None:
             self.basenames = [posixpath.join(self.baseDirectory, basename) for basename in self.basenames]
@@ -435,9 +438,66 @@ class BFEEGromacs:
         if hasattr(self, 'solvent'):
             self.solvent.write(outputFile, name='BFEE_Solvent', mode='a')
 
+    def generate000(self):
+        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][000][%(levelname)s]:%(message)s'))
+        generate_basename = self.basenames[0]
+        self.logger.info('=' * 80)
+        self.logger.info(f'Generating simulation files for {generate_basename}...')
+        if not posixpath.exists(generate_basename):
+            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+            os.makedirs(generate_basename)
+        # generate the MDP file
+        generateMDP(f'{sys.path[0]}/templates/gromacs/000.mdp.template',
+                    posixpath.join(generate_basename, '000_eq'),
+                    logger=self.logger,
+                    timeStep=0.002,
+                    numSteps=4000000,
+                    temperature=self.temperature,
+                    pressure=1.01325)
+        # check if the ligand and protein is selected
+        if not hasattr(self, 'ligand'):
+            raise RuntimeError('The atoms of the ligand have not been selected.')
+        if not hasattr(self, 'protein'):
+            raise RuntimeError('The atoms of the protein have not been selected.')
+        # measure the COM of the protein
+        protein_center = measure_center(self.protein.positions)
+        # convert angstrom to nanometer and format the string
+        protein_center = convert(protein_center, "angstrom", "nm")
+        protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
+        self.logger.info('COM of the protein: ' + protein_center_str + '.')
+        # generate the index file
+        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        # generate the colvars configuration
+        colvars_inputfile_basename = posixpath.join(generate_basename, '000_colvars')
+        generateColvars(f'{sys.path[0]}/templates/gromacs/000.colvars.template',
+                        colvars_inputfile_basename,
+                        protein_selection='BFEE_Protein',
+                        protein_center=protein_center_str,
+                        logger=self.logger)
+        # generate the reference file
+        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        # generate the shell script for making the tpr file
+        generateShellScript(f'{sys.path[0]}/templates/gromacs/000.generate_tpr_sh.template',
+                            posixpath.join(generate_basename, '000_generate_tpr'),
+                            logger=self.logger,
+                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                                                 '000_eq.mdp')),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
+            os.makedirs(posixpath.join(generate_basename, 'output'))
+        self.logger.info(f"Generation of {generate_basename} done.")
+        self.logger.info('=' * 80)
+
+
     def generate001(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][001][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[0]
+        generate_basename = self.basenames[1]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -485,7 +545,7 @@ class BFEEGromacs:
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '001_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -498,7 +558,7 @@ class BFEEGromacs:
     
     def generate002(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][002][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[1]
+        generate_basename = self.basenames[2]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -546,7 +606,7 @@ class BFEEGromacs:
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '002_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -561,7 +621,7 @@ class BFEEGromacs:
 
     def generate003(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][003][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[2]
+        generate_basename = self.basenames[3]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -606,11 +666,11 @@ class BFEEGromacs:
         generateShellScript(f'{sys.path[0]}/templates/gromacs/003.generate_tpr_sh.template',
                             posixpath.join(generate_basename, '003_generate_tpr'),
                             logger=self.logger,
-                            BASENAME_002=self.stepnames[1],
+                            BASENAME_002=self.stepnames[2],
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '003_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -625,7 +685,7 @@ class BFEEGromacs:
 
     def generate004(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][004][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[3]
+        generate_basename = self.basenames[4]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -670,12 +730,12 @@ class BFEEGromacs:
         generateShellScript(f'{sys.path[0]}/templates/gromacs/004.generate_tpr_sh.template',
                             posixpath.join(generate_basename, '004_generate_tpr'),
                             logger=self.logger,
-                            BASENAME_002=self.stepnames[1],
-                            BASENAME_003=self.stepnames[2],
+                            BASENAME_002=self.stepnames[2],
+                            BASENAME_003=self.stepnames[3],
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '004_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -690,7 +750,7 @@ class BFEEGromacs:
 
     def generate005(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][005][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[4]
+        generate_basename = self.basenames[5]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -743,13 +803,13 @@ class BFEEGromacs:
         generateShellScript(f'{sys.path[0]}/templates/gromacs/005.generate_tpr_sh.template',
                             posixpath.join(generate_basename, '005_generate_tpr'),
                             logger=self.logger,
-                            BASENAME_002=self.stepnames[1],
-                            BASENAME_003=self.stepnames[2],
-                            BASENAME_004=self.stepnames[3],
+                            BASENAME_002=self.stepnames[2],
+                            BASENAME_003=self.stepnames[3],
+                            BASENAME_004=self.stepnames[4],
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '005_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -764,7 +824,7 @@ class BFEEGromacs:
 
     def generate006(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][006][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[5]
+        generate_basename = self.basenames[6]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -817,14 +877,14 @@ class BFEEGromacs:
         generateShellScript(f'{sys.path[0]}/templates/gromacs/006.generate_tpr_sh.template',
                             posixpath.join(generate_basename, '006_generate_tpr'),
                             logger=self.logger,
-                            BASENAME_002=self.stepnames[1],
-                            BASENAME_003=self.stepnames[2],
-                            BASENAME_004=self.stepnames[3],
-                            BASENAME_005=self.stepnames[4],
+                            BASENAME_002=self.stepnames[2],
+                            BASENAME_003=self.stepnames[3],
+                            BASENAME_004=self.stepnames[4],
+                            BASENAME_005=self.stepnames[5],
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '006_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -839,7 +899,7 @@ class BFEEGromacs:
 
     def generate007(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][007][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[6]
+        generate_basename = self.basenames[7]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
@@ -849,10 +909,19 @@ class BFEEGromacs:
         generateMDP(f'{sys.path[0]}/templates/gromacs/007_min.mdp.template',
                     posixpath.join(generate_basename, '007_Minimize'),
                     timeStep=0.002,
-                    numSteps=100000,
+                    numSteps=5000,
                     temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger)
+        # equilibration
+        generateMDP(f'{sys.path[0]}/templates/gromacs/007.mdp.template',
+                    posixpath.join(generate_basename, '007_Equilibration'),
+                    timeStep=0.002,
+                    numSteps=5000000,
+                    temperature=self.temperature,
+                    pressure=1.01325,
+                    logger=self.logger)
+        # free-energy calculation
         generateMDP(f'{sys.path[0]}/templates/gromacs/007.mdp.template',
                     posixpath.join(generate_basename, '007_PMF'),
                     timeStep=0.002,
@@ -876,6 +945,7 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
+        colvars_inputfile_basename_eq = posixpath.join(generate_basename, '007_eq_colvars')
         colvars_inputfile_basename = posixpath.join(generate_basename, '007_colvars')
         # measure the current COM distance from the ligand to protein
         ligand_center = measure_center(self.ligand.positions)
@@ -892,6 +962,14 @@ class BFEEGromacs:
         # also we will need r_upper_shift to enlarge the solvent box
         r_upper_shift = 2.1
         r_upper_boundary = r_center + r_upper_shift
+        # colvars file for equilibration
+        generateColvars(f'{sys.path[0]}/templates/gromacs/007_eq.colvars.template',
+                        colvars_inputfile_basename_eq,
+                        logger=self.logger,
+                        ligand_selection='BFEE_Ligand',
+                        protein_selection='BFEE_Protein',
+                        protein_center=protein_center_str)
+        # colvars file for free-energy calculation
         generateColvars(f'{sys.path[0]}/templates/gromacs/007.colvars.template',
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -911,14 +989,15 @@ class BFEEGromacs:
         new_box_x = np.around(convert(self.system.dimensions[0], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         new_box_y = np.around(convert(self.system.dimensions[1], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         new_box_z = np.around(convert(self.system.dimensions[2], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/007.generate_tpr_sh.template',
-                            posixpath.join(generate_basename, '007_generate_tpr'),
+        # generate shell script for equlibration
+        generateShellScript(f'{sys.path[0]}/templates/gromacs/007_eq.generate_tpr_sh.template',
+                            posixpath.join(generate_basename, '007.1_generate_eq_tpr'),
                             logger=self.logger,
-                            BASENAME_002=self.stepnames[1],
-                            BASENAME_003=self.stepnames[2],
-                            BASENAME_004=self.stepnames[3],
-                            BASENAME_005=self.stepnames[4],
-                            BASENAME_006=self.stepnames[5],
+                            BASENAME_002=self.stepnames[2],
+                            BASENAME_003=self.stepnames[3],
+                            BASENAME_004=self.stepnames[4],
+                            BASENAME_005=self.stepnames[5],
+                            BASENAME_006=self.stepnames[6],
                             BOX_MODIFIED_GRO_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                          'box_modified.gro')),
                                                                         posixpath.abspath(generate_basename)).replace('\\', '/'),
@@ -935,11 +1014,29 @@ class BFEEGromacs:
                                                                                                      '007_Minimize.mdp')),
                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'),
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
-                                                                                                 '007_PMF.mdp')),
+                                                                                                 '007_Equilibration.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename_eq + '.dat'),
+                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+        # generate shell script for free-energy calculation
+        generateShellScript(f'{sys.path[0]}/templates/gromacs/007.generate_tpr_sh.template',
+                            posixpath.join(generate_basename, '007.2_generate_tpr'),
+                            logger=self.logger,
+                            BASENAME_002=self.stepnames[2],
+                            BASENAME_003=self.stepnames[3],
+                            BASENAME_004=self.stepnames[4],
+                            BASENAME_005=self.stepnames[5],
+                            BASENAME_006=self.stepnames[6],
+                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                                                 '007_PMF.mdp')),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/007_r/output/007_r_eq.out.gro'),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/007_r/solvated.top'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
@@ -952,12 +1049,20 @@ class BFEEGromacs:
 
     def generate008(self):
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][008][%(levelname)s]:%(message)s'))
-        generate_basename = self.basenames[7]
+        generate_basename = self.basenames[8]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
+        # # generate the MDP file for equlibration
+        generateMDP(f'{sys.path[0]}/templates/gromacs/008.mdp.template',
+                    posixpath.join(generate_basename, '008_Equilibration'),
+                    logger=self.logger,
+                    timeStep=0.002,
+                    numSteps=1000000,
+                    temperature=self.temperature,
+                    pressure=1.01325)
         # generate the MDP file
         generateMDP(f'{sys.path[0]}/templates/gromacs/008.mdp.template',
                     posixpath.join(generate_basename, '008_PMF'),
@@ -986,14 +1091,25 @@ class BFEEGromacs:
         self.ligandOnly.positions = ligand_position_in_system
         # write out the whole ligand-only system as reference
         self.ligandOnlySystem.select_atoms('all').write(posixpath.join(generate_basename, 'reference_ligand_only.xyz'))
-        # generate the shell script for making the tpr file
+        # generate the shell script for making the tpr file for equilibration
+        generateShellScript(f'{sys.path[0]}/templates/gromacs/008_eq.generate_tpr_sh.template',
+                            posixpath.join(generate_basename, '008.1_generate_eq_tpr'),
+                            logger=self.logger,
+                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                                                 '008_Equilibration.mdp')),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyStructureFile),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyTopologyFile),
+                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),)
+        # generate the shell script for making the tpr file for free-energy calculation
         generateShellScript(f'{sys.path[0]}/templates/gromacs/008.generate_tpr_sh.template',
-                            posixpath.join(generate_basename, '008_generate_tpr'),
+                            posixpath.join(generate_basename, '008.2_generate_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
                                                                                                  '008_PMF.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyStructureFile),
+                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/008_RMSD_unbound/output/008_RMSD_unbound_eq.out.gro'),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyTopologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
