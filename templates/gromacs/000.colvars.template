@@ -1,0 +1,37 @@
+colvarsTrajFrequency    500
+colvarsRestartFrequency 50000
+indexFile               colvars.ndx
+
+colvar {
+    name translation
+    distance {
+        group1 {
+            indexGroup $protein_selection
+        }
+        group2 {
+            dummyAtom $protein_center
+        }
+    }
+}
+
+harmonic {
+    colvars         translation
+    centers         0.0
+    forceConstant   4184
+}
+
+colvar {
+    name orientation
+    orientation {
+        atoms {
+            indexGroup $protein_selection
+        }
+        refPositionsfile reference.xyz
+    }
+}
+
+harmonic {
+    colvars         orientation
+    centers         (1.0, 0.0, 0.0, 0.0)
+    forceConstant   836.8
+}

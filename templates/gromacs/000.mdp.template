@@ -1,0 +1,70 @@
+;equilibration of p41-abl
+
+;Run control
+integrator          = md
+dt                  = $dt
+tinit               = 0
+nsteps              = $nsteps
+comm-mode           = Linear
+nstcomm             = 1000
+
+;Langevin dynamics
+bd-fric             = 0
+ld-seed             = -1
+
+;Energy minimization
+;emtol               = 10
+;emstep              = 0.01
+
+;Output control
+nstxout             = 5000
+nstvout             = 5000
+nstfout             = 5000
+nstlog              = 5000
+nstcalcenergy       = 1000
+nstenergy           = 5000
+
+;Neighbor searching
+cutoff-scheme       = Verlet
+ns-type             = grid
+pbc                 = xyz
+periodic-molecules  = no
+
+;Electrostatics
+coulombtype         = PME
+coulomb-modifier    = Potential-shift-Verlet
+rcoulomb            = 1.2
+
+;VdW
+vdwtype             = Cut-off
+vdw-modifier        = force-switch
+rvdw                = 1.2
+rvdw-switch         = 1.0
+DispCorr            = no
+
+;Bonds (for minimization)
+constraint-algorithm    = LINCS
+constraints             = h-bonds
+continuation            = yes
+morse                   = no
+
+;Implicit solvent
+implicit-solvent    = no
+
+;Pressure coupling
+;Pressure coupling
+pcoupl              = berendsen
+pcoupltype          = Isotropic
+nstpcouple          = -1
+tau-p               = 2
+compressibility     = 4.5e-5
+ref-p               = $pressure
+
+;Temperature coupling
+tcoupl              = v-rescale
+tc-grps             = System
+tau_t               = 0.1
+ref_t               = $temperature
+
+;Velocity generation
+gen-vel             = no
