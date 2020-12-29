@@ -395,6 +395,10 @@ class BFEEGromacs:
         self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
         if not posixpath.exists(self.baseDirectory):
             os.makedirs(self.baseDirectory)
+        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein')):
+            os.makedirs(posixpath.join(self.baseDirectory, 'Protein'))
+        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand')):
+            os.makedirs(posixpath.join(self.baseDirectory, 'Ligand'))
 
         # check if the topologies have other itp files included
         topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.topologyFile)
@@ -404,10 +408,10 @@ class BFEEGromacs:
             dest_dirname = posixpath.dirname(includeString)
             if dest_dirname:
                 # if dest_dirname is not empty
-                if not posixpath.exists(posixpath.join(self.baseDirectory, dest_dirname)):
+                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein', dest_dirname)):
                 # if the destination directory does not exist
-                    os.makedirs(posixpath.join(self.baseDirectory, dest_dirname))
-            shutil.copy(includeFile, posixpath.join(self.baseDirectory, dest_dirname))
+                    os.makedirs(posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
+            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
         # do the same thing to the ligand topology
         topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.ligandOnlyTopologyFile)
         for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
@@ -416,15 +420,15 @@ class BFEEGromacs:
             dest_dirname = posixpath.dirname(includeString)
             if dest_dirname:
                 # if dest_dirname is not empty
-                if not posixpath.exists(posixpath.join(self.baseDirectory, dest_dirname)):
+                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname)):
                 # if the destination directory does not exist
-                    os.makedirs(posixpath.join(self.baseDirectory, dest_dirname))
-            shutil.copy(includeFile, posixpath.join(self.baseDirectory, dest_dirname))
+                    os.makedirs(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
+            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
 
         #self.structureFile = shutil.copy(self.structureFile, self.baseDirectory)
-        self.topologyFile = shutil.copy(self.topologyFile, self.baseDirectory)
-        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, self.baseDirectory)
-        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, self.baseDirectory)
+        self.topologyFile = shutil.copy(self.topologyFile, posixpath.join(self.baseDirectory, 'Protein'))
+        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, posixpath.join(self.baseDirectory, 'Ligand'))
+        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, posixpath.join(self.baseDirectory, 'Ligand'))
 
         # move the system, so that the complex is at the center of the simulation box
         all_center = measure_center(all_atoms.positions)
@@ -444,7 +448,7 @@ class BFEEGromacs:
         ligandOnly_center = measure_center(all_atoms.positions)
 
         _, fileName = os.path.split(self.structureFile)
-        all_atoms.write(self.baseDirectory + '/' + fileName)
+        all_atoms.write(self.baseDirectory + '/Protein/' + fileName)
 
         _, ligandOnly_fileName = os.path.split(self.ligandOnlyStructureFile)
         all_atoms_ligandOnly.write(self.baseDirectory + '/' + ligandOnly_fileName)
@@ -454,7 +458,7 @@ class BFEEGromacs:
             #all_atoms = self.system.select_atoms("all")
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
         newBasename = posixpath.splitext(fileName)[0]
-        self.structureFile = self.baseDirectory + '/' + fileName + '.new.gro'
+        self.structureFile = self.baseDirectory + '/Protein/' + fileName + '.new.gro'
             #self.saveStructure(self.structureFile)
         all_atoms.write(self.structureFile)
         # measure the cell of the ligand-only system
