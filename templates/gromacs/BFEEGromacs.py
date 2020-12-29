@@ -280,6 +280,8 @@ class BFEEGromacs:
         set the temperature
     generateGromacsIndex(outputFile)
         generate a GROMACS index file for atom selection in Colvars
+    generate000()
+        generate files for running an equilibrium simulation
     generate001()
         generate files for determining the PMF along the RMSD of the ligand  
         with respect to its bound state
@@ -316,7 +318,10 @@ class BFEEGromacs:
         # setup class attributes
         self.structureFile = structureFile
         self.topologyFile = topologyFile
-        self.baseDirectory = baseDirectory
+        if baseDirectory is None:
+            self.baseDirectory = os.getcwd()
+        else:
+            self.baseDirectory = baseDirectory
         self.ligandOnlyStructureFile = ligandOnlyStructureFile
         self.ligandOnlyTopologyFile = ligandOnlyTopologyFile
 
@@ -339,46 +344,45 @@ class BFEEGromacs:
 
         # set default temperature to 300.0 K
         self.temperature = 300.0
-        if self.baseDirectory is not None:
-            self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
-            if not posixpath.exists(self.baseDirectory):
-                os.makedirs(self.baseDirectory)
-            #self.structureFile = shutil.copy(self.structureFile, self.baseDirectory)
-            self.topologyFile = shutil.copy(self.topologyFile, self.baseDirectory)
-            self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, self.baseDirectory)
-            self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, self.baseDirectory)
+        self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
+        if not posixpath.exists(self.baseDirectory):
+            os.makedirs(self.baseDirectory)
+        #self.structureFile = shutil.copy(self.structureFile, self.baseDirectory)
+        self.topologyFile = shutil.copy(self.topologyFile, self.baseDirectory)
+        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, self.baseDirectory)
+        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, self.baseDirectory)
 
-            # move the system, so that the complex is at the center of the simulation box
-            all_center = measure_center(all_atoms.positions)
-            moveVector = (-all_center[0], -all_center[1], -all_center[2])
-            transformations.translate(moveVector)(all_atoms)
-            all_center = measure_center(all_atoms.positions)
-            moveVector = (dim[0]/2, dim[1]/2, dim[2]/2)
-            transformations.translate(moveVector)(all_atoms)
-            all_center = measure_center(all_atoms.positions)
+        # move the system, so that the complex is at the center of the simulation box
+        all_center = measure_center(all_atoms.positions)
+        moveVector = (-all_center[0], -all_center[1], -all_center[2])
+        transformations.translate(moveVector)(all_atoms)
+        all_center = measure_center(all_atoms.positions)
+        moveVector = (dim[0]/2, dim[1]/2, dim[2]/2)
+        transformations.translate(moveVector)(all_atoms)
+        all_center = measure_center(all_atoms.positions)
 
-            ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
-            moveVector = (-ligandOnly_center[0], -ligandOnly_center[1], -ligandOnly_center[2])
-            transformations.translate(moveVector)(all_atoms_ligandOnly)
-            ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
-            moveVector = (ligandOnly_dim[0]/2, ligandOnly_dim[1]/2, ligandOnly_dim[2]/2)
-            transformations.translate(moveVector)(all_atoms_ligandOnly)
-            ligandOnly_center = measure_center(all_atoms.positions)
+        ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
+        moveVector = (-ligandOnly_center[0], -ligandOnly_center[1], -ligandOnly_center[2])
+        transformations.translate(moveVector)(all_atoms_ligandOnly)
+        ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
+        moveVector = (ligandOnly_dim[0]/2, ligandOnly_dim[1]/2, ligandOnly_dim[2]/2)
+        transformations.translate(moveVector)(all_atoms_ligandOnly)
+        ligandOnly_center = measure_center(all_atoms.positions)
 
-            _, fileName = os.path.split(self.structureFile)
-            all_atoms.write(self.baseDirectory + '/' + fileName)
+        _, fileName = os.path.split(self.structureFile)
+        all_atoms.write(self.baseDirectory + '/' + fileName)
 
-            _, ligandOnly_fileName = os.path.split(self.ligandOnlyStructureFile)
-            all_atoms_ligandOnly.write(self.baseDirectory + '/' + ligandOnly_fileName)
+        _, ligandOnly_fileName = os.path.split(self.ligandOnlyStructureFile)
+        all_atoms_ligandOnly.write(self.baseDirectory + '/' + ligandOnly_fileName)
 
         #if isclose(volume, 0.0):
             #self.logger.warning(f'The volume is too small. Maybe the structure file is a PDB file without the unit cell.')
             #all_atoms = self.system.select_atoms("all")
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
-            newBasename = posixpath.splitext(fileName)[0]
-            self.structureFile = self.baseDirectory + '/' + fileName + '.new.gro'
+        newBasename = posixpath.splitext(fileName)[0]
+        self.structureFile = self.baseDirectory + '/' + fileName + '.new.gro'
             #self.saveStructure(self.structureFile)
-            all_atoms.write(self.structureFile)
+        all_atoms.write(self.structureFile)
         # measure the cell of the ligand-only system
         #dim = self.ligandOnlySystem.dimensions
         #volume = dim[0] * dim[1] * dim[2]
@@ -389,10 +393,10 @@ class BFEEGromacs:
             #self.ligandOnlySystem.trajectory[0].triclinic_dimensions = get_cell(all_atoms.positions)
             #dim = self.ligandOnlySystem.dimensions
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
-            newBasename = posixpath.splitext(ligandOnly_fileName)[0]
-            self.ligandOnlyStructureFile = self.baseDirectory + '/' + ligandOnly_fileName + '.new.gro'
+        newBasename = posixpath.splitext(ligandOnly_fileName)[0]
+        self.ligandOnlyStructureFile = self.baseDirectory + '/' + ligandOnly_fileName + '.new.gro'
             #self.saveStructure(self.ligandOnlyStructureFile)
-            all_atoms_ligandOnly.write(self.ligandOnlyStructureFile)
+        all_atoms_ligandOnly.write(self.ligandOnlyStructureFile)
 
         self.basenames = [
                           '000_eq',
@@ -406,8 +410,7 @@ class BFEEGromacs:
                           '008_RMSD_unbound'
                         ]
         self.stepnames = self.basenames.copy()
-        if self.baseDirectory is not None:
-            self.basenames = [posixpath.join(self.baseDirectory, basename) for basename in self.basenames]
+        self.basenames = [posixpath.join(self.baseDirectory, basename) for basename in self.basenames]
         self.logger.info('Initialization done.')
 
     def saveStructure(self, outputFile, selection='all'):
@@ -1160,6 +1163,7 @@ if __name__ == "__main__":
     bfee.setLigandHeavyAtomsGroup('segid PPRO and not (name H*)')
     bfee.setSolventAtomsGroup('resname TIP3*')
     bfee.setTemperature(350.0)
+    bfee.generate000()
     bfee.generate001()
     bfee.generate002()
     bfee.generate003()
