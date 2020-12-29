@@ -17,7 +17,7 @@ GRO_FILE=$GRO_FILE_TEMPLATE
 TOP_FILE=$TOP_FILE_TEMPLATE
 
 # generate the tpr file
-OUTPUT_BASENAME=$(basename $(pwd))
+OUTPUT_BASENAME=$(basename "$(pwd)")
 TPR_FILE="$OUTPUT_BASENAME.tpr"
 NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
 echo "Making gromacs tpr file ($TPR_FILE)..."

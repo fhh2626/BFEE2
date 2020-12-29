@@ -27,7 +27,7 @@ echo "Add more solvent molecules to fill the box..."
 $GMX_BIN solvate -cp $BOX_MODIFIED_GRO_TEMPLATE -cs solvent.gro -p $NEW_TOP_FILE -box $NEW_BOX_X_TEMPLATE $NEW_BOX_Y_TEMPLATE $NEW_BOX_Z_TEMPLATE -o $NEW_GRO_FILE
 
 # generate the tpr file for minimization
-OUTPUT_BASENAME=$(basename $(pwd))
+OUTPUT_BASENAME=$(basename "$(pwd)")
 MIN_MDP_FILE=$MIN_MDP_FILE_TEMPLATE
 MIN_TPR_FILE="$OUTPUT_BASENAME.min.tpr"
 NEW_MIN_MDP_FILE="$OUTPUT_BASENAME.min.new.mdp"
@@ -40,7 +40,7 @@ DEFAULT_OUTPUT_FILENAME="output_minimization/$OUTPUT_BASENAME.min.out"
 $GMX_BIN mdrun -s $MIN_TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME
 
 # generate the tpr file
-OUTPUT_BASENAME=$(basename $(pwd))
+OUTPUT_BASENAME=$(basename "$(pwd)")
 TPR_FILE="$OUTPUT_BASENAME.tpr"
 NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
 NEW_GRO_FILE="$DEFAULT_OUTPUT_FILENAME.gro"
