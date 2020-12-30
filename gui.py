@@ -501,7 +501,7 @@ class mainUI(QMainWindow):
 
         # CHARMM force field files
         self.forceFieldFilesLayout = QVBoxLayout()
-        self.forceFieldFilesLabel = QLabel('CHARMM FF files:')
+        self.forceFieldFilesLabel = QLabel('Force field files:')
         self.forceFieldFilesBox = QListWidget()
         self.forceFieldFilesChildLayout = QHBoxLayout()
         self.forceFieldAddButton = QPushButton('Add')
@@ -910,11 +910,11 @@ class mainUI(QMainWindow):
 
         # plot a (stratified) pmf
         self.plotPmf = QGroupBox('Plot (stratified) PMFs:')
-        self.plotPmfLayout = QHBoxLayout()
+        self.plotPmfLayout = QVBoxLayout()
 
         self.plotPmfLabel = QLabel('PMF files:')
         self.plotPmfBox = QListWidget()
-        self.plotPmfChildLayout = QVBoxLayout()
+        self.plotPmfChildLayout = QHBoxLayout()
         self.plotPmfAddButton = QPushButton('Add')
         self.plotPmfClearButton = QPushButton('Clear')
         self.plotPmfPlotButton = QPushButton('Plot')
@@ -929,11 +929,11 @@ class mainUI(QMainWindow):
 
         # calculate pmf RMSD convergence
         self.plotPmfConvergence = QGroupBox('Calculate PMF RMSD convergence:')
-        self.plotPmfConvergenceLayout = QHBoxLayout()
+        self.plotPmfConvergenceLayout = QVBoxLayout()
 
         self.plotPmfConvergenceLabel = QLabel('history file:')
         self.plotPmfConvergenceBox = QLineEdit()
-        self.plotPmfConvergenceChildLayout = QVBoxLayout()
+        self.plotPmfConvergenceChildLayout = QHBoxLayout()
         self.plotPmfConvergenceBrowseButton = QPushButton('Browse')
         self.plotPmfConvergencePlotButton = QPushButton('Plot')
         self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergenceBrowseButton)
@@ -946,11 +946,11 @@ class mainUI(QMainWindow):
 
         # merge a (stratified) pmf
         self.mergePmf = QGroupBox('Merge (stratified) PMFs:')
-        self.mergePmfLayout = QHBoxLayout()
+        self.mergePmfLayout = QVBoxLayout()
 
         self.mergePmfLabel = QLabel('PMF files:')
         self.mergePmfBox = QListWidget()
-        self.mergePmfChildLayout = QVBoxLayout()
+        self.mergePmfChildLayout = QHBoxLayout()
         self.mergePmfAddButton = QPushButton('Add')
         self.mergePmfClearButton = QPushButton('Clear')
         self.mergePmfmergeButton = QPushButton('Merge')
