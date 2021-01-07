@@ -998,7 +998,7 @@ class mainUI(QMainWindow):
                 f"\
            {VERSION}\n\n \
 Auther: Haohao Fu (fhh2626@gmail.com)\n\n\
-This software is under the MIT license.\n\n\
+This software is under the GPLv3 license.\n\n\
 Contact Wensheng Cai (wscai@nankai.edu.cn)\n\
 and Chris Chipot (chipot@ks.uiuc.edu) for\n\
 further copyright information.", 
