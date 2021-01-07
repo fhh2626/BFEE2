@@ -12,6 +12,54 @@ from MDAnalysis import transformations
 from math import isclose
 
 
+def scanGromacsTopologyInclude(gmxTopFile, logger=None):
+    """
+    scanGromacsTopologyInclude(gmxTopFile)
+
+    scan the files included by a gromacs topology file
+
+    Parameters
+    ----------
+    gmxTopFile : str
+        filename of the gromacs topology file
+
+    Returns
+    -------
+    tuple
+        a (list, list) tuple.
+        The first list contains the absolute pathnames of included files.
+        The second list contains the strings in the quotation marks for handling
+        relative paths.
+    logger : Logging.logger
+        logger for debugging
+    """
+    topology_dirpath = os.path.dirname(os.path.abspath(gmxTopFile))
+    include_files = []
+    include_strings = []
+    with open(gmxTopFile, 'r') as finput:
+        for line in finput:
+            line = line.strip()
+            if line.startswith('#include'):
+                # this is an include line
+                # find the first quote
+                first_quote = line.find('"')
+                # find the second quote
+                second_quote = line.find('"', first_quote+1)
+                # save the string of include
+                include_str = line[first_quote+1:second_quote]
+                # find the absolute path and save it to the list
+                include_filename = os.path.join(topology_dirpath, include_str).replace('\\', '/')
+                if (posixpath.exists(include_filename)):
+                    include_files.append(include_filename)
+                    include_strings.append(include_str)
+                else:
+                    if logger is None:
+                        print(f'Warning: {include_filename} does not exists.')
+                    else:
+                        logger.warning(f'{include_filename} does not exists.')
+    return include_files, include_strings
+
+
 def measure_minmax(atom_positions):
     """
     measure_minmax(atom_positions)
@@ -347,10 +395,40 @@ class BFEEGromacs:
         self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
         if not posixpath.exists(self.baseDirectory):
             os.makedirs(self.baseDirectory)
+        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein')):
+            os.makedirs(posixpath.join(self.baseDirectory, 'Protein'))
+        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand')):
+            os.makedirs(posixpath.join(self.baseDirectory, 'Ligand'))
+
+        # check if the topologies have other itp files included
+        topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.topologyFile)
+        for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
+            # handle something like "#include "toppar/xxx.itp""
+            # in this case we need to create the directory named "toppar" in the base directory
+            dest_dirname = posixpath.dirname(includeString)
+            if dest_dirname:
+                # if dest_dirname is not empty
+                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein', dest_dirname)):
+                # if the destination directory does not exist
+                    os.makedirs(posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
+            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
+        # do the same thing to the ligand topology
+        topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.ligandOnlyTopologyFile)
+        for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
+            # handle something like "#include "toppar/xxx.itp""
+            # in this case we need to create the directory named "toppar" in the base directory
+            dest_dirname = posixpath.dirname(includeString)
+            if dest_dirname:
+                # if dest_dirname is not empty
+                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname)):
+                # if the destination directory does not exist
+                    os.makedirs(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
+            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
+
         #self.structureFile = shutil.copy(self.structureFile, self.baseDirectory)
-        self.topologyFile = shutil.copy(self.topologyFile, self.baseDirectory)
-        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, self.baseDirectory)
-        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, self.baseDirectory)
+        self.topologyFile = shutil.copy(self.topologyFile, posixpath.join(self.baseDirectory, 'Protein'))
+        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, posixpath.join(self.baseDirectory, 'Ligand'))
+        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, posixpath.join(self.baseDirectory, 'Ligand'))
 
         # move the system, so that the complex is at the center of the simulation box
         all_center = measure_center(all_atoms.positions)
@@ -370,7 +448,7 @@ class BFEEGromacs:
         ligandOnly_center = measure_center(all_atoms.positions)
 
         _, fileName = os.path.split(self.structureFile)
-        all_atoms.write(self.baseDirectory + '/' + fileName)
+        all_atoms.write(self.baseDirectory + '/Protein/' + fileName)
 
         _, ligandOnly_fileName = os.path.split(self.ligandOnlyStructureFile)
         all_atoms_ligandOnly.write(self.baseDirectory + '/' + ligandOnly_fileName)
@@ -380,7 +458,7 @@ class BFEEGromacs:
             #all_atoms = self.system.select_atoms("all")
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
         newBasename = posixpath.splitext(fileName)[0]
-        self.structureFile = self.baseDirectory + '/' + fileName + '.new.gro'
+        self.structureFile = self.baseDirectory + '/Protein/' + fileName + '.new.gro'
             #self.saveStructure(self.structureFile)
         all_atoms.write(self.structureFile)
         # measure the cell of the ligand-only system
