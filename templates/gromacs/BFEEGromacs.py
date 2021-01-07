@@ -33,7 +33,7 @@ def scanGromacsTopologyInclude(gmxTopFile, logger=None):
     logger : Logging.logger
         logger for debugging
     """
-    topology_dirpath = posixpath.dirname(posixpath.abspath(gmxTopFile))
+    topology_dirpath = os.path.dirname(os.path.abspath(gmxTopFile))
     include_files = []
     include_strings = []
     with open(gmxTopFile, 'r') as finput:
@@ -48,7 +48,7 @@ def scanGromacsTopologyInclude(gmxTopFile, logger=None):
                 # save the string of include
                 include_str = line[first_quote+1:second_quote]
                 # find the absolute path and save it to the list
-                include_filename = posixpath.join(topology_dirpath, include_str)
+                include_filename = os.path.join(topology_dirpath, include_str).replace('\\', '/')
                 if (posixpath.exists(include_filename)):
                     include_files.append(include_filename)
                     include_strings.append(include_str)
