@@ -29,6 +29,6 @@ WTM-eABF: [Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264](https://pubs.acs.org
 Collective variables: [Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791)<br>
 
 ## Contact us
-Authors: Haohao Fu (fhh2626@mail.nankai.edu.cn) and Haochuan Chen (yjcoshc@mail.nankai.edu.cn)<br>
+Technique issues: Haohao Fu (fhh2626@mail.nankai.edu.cn) and Haochuan Chen (yjcoshc@mail.nankai.edu.cn)<br>
 
-This software is under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license. For more information about the copyright of BFEE, contact the corresponding authors of the corresponding papers (wscai@nankai.edu.cn, Christophe.Chipot@univ-lorraine.fr).
+This software is under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license. For more information about the copyright of BFEE, contact the corresponding authors of the aforementioned papers (wscai@nankai.edu.cn, Christophe.Chipot@univ-lorraine.fr).
