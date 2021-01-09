@@ -5,6 +5,12 @@ from MDAnalysis import transformations
 import numpy as np
 import os, sys, math, shutil
 
+# an runtime error
+# selection corresponding to nothing
+class SelectionError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
 class fileParser:
     ''' topology and coordinate parser,
         this class implements basic method for the topology and
@@ -46,6 +52,10 @@ class fileParser:
                 topPath (string): path for the topology file to be saved '''
 
         atoms = self.uObject.select_atoms(selection)
+
+        if len(atoms) == 0:
+            raise SelectionError('Empty selection!')
+
         atoms.write(targetPath, targetType)
         if saveTop:
             assert(selection == 'all')
@@ -67,6 +77,10 @@ class fileParser:
 
         for selection, name in zip(selections, names):
             atoms = self.uObject.select_atoms(f'{selection} {HString}')
+            
+            if len(atoms) == 0:
+                raise SelectionError('Empty selection!')
+        
             atoms.write(targetPath, 'ndx', name=name, mode='a')
 
     def getResid(self, selection):
@@ -77,6 +91,10 @@ class fileParser:
             Return:
                 string: a list of resid, e.g. (4,5,6,7,8,9,10) '''
         atoms = self.uObject.select_atoms(selection)
+        
+        if len(atoms) == 0:
+            raise SelectionError('Empty selection!')
+        
         return ','.join([str(num+1) for num in atoms.residues.ix])
 
     def measureMinmax(self, selection):
@@ -87,6 +105,10 @@ class fileParser:
                 np.array (2*3, float): ((minX, minY, minZ), (maxX, maxY, maxZ)) '''
 
         atoms = self.uObject.select_atoms(selection)
+        
+        if len(atoms) == 0:
+            raise SelectionError('Empty selection!')
+        
         atomPositions = atoms.positions
         xyz_array = np.transpose(atomPositions)
         min_x = np.min(xyz_array[0])
@@ -106,6 +128,10 @@ class fileParser:
                 np.array (3, float): (x, y, z) '''
 
         atoms = self.uObject.select_atoms(selection)
+        
+        if len(atoms) == 0:
+            raise SelectionError('Empty selection!')
+        
         atomPositions = atoms.positions
         xyz_array = np.transpose(atomPositions)
         center_x = np.average(xyz_array[0])
@@ -158,7 +184,12 @@ class fileParser:
                 selection (string): selection of atoms to change beta
                 beta (int): beta value '''
 
-        self.uObject.select_atoms(selection).tempfactors = beta
+        atoms = self.uObject.select_atoms(selection)
+        
+        if len(atoms) == 0:
+            raise SelectionError('Empty selection!')
+        
+        atoms.tempfactors = beta
 
     def moveSystem(self, moveVector):
         ''' move all the atoms in the loaded file

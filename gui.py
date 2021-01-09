@@ -7,9 +7,9 @@ from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGr
 from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
 from PySide2.QtGui import QIcon, QFont
 import postTreatment, inputGenerator
-from commonTools import commonSlots, ploter
+from commonTools import commonSlots, ploter, fileParser
 
-VERSION = 'BFEEstimator v2.0alpha'
+VERSION = 'BFEEstimator v2.1alpha'
 
 class mainSettings(QWidget):
     ''' settings in the menubar
@@ -1243,34 +1243,72 @@ force fields!'
                             )
                             return
 
-                    iGenerator.generateNAMDGeometricFiles(
-                        path,
-                        self.psfLineEdit.text(),
-                        self.coorLineEdit.text(),
-                        forceFieldType,
-                        forceFieldFiles,
-                        float(self.temperatureLineEdit.text()),
-                        self.selectProteineLineEdit.text(),
-                        self.selectLigandLineEdit.text(),
-                        self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
-                        self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
-                        self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
-                        stratification,
-                        self.mainSettings.vmdLineEdit.text()
-                    )
+                    try:
+                        iGenerator.generateNAMDGeometricFiles(
+                            path,
+                            self.psfLineEdit.text(),
+                            self.coorLineEdit.text(),
+                            forceFieldType,
+                            forceFieldFiles,
+                            float(self.temperatureLineEdit.text()),
+                            self.selectProteineLineEdit.text(),
+                            self.selectLigandLineEdit.text(),
+                            self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
+                            self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
+                            self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
+                            stratification,
+                            self.mainSettings.vmdLineEdit.text()
+                        )
+                    except fileParser.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check you selection again!'
+                        )
+                        return
+                    except:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
+
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
-                    iGenerator.generateNAMDAlchemicalFiles(
-                        path,
-                        self.psfLineEdit.text(),
-                        self.coorLineEdit.text(),
-                        forceFieldType,
-                        forceFieldFiles,
-                        float(self.temperatureLineEdit.text()),
-                        self.selectProteineLineEdit.text(),
-                        self.selectLigandLineEdit.text(),
-                        alchemicalStratification,
-                        self.mainSettings.vmdLineEdit.text()
-                    )
+
+                    try:
+                        iGenerator.generateNAMDAlchemicalFiles(
+                            path,
+                            self.psfLineEdit.text(),
+                            self.coorLineEdit.text(),
+                            forceFieldType,
+                            forceFieldFiles,
+                            float(self.temperatureLineEdit.text()),
+                            self.selectProteineLineEdit.text(),
+                            self.selectLigandLineEdit.text(),
+                            alchemicalStratification,
+                            self.mainSettings.vmdLineEdit.text()
+                        )
+                    except fileParser.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check you selection again!'
+                        )
+                        return
+                    except:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
 
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:
