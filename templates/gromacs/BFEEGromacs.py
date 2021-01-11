@@ -445,7 +445,7 @@ class BFEEGromacs:
         ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
         moveVector = (ligandOnly_dim[0]/2, ligandOnly_dim[1]/2, ligandOnly_dim[2]/2)
         transformations.translate(moveVector)(all_atoms_ligandOnly)
-        ligandOnly_center = measure_center(all_atoms.positions)
+        ligandOnly_center = measure_center(all_atoms_ligandOnly.positions)
 
         _, fileName = os.path.split(self.structureFile)
         all_atoms.write(self.baseDirectory + '/Protein/' + fileName)
@@ -896,6 +896,8 @@ class BFEEGromacs:
         colvars_inputfile_basename = posixpath.join(generate_basename, '005_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
+        ligand_center = convert(ligand_center, "angstrom", "nm")
+        ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
         polar_theta, polar_phi = mearsurePolarAngles(protein_center, ligand_center)
         polar_theta_center = np.around(polar_theta, 1)
         self.logger.info(f'Measured polar angles: theta = {polar_theta:12.5f} ; phi = {polar_phi:12.5f}')
@@ -970,6 +972,8 @@ class BFEEGromacs:
         colvars_inputfile_basename = posixpath.join(generate_basename, '006_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
+        ligand_center = convert(ligand_center, "angstrom", "nm")
+        ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
         polar_theta, polar_phi = mearsurePolarAngles(protein_center, ligand_center)
         polar_phi_center = np.around(polar_phi, 1)
         self.logger.info(f'Measured polar angles: theta = {polar_theta:12.5f} ; phi = {polar_phi:12.5f}')
@@ -1064,14 +1068,20 @@ class BFEEGromacs:
         colvars_inputfile_basename = posixpath.join(generate_basename, '007_colvars')
         # measure the current COM distance from the ligand to protein
         ligand_center = measure_center(self.ligand.positions)
+        ligand_center = convert(ligand_center, "angstrom", "nm")
+        ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
+        self.logger.info('COM of the ligand: ' + ligand_center_str + '.')
         r_center = np.sqrt(np.dot(ligand_center - protein_center, ligand_center - protein_center))
         # convert r_center to nm
         r_center = np.around(convert(r_center, 'angstrom', 'nm'), 2)
+        self.logger.info('Distance of protein and ligand: ' + str(r_center) + ' nm.')
         r_width = 0.01
         # r_lower_boundary = r_center - r_lower_shift
         # r_lower_shift is default to 0.2 nm
         r_lower_shift = 0.2
         r_lower_boundary = r_center - r_lower_shift
+        if r_lower_boundary < 0:
+            r_lower_boundary = 0.0
         # r_upper_boundary = r_center + r_upper_shift
         # r_upper_shift is default to 2.1 nm
         # also we will need r_upper_shift to enlarge the solvent box
