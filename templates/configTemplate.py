@@ -278,8 +278,8 @@ colvar {{                              \n\
         atoms {{                               \n\
             indexGroup  ligand                 \n\
             centerReference    on              \n\
-            rotateReference   on               \n\
-	    enableFitGradients no                  \n\
+            rotateReference    on              \n\
+	        enableFitGradients no              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\
@@ -308,6 +308,13 @@ colvar {{                              \n\
 colvar {{                                   \n\
     name {angle}                            \n'
 
+        if angle == 'polarTheta':
+            string += f'\
+    customFunction acos(i3) * 180 / 3.1415926\n'
+        elif angle == 'polarPhi':
+            string += f'\
+    customFunction atan2(i2, i1) * 180 / 3.1415926\n'
+
         if setBoundary:
             string += f'\
     width 1                                 \n\
@@ -319,15 +326,27 @@ colvar {{                                   \n\
     extendedFluctuation 1                   \n'
 
         string += f'\
-    {angle} {{                              \n\
-        atoms {{                            \n\
-            indexGroup  ligand              \n\
-            centerReference   on            \n\
-            rotateReference   on            \n\
+    distanceDir {{                          \n\
+        name  i                             \n\
+        group1 {{                           \n\
+            indexGroup  reference           \n\
+            centerReference    on           \n\
+            rotateReference    on           \n\
+            enableFitGradients no           \n\
             fittingGroup {{                 \n\
-                indexGroup  reference       \n\
+                indexGroup  protein         \n\
             }}                              \n\
-            refPositionsFile  {refFile}     \n\
+            refpositionsfile  {refFile}     \n\
+        }}                                  \n\
+        group2 {{                           \n\
+            indexGroup  ligand              \n\
+            centerReference    on           \n\
+            rotateReference    on           \n\
+            enableFitGradients no           \n\
+            fittingGroup {{                 \n\
+                indexGroup  protein         \n\
+            }}                              \n\
+            refpositionsfile  {refFile}     \n\
         }}                                  \n\
     }}                                      \n\
 }}                                          \n'
@@ -344,8 +363,7 @@ colvar {{                                   \n\
         
         string = f'\
 colvar {{                            \n\
-    name    r                        \n\
-'
+    name    r                        \n'
         if setBoundary:
             string += f'\
     width 0.1                        \n\
