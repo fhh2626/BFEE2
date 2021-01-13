@@ -25,6 +25,7 @@ class inputGenerator():
         selectionPro,
         selectionLig,
         stratification = [1,1,1,1],
+        doubleWide = False,
         vmdPath = ''
     ):
         ''' generate all the input files for NAMD alchemical simulation
@@ -38,6 +39,7 @@ class inputGenerator():
                 selectionPro (string): MDAnalysis-style selection of the protein
                 selectionLig (string): MDAnalysis-style selection of the ligand
                 stratification (list of int, 8): number of windows for each simulation
+                doubleWide (bool): whether double-wide simulations are carried out
                 vmdPath (string): path to vmd '''
 
         assert(len(stratification) == 4)
@@ -61,7 +63,7 @@ class inputGenerator():
             relativeFFPath.append(f'../{name}')
         
         self._generateAlchemicalNAMDConfig(
-            path, forceFieldType, relativeFFPath, temperature, stratification
+            path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification
@@ -439,7 +441,8 @@ class inputGenerator():
         forceFieldType,
         forceFields,
         temperature,
-        stratification = [1,1,1,1]
+        stratification = [1,1,1,1],
+        doubleWide = False
     ):
         ''' generate NAMD config fils for the alchemical route
             Inputs:
@@ -447,7 +450,8 @@ class inputGenerator():
                 forceFieldType (string): 'charmm' or 'amber'
                 forceFieldFiles (list of strings): list of CHARMM force field files
                 temperature (float): temperature of the simulation
-                stratification (list of int, 4): number of windows for each simulation  '''
+                stratification (list of int, 4): number of windows for each simulation
+                doubleWide (bool): whether double-wide simulations are carried out  '''
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -499,6 +503,17 @@ class inputGenerator():
                     stratification[0], False
                 )
             )
+        
+        if doubleWide:
+            with open(f'{path}/BFEE/001_MoleculeBound/fep_doubleWide.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                        'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
+                        stratification[0], False, True
+                    )
+                )
 
         # 002_RestraintBound
         with open(f'{path}/BFEE/002_RestraintBound/ti_forward.conf', 'w') as namdConfig:
@@ -541,6 +556,18 @@ class inputGenerator():
                     stratification[0], False
                 )
             )
+
+        if doubleWide:
+            with open(f'{path}/BFEE/003_MoleculeUnbound/fep_doubleWide.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
+                        f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
+                        f'../000_eq/output/eq_ligandOnly.xsc', '',
+                        'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
+                        stratification[0], False, True
+                    )
+                )
 
         # 004_RestraintUnbound
         with open(f'{path}/BFEE/004_RestraintUnbound/ti_forward.conf', 'w') as namdConfig:

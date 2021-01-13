@@ -28,7 +28,8 @@ class configTemplate:
                             CVRestartFile = '',
                             fepFile = '',
                             fepWindowNum = 20,
-                            fepForward = True
+                            fepForward = True,
+                            fepDoubleWide = False
                             ):
         ''' the namd config file template
             Inputs:
@@ -49,6 +50,7 @@ class configTemplate:
                 fepFile (string): name of fep file, indicating which atoms will be generated/removed (if run alchemical simulation)
                 fepWindowNum (int): number of fep windows
                 fepForward (bool): whether this is a forward fep simulation
+                fepDouble (bool): whether this is a double-wide fep simulation
             Return:
                 string: a NAMD config string if succeed, and empty string otherwise
             '''
@@ -192,11 +194,21 @@ alchElecLambdaStart 0.5                         \n\
 alchEquilSteps 100000                           \n'
 
             if fepForward:
-                configString += f'\
+                if not fepDoubleWide:
+                    configString += f'\
 runFEPmin 0.0 1.0 {1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                else:
+                    # double wide simulation
+                    configString += f'\
+runFEP 0.0 1.0 {1.0/fepWindowNum} 500000 true\n'
             else:
-                configString += f'\
+                if not fepDoubleWide:
+                    configString += f'\
 runFEPmin 1.0 0.0 {-1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                else:
+                    # double wide simulation
+                    configString += f'\
+runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
 
         return configString
 

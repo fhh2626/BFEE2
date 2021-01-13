@@ -247,6 +247,7 @@ class alchemicalAdvancedSettings(QWidget):
 
         self.mainLayout = QVBoxLayout()
 
+        # stratification windows
         self.stratification = QGroupBox('Stratification windows')
         self.stratificationLayout = QGridLayout()
 
@@ -270,6 +271,15 @@ class alchemicalAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
 
+        # double-wide simulation
+        self.doubleWide = QGroupBox('Double-wide simulation')
+        self.doubleWideLayout = QGridLayout()
+
+        self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide simulations')
+        self.doubleWideCheckbox.setChecked(False)
+        self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
+        self.doubleWide.setLayout(self.doubleWideLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -278,6 +288,7 @@ class alchemicalAdvancedSettings(QWidget):
         #self.alchemicalAdvancedSettingsButtonLayout.addWidget(self.alchemicalAdvancedSettingsCancelButton)
         
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1290,6 +1301,7 @@ Unknown error!'
                             self.selectProteineLineEdit.text(),
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
+                            self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except fileParser.SelectionError:
