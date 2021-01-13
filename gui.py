@@ -1279,6 +1279,15 @@ Selection corresponding to nothing!\n\
 Check you selection again!'
                         )
                         return
+                    except PermissionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Cannot read input files due to the permission reason!\n\
+Restart the program or check the authority of the files!'
+                        )
+                        return
                     except:
                         QMessageBox.warning(
                                 self, 
@@ -1304,6 +1313,15 @@ Unknown error!'
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
+                    except PermissionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Cannot read input files due to the permission reason!\n\
+Restart the program or check the authority of the files!'
+                        )
+                        return
                     except fileParser.SelectionError:
                         QMessageBox.warning(
                                 self, 
