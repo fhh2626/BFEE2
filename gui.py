@@ -7,9 +7,9 @@ from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGr
 from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
 from PySide2.QtGui import QIcon, QFont
 import postTreatment, inputGenerator
-from commonTools import commonSlots, ploter
+from commonTools import commonSlots, ploter, fileParser
 
-VERSION = 'BFEEstimator v2.0alpha'
+VERSION = 'BFEEstimator v2.1alpha'
 
 class mainSettings(QWidget):
     ''' settings in the menubar
@@ -247,6 +247,7 @@ class alchemicalAdvancedSettings(QWidget):
 
         self.mainLayout = QVBoxLayout()
 
+        # stratification windows
         self.stratification = QGroupBox('Stratification windows')
         self.stratificationLayout = QGridLayout()
 
@@ -270,6 +271,15 @@ class alchemicalAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
 
+        # double-wide simulation
+        self.doubleWide = QGroupBox('Double-wide simulation')
+        self.doubleWideLayout = QGridLayout()
+
+        self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide simulations')
+        self.doubleWideCheckbox.setChecked(False)
+        self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
+        self.doubleWide.setLayout(self.doubleWideLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -278,6 +288,7 @@ class alchemicalAdvancedSettings(QWidget):
         #self.alchemicalAdvancedSettingsButtonLayout.addWidget(self.alchemicalAdvancedSettingsCancelButton)
         
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1243,34 +1254,91 @@ force fields!'
                             )
                             return
 
-                    iGenerator.generateNAMDGeometricFiles(
-                        path,
-                        self.psfLineEdit.text(),
-                        self.coorLineEdit.text(),
-                        forceFieldType,
-                        forceFieldFiles,
-                        float(self.temperatureLineEdit.text()),
-                        self.selectProteineLineEdit.text(),
-                        self.selectLigandLineEdit.text(),
-                        self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
-                        self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
-                        self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
-                        stratification,
-                        self.mainSettings.vmdLineEdit.text()
-                    )
+                    try:
+                        iGenerator.generateNAMDGeometricFiles(
+                            path,
+                            self.psfLineEdit.text(),
+                            self.coorLineEdit.text(),
+                            forceFieldType,
+                            forceFieldFiles,
+                            float(self.temperatureLineEdit.text()),
+                            self.selectProteineLineEdit.text(),
+                            self.selectLigandLineEdit.text(),
+                            self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
+                            self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
+                            self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
+                            stratification,
+                            self.mainSettings.vmdLineEdit.text()
+                        )
+                    except fileParser.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check you selection again!'
+                        )
+                        return
+                    except PermissionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Cannot read input files due to the permission reason!\n\
+Restart the program or check the authority of the files!'
+                        )
+                        return
+                    except:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
+
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
-                    iGenerator.generateNAMDAlchemicalFiles(
-                        path,
-                        self.psfLineEdit.text(),
-                        self.coorLineEdit.text(),
-                        forceFieldType,
-                        forceFieldFiles,
-                        float(self.temperatureLineEdit.text()),
-                        self.selectProteineLineEdit.text(),
-                        self.selectLigandLineEdit.text(),
-                        alchemicalStratification,
-                        self.mainSettings.vmdLineEdit.text()
-                    )
+
+                    try:
+                        iGenerator.generateNAMDAlchemicalFiles(
+                            path,
+                            self.psfLineEdit.text(),
+                            self.coorLineEdit.text(),
+                            forceFieldType,
+                            forceFieldFiles,
+                            float(self.temperatureLineEdit.text()),
+                            self.selectProteineLineEdit.text(),
+                            self.selectLigandLineEdit.text(),
+                            alchemicalStratification,
+                            self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
+                            self.mainSettings.vmdLineEdit.text()
+                        )
+                    except PermissionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Cannot read input files due to the permission reason!\n\
+Restart the program or check the authority of the files!'
+                        )
+                        return
+                    except fileParser.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check you selection again!'
+                        )
+                        return
+                    except:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
 
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:

@@ -28,7 +28,8 @@ class configTemplate:
                             CVRestartFile = '',
                             fepFile = '',
                             fepWindowNum = 20,
-                            fepForward = True
+                            fepForward = True,
+                            fepDoubleWide = False
                             ):
         ''' the namd config file template
             Inputs:
@@ -49,6 +50,7 @@ class configTemplate:
                 fepFile (string): name of fep file, indicating which atoms will be generated/removed (if run alchemical simulation)
                 fepWindowNum (int): number of fep windows
                 fepForward (bool): whether this is a forward fep simulation
+                fepDouble (bool): whether this is a double-wide fep simulation
             Return:
                 string: a NAMD config string if succeed, and empty string otherwise
             '''
@@ -192,11 +194,21 @@ alchElecLambdaStart 0.5                         \n\
 alchEquilSteps 100000                           \n'
 
             if fepForward:
-                configString += f'\
+                if not fepDoubleWide:
+                    configString += f'\
 runFEPmin 0.0 1.0 {1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                else:
+                    # double wide simulation
+                    configString += f'\
+runFEP 0.0 1.0 {1.0/fepWindowNum} 500000 true\n'
             else:
-                configString += f'\
+                if not fepDoubleWide:
+                    configString += f'\
 runFEPmin 1.0 0.0 {-1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                else:
+                    # double wide simulation
+                    configString += f'\
+runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
 
         return configString
 
@@ -278,8 +290,8 @@ colvar {{                              \n\
         atoms {{                               \n\
             indexGroup  ligand                 \n\
             centerReference    on              \n\
-            rotateReference   on               \n\
-	    enableFitGradients no                  \n\
+            rotateReference    on              \n\
+	        enableFitGradients no              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\
@@ -308,6 +320,13 @@ colvar {{                              \n\
 colvar {{                                   \n\
     name {angle}                            \n'
 
+        if angle == 'polarTheta':
+            string += f'\
+    customFunction acos(i3) * 180 / 3.1415926\n'
+        elif angle == 'polarPhi':
+            string += f'\
+    customFunction atan2(i2, i1) * 180 / 3.1415926\n'
+
         if setBoundary:
             string += f'\
     width 1                                 \n\
@@ -319,15 +338,27 @@ colvar {{                                   \n\
     extendedFluctuation 1                   \n'
 
         string += f'\
-    {angle} {{                              \n\
-        atoms {{                            \n\
-            indexGroup  ligand              \n\
-            centerReference   on            \n\
-            rotateReference   on            \n\
+    distanceDir {{                          \n\
+        name  i                             \n\
+        group1 {{                           \n\
+            indexGroup  reference           \n\
+            centerReference    on           \n\
+            rotateReference    on           \n\
+            enableFitGradients no           \n\
             fittingGroup {{                 \n\
-                indexGroup  reference       \n\
+                indexGroup  protein         \n\
             }}                              \n\
-            refPositionsFile  {refFile}     \n\
+            refpositionsfile  {refFile}     \n\
+        }}                                  \n\
+        group2 {{                           \n\
+            indexGroup  ligand              \n\
+            centerReference    on           \n\
+            rotateReference    on           \n\
+            enableFitGradients no           \n\
+            fittingGroup {{                 \n\
+                indexGroup  protein         \n\
+            }}                              \n\
+            refpositionsfile  {refFile}     \n\
         }}                                  \n\
     }}                                      \n\
 }}                                          \n'
@@ -344,8 +375,7 @@ colvar {{                                   \n\
         
         string = f'\
 colvar {{                            \n\
-    name    r                        \n\
-'
+    name    r                        \n'
         if setBoundary:
             string += f'\
     width 0.1                        \n\
