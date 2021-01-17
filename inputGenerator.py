@@ -141,7 +141,8 @@ class inputGenerator():
         selectionPro,
         selectionLig,
         selectionSol='resname TIP3* or resname SPC*',
-        temperature=300.0
+        temperature=300.0,
+        loghandler=None
     ):
         ''' generate all the input files for Gromacs Geometric simulation
             This function is based on BFEEGromacs.py
@@ -166,7 +167,8 @@ class inputGenerator():
             topFile, 
             ligandOnlyPdbFile, 
             ligandOnlyTopFile, 
-            f'{path}/BFEE'
+            f'{path}/BFEE',
+            loghandler
         )
         bfee.setProteinHeavyAtomsGroup(f'{selectionPro} and not (name H*)')
         bfee.setLigandHeavyAtomsGroup(f'{selectionLig} and not (name H*)')

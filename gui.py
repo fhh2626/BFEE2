@@ -1,15 +1,66 @@
 # the GUI of new BFEE
 
 import sys, os
+import logging
 from PySide2 import QtCore
 from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
 from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
+from PySide2.QtWidgets import QDialog, QTextBrowser
 from PySide2.QtGui import QIcon, QFont
 import postTreatment, inputGenerator
 from commonTools import commonSlots, ploter, fileParser
 
 VERSION = 'BFEEstimator v2.1alpha'
+
+# log handler class for better debugging
+# example usage:
+#    logger = logging.logger()
+#    handler = QMsgBoxLogHandler()
+#    logger.addHandler(handler)
+#    logger.setLevel(logging.INFO)
+#    logger.info('Hello World!')
+#    handler.showLogBox() # "Hello World!" will appear in the dialog box.
+class QMsgBoxLogHandler(logging.Handler, QtCore.QObject):
+    """
+    A helper class for bridging python logging and a Qt dialog box
+
+    Attributes
+    ----------
+    dialog : QDialog
+        the main dialgo
+    logBrowser : QTextBrowser
+        QTextBrowser widget to hold the debug messages
+
+    Methods
+    -------
+    __init__()
+        empty constructor of the class
+    emit(record)
+        append formatted message to logBrowser (inherited from logging)
+    showLogBox()
+        open the dialog
+    """
+    def __init__(self):
+        logging.Handler.__init__(self)
+        QtCore.QObject.__init__(self)
+        self.setLevel(logging.INFO)
+        self.dialog = QDialog(None)
+        self.dialog.setWindowTitle('Debug log')
+        self.logBrowser = QTextBrowser()
+        layout = QVBoxLayout()
+        layout.addWidget(self.logBrowser)
+        self.dialog.setLayout(layout)
+
+    def emit(self, record):
+        self.logBrowser.append(self.format(record))
+        if self.logBrowser.isVisible():
+            QApplication.processEvents()
+
+    def showLogBox(self):
+        QApplication.processEvents()
+        self.dialog.show()
+        return
 
 class mainSettings(QWidget):
     ''' settings in the menubar
@@ -305,7 +356,10 @@ class mainUI(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        
+
+        # logger for debugging
+        self.loghandler= QMsgBoxLogHandler()
+
         self._initActions()
 
         self._initNAMDTab()
@@ -348,6 +402,11 @@ class mainUI(QMainWindow):
         self.helpAction.setStatusTip('Open user manual')
         #self.helpAction.triggered.connect()
 
+        # log
+        self.logAction = QAction('&Log', self)
+        self.logAction.setStatusTip('Show debug logging')
+        self.logAction.triggered.connect(self.loghandler.showLogBox)
+
         # about
         self.aboutAction = QAction('&About', self)
         self.aboutAction.setStatusTip('About BFEEstimator')
@@ -370,6 +429,7 @@ class mainUI(QMainWindow):
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
         self.helpMenu.addSeparator()
+        self.helpMenu.addAction(self.logAction)
         self.helpMenu.addAction(self.aboutAction)
 
         # main layout
@@ -1364,7 +1424,8 @@ Unknown error!'
                         ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
                         selectionPro=self.selectProteineLineEdit.text(),
                         selectionLig=self.selectLigandLineEdit.text(),
-                        temperature=float(self.temperatureLineEdit.text())
+                        temperature=float(self.temperatureLineEdit.text()),
+                        loghandler=self.loghandler
                     )
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
                     QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')
