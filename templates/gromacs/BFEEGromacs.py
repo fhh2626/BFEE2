@@ -274,7 +274,7 @@ class BFEEGromacs:
     ----------
     logger : logging.Logger
         logger object for debugging
-    handler : logging.StreamHandler
+    handler : logging.StreamHandler or QMsgBoxLogHandler
         output stream of the debug output
     baseDirectory : str
         output directory of the generated files
@@ -355,11 +355,14 @@ class BFEEGromacs:
         generate files for determining the PMF along the RMSD of the ligand  
         with respect to its unbound state
     """
-    def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None):
+    def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None, logHandler=None):
         # setup the logger
         self.logger = logging.getLogger()
-        self.handler = logging.StreamHandler(sys.stdout)
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][%(levelname)s]:%(message)s'))
+        if logHandler is None:
+            self.handler = logging.StreamHandler(sys.stdout)
+        else:
+            self.handler = logHandler
+        self.handler.setFormatter(logging.Formatter('[%(filename)s:%(lineno)s %(funcName)10s][%(levelname)s]:%(message)s'))
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
         self.logger.info('Initializing BFEEGromacs...')
@@ -554,9 +557,7 @@ class BFEEGromacs:
             self.solvent.write(outputFile, name='BFEE_Solvent', mode='a')
 
     def generate000(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][000][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[0]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -607,13 +608,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
-
 
     def generate001(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][001][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[1]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -669,12 +666,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
-    
+
     def generate002(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][002][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[2]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -732,12 +726,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate003(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][003][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[3]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -796,12 +787,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate004(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][004][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[4]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -861,12 +849,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate005(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][005][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[5]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -937,12 +922,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate006(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][006][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[6]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -1014,12 +996,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate007(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][007][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[7]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -1170,12 +1149,9 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
     def generate008(self):
-        self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][008][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[8]
-        self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
@@ -1243,7 +1219,6 @@ class BFEEGromacs:
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
-        self.logger.info('=' * 80)
 
 if __name__ == "__main__":
     bfee = BFEEGromacs('p41-abl.pdb', 'p41-abl.top', 'ligand-only.pdb', 'ligand-only.top', 'p41-abl-test/abc/def')
