@@ -280,6 +280,15 @@ class alchemicalAdvancedSettings(QWidget):
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
+        # minimize before sampling in each window
+        self.minBeforeSample = QGroupBox('Minimization before sampling')
+        self.minBeforeSampleLayout = QVBoxLayout()
+
+        self.minBeforeSampleCheckbox = QCheckBox('Minimize before sampling in each window')
+        self.minBeforeSampleCheckbox.setChecked(False)
+        self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
+        self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -289,6 +298,7 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
+        self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1311,6 +1321,7 @@ Unknown error!'
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:

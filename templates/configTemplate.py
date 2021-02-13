@@ -29,7 +29,8 @@ class configTemplate:
                             fepFile = '',
                             fepWindowNum = 20,
                             fepForward = True,
-                            fepDoubleWide = False
+                            fepDoubleWide = False,
+                            fepMinBeforeSample = False
                             ):
         ''' the namd config file template
             Inputs:
@@ -51,6 +52,7 @@ class configTemplate:
                 fepWindowNum (int): number of fep windows
                 fepForward (bool): whether this is a forward fep simulation
                 fepDouble (bool): whether this is a double-wide fep simulation
+                fepMinBeforeSample (bool): whether do minimization before sampling in each FEP window
             Return:
                 string: a NAMD config string if succeed, and empty string otherwise
             '''
@@ -195,16 +197,30 @@ alchEquilSteps 100000                           \n'
 
             if fepForward:
                 if not fepDoubleWide:
-                    configString += f'\
+                    if fepMinBeforeSample:
+                        # minimize before sampling
+                        configString += f'\
 runFEPmin 0.0 1.0 {1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                    else:
+                        configString += f'\
+runFEP 0.0 1.0 {1.0/fepWindowNum} 500000\n'
+
                 else:
                     # double wide simulation
                     configString += f'\
 runFEP 0.0 1.0 {1.0/fepWindowNum} 500000 true\n'
+
             else:
+                # backward
                 if not fepDoubleWide:
-                    configString += f'\
+                    if fepMinBeforeSample:
+                        # minimize before sampling
+                        configString += f'\
 runFEPmin 1.0 0.0 {-1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                    else:
+                        configString += f'\
+runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000\n'
+
                 else:
                     # double wide simulation
                     configString += f'\

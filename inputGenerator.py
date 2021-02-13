@@ -26,6 +26,7 @@ class inputGenerator():
         selectionLig,
         stratification = [1,1,1,1],
         doubleWide = False,
+        minBeforeSample = False,
         vmdPath = ''
     ):
         ''' generate all the input files for NAMD alchemical simulation
@@ -40,6 +41,7 @@ class inputGenerator():
                 selectionLig (string): MDAnalysis-style selection of the ligand
                 stratification (list of int, 8): number of windows for each simulation
                 doubleWide (bool): whether double-wide simulations are carried out
+                minBeforeSample (bool): minimization before sampling in each FEP window
                 vmdPath (string): path to vmd '''
 
         assert(len(stratification) == 4)
@@ -63,7 +65,7 @@ class inputGenerator():
             relativeFFPath.append(f'../{name}')
         
         self._generateAlchemicalNAMDConfig(
-            path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide
+            path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification
@@ -442,7 +444,8 @@ class inputGenerator():
         forceFields,
         temperature,
         stratification = [1,1,1,1],
-        doubleWide = False
+        doubleWide = False,
+        minBeforeSample = False
     ):
         ''' generate NAMD config fils for the alchemical route
             Inputs:
@@ -451,7 +454,8 @@ class inputGenerator():
                 forceFieldFiles (list of strings): list of CHARMM force field files
                 temperature (float): temperature of the simulation
                 stratification (list of int, 4): number of windows for each simulation
-                doubleWide (bool): whether double-wide simulations are carried out  '''
+                doubleWide (bool): whether double-wide simulations are carried out
+                minBeforeSample (bool): minimization before sampling in each FEP window  '''
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -491,7 +495,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], True
+                    stratification[0], True, doubleWide, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/001_MoleculeBound/fep_backward.conf', 'w') as namdConfig:
@@ -500,7 +504,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], False
+                    stratification[0], False, doubleWide, minBeforeSample
                 )
             )
         
@@ -543,7 +547,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], True
+                    stratification[0], True, doubleWide, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/fep_backward.conf', 'w') as namdConfig:
@@ -553,7 +557,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], False
+                    stratification[0], False, doubleWide, minBeforeSample
                 )
             )
 
