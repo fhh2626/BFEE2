@@ -495,7 +495,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], True, doubleWide, minBeforeSample
+                    stratification[0], True, False, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/001_MoleculeBound/fep_backward.conf', 'w') as namdConfig:
@@ -504,7 +504,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], False, doubleWide, minBeforeSample
+                    stratification[0], False, False, minBeforeSample
                 )
             )
         
@@ -547,7 +547,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], True, doubleWide, minBeforeSample
+                    stratification[0], True, False, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/fep_backward.conf', 'w') as namdConfig:
@@ -557,7 +557,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], False, doubleWide, minBeforeSample
+                    stratification[0], False, False, minBeforeSample
                 )
             )
 
