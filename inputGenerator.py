@@ -1094,7 +1094,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     '', '', '', 
-                    pbc + np.array([[22,22,22],[0,0,0]]),
+                    pbc + np.array([[24,24,24],[0,0,0]]),
                     'output/eq', temperature, 5000000, 'colvars_eq.in', ''
                 )
             )
