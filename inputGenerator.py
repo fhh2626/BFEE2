@@ -552,7 +552,7 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                    f'output/fep_backward.coor', f'output/fep_backward.vel', f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                     stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein
                 )
@@ -603,8 +603,8 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
-                    f'../000_eq/output/eq_ligandOnly.xsc', '',
+                    f'output/fep_backward.coor', f'output/fep_backward.vel', 
+                    f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
                     stratification[0], True, False, minBeforeSample
                 )
