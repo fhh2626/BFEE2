@@ -30,7 +30,8 @@ class configTemplate:
                             fepWindowNum = 20,
                             fepForward = True,
                             fepDoubleWide = False,
-                            fepMinBeforeSample = False
+                            fepMinBeforeSample = False,
+                            membraneProtein = False
                             ):
         ''' the namd config file template
             Inputs:
@@ -53,6 +54,7 @@ class configTemplate:
                 fepForward (bool): whether this is a forward fep simulation
                 fepDouble (bool): whether this is a double-wide fep simulation
                 fepMinBeforeSample (bool): whether do minimization before sampling in each FEP window
+                membraneProtein (bool): whether simulating a membrame protein
             Return:
                 string: a NAMD config string if succeed, and empty string otherwise
             '''
@@ -142,7 +144,6 @@ langevinpistonperiod 200                        \n\
 langevinpistondecay  100                        \n\
 langevinpistontemp   {temperature}              \n\
 usegrouppressure     yes                        \n\
-useflexiblecell      no                         \n\
 PME                  yes                        \n\
 PMETolerance         10e-6                      \n\
 PMEInterpOrder       4                          \n\
@@ -156,6 +157,16 @@ rigiditerations      400                        \n\
 stepspercycle        10                         \n\
 splitpatch           hydrogen                   \n\
 margin               2                          \n'
+
+        # membrane protein
+        if membraneProtein:
+            configString += f'\
+useflexiblecell      yes                        \n\
+useConstantRatio     yes                        \n'
+        else:
+            configString += f'\
+useflexiblecell      no                         \n\
+useConstantRatio     no                         \n'
 
         # colvars definition
         if cvFile != '':
