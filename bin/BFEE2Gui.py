@@ -39,7 +39,7 @@
 
 import sys
 from PySide2.QtWidgets import QApplication
-import gui
+import BFEE2.gui as gui
         
 if __name__ == '__main__':
     

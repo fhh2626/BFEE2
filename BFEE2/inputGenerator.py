@@ -2,9 +2,9 @@
 
 import os, sys, shutil, subprocess
 import numpy as np
-from commonTools import fileParser
-from templates import configTemplate, scriptTemplate
-from templates.gromacs.BFEEGromacs import BFEEGromacs
+from BFEE2.commonTools import fileParser
+from BFEE2.templates import configTemplate, scriptTemplate
+from BFEE2.templates.gromacs.BFEEGromacs import BFEEGromacs
 
 class inputGenerator():
     ''' generate all the inputs and define corresponding slots '''
