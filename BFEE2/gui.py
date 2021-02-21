@@ -6,7 +6,8 @@ from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabW
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
 from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
 from PySide2.QtGui import QIcon, QFont
-import BFEE2.postTreatment, BFEE2.inputGenerator
+import BFEE2.postTreatment as postTreatment
+import BFEE2.inputGenerator as inputGenerator
 from BFEE2.commonTools import commonSlots, ploter, fileParser
 
 VERSION = 'BFEEstimator v2.1alpha'
