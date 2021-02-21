@@ -11,6 +11,11 @@ from MDAnalysis.units import convert
 from MDAnalysis import transformations
 from math import isclose
 
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Try backported to PY<37 `importlib_resources`.
+    import importlib_resources as pkg_resources
 
 def scanGromacsTopologyInclude(gmxTopFile, logger=None):
     """
@@ -140,15 +145,15 @@ def get_cell(atom_positions):
                      cell_basis_vector3])
 
 
-def generateMDP(MDPTemplateFile, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None):
+def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None):
     """
-    generateMDP(MDPTemplateFile, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None)
+    generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None)
 
     generate a GROMACS mdp file from a template
 
     Parameters
     ----------
-    MDPTemplateFile : str
+    MDPTemplate : str
         template MDP file with $dt and $nsteps
     outputPrefix : str
         prefix (no .mdp extension) of the output MDP file
@@ -163,20 +168,20 @@ def generateMDP(MDPTemplateFile, outputPrefix, timeStep, numSteps, temperature, 
     logger : Logging.logger
         logger for debugging
     """
-    if logger is None:
-        print(f'generateMDP: Generating {outputPrefix + ".mdp"} from template {MDPTemplateFile}...')
-        print(f'Timestep (dt): {timeStep}')
-        print(f'Number of simulation steps (nsteps): {numSteps}')
-        print(f'Temperature: {temperature}')
-        print(f'Pressure: {pressure}')
-    else:
-        logger.info(f'generateMDP: Generating {outputPrefix + ".mdp"} from template {MDPTemplateFile}...')
-        logger.info(f'Timestep (dt): {timeStep}')
-        logger.info(f'Number of simulation steps (nsteps): {numSteps}')
-        logger.info(f'Temperature: {temperature}')
-        logger.info(f'Pressure: {pressure}')
-    with open(MDPTemplateFile, 'r', newline='\n') as finput:
-        MDP_content = string.Template(finput.read())
+    #if logger is None:
+        #print(f'generateMDP: Generating {outputPrefix + ".mdp"} from template {MDPTemplate}...')
+        #print(f'Timestep (dt): {timeStep}')
+        #print(f'Number of simulation steps (nsteps): {numSteps}')
+        #print(f'Temperature: {temperature}')
+        #print(f'Pressure: {pressure}')
+    #else:
+        #logger.info(f'generateMDP: Generating {outputPrefix + ".mdp"} from template {MDPTemplate}...')
+        #logger.info(f'Timestep (dt): {timeStep}')
+        #logger.info(f'Number of simulation steps (nsteps): {numSteps}')
+        #logger.info(f'Temperature: {temperature}')
+        #logger.info(f'Pressure: {pressure}')
+    #with open(MDPTemplate, 'r', newline='\n') as finput:
+    MDP_content = string.Template(MDPTemplate)
     MDP_content = MDP_content.safe_substitute(dt=timeStep,
                                               nsteps=numSteps,
                                               temperature=temperature,
@@ -199,19 +204,19 @@ def generateColvars(colvarsTemplate, outputPrefix, logger=None, **kwargs):
     **kwargs
         additional arguments passed to safe_substitute()
     """
-    if logger is None:
-        print(f'generateColvars: Generating {outputPrefix + ".dat"} from template {colvarsTemplate}...')
-        print('Colvars parameters:')
-    else:
-        logger.info(f'generateColvars: Generating {outputPrefix + ".dat"} from template {colvarsTemplate}...')
-        logger.info('Colvars parameters:')
+    #if logger is None:
+        #print(f'generateColvars: Generating {outputPrefix + ".dat"} from template {colvarsTemplate}...')
+        #print('Colvars parameters:')
+    #else:
+        #logger.info(f'generateColvars: Generating {outputPrefix + ".dat"} from template {colvarsTemplate}...')
+        #logger.info('Colvars parameters:')
     for key, val in kwargs.items():
         if logger is None:
             print(f'{key} = {val}')
         else:
             logger.info(f'{key} = {val}')
-    with open(colvarsTemplate, 'r', newline='\n') as finput:
-        content = string.Template(finput.read())
+    #with open(colvarsTemplate, 'r', newline='\n') as finput:
+    content = string.Template(colvarsTemplate)
     content = content.safe_substitute(**kwargs)
     with open(outputPrefix + '.dat', 'w', newline='\n') as foutput:
         foutput.write(content)
@@ -231,12 +236,12 @@ def generateShellScript(shellTemplate, outputPrefix, logger=None, **kwargs):
     **kwargs
         additional arguments passed to safe_substitute()
     """
-    if logger is None:
-        print(f'generateShellScript: Generating {outputPrefix + ".sh"} from template {shellTemplate}...')
-    else:
-        logger.info(f'generateShellScript: Generating {outputPrefix + ".sh"} from template {shellTemplate}...')
-    with open(shellTemplate, 'r', newline='\n') as finput:
-        content = string.Template(finput.read())
+    #if logger is None:
+        #print(f'generateShellScript: Generating {outputPrefix + ".sh"} from template {shellTemplate}...')
+    #else:
+        #logger.info(f'generateShellScript: Generating {outputPrefix + ".sh"} from template {shellTemplate}...')
+    #with open(shellTemplate, 'r', newline='\n') as finput:
+    content = string.Template(shellTemplate)
     content = content.safe_substitute(**kwargs)
     with open(outputPrefix + '.sh', 'w', newline='\n') as foutput:
         foutput.write(content)
@@ -562,7 +567,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/000.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '000.mdp.template'),
                     posixpath.join(generate_basename, '000_eq'),
                     logger=self.logger,
                     timeStep=0.002,
@@ -584,7 +589,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '000_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/000.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '000.colvars.template'),
                         colvars_inputfile_basename,
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str,
@@ -592,18 +597,18 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/000.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '000.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '000_generate_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
-                                                                                                 '000_eq.mdp')),
+                                                                                                '000_eq.mdp')),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                    posixpath.abspath(generate_basename)).replace('\\', '/'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -619,7 +624,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/001.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '001.mdp.template'),
                     posixpath.join(generate_basename, '001_PMF'),
                     logger=self.logger,
                     timeStep=0.002,
@@ -641,7 +646,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '001_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/001.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '001.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
                         rmsd_lower_boundary=0.0,
@@ -654,7 +659,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/001.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '001.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '001_generate_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
@@ -680,7 +685,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/002.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '002.mdp.template'),
                     posixpath.join(generate_basename, '002_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
@@ -702,7 +707,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/002.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '002.mdp.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         eulerTheta_width=1,
@@ -715,7 +720,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/002.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '002.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '002_generate_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
@@ -728,7 +733,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -743,7 +749,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/003.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '003.mdp.template'),
                     posixpath.join(generate_basename, '003_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
@@ -765,7 +771,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '003_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/003.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '003.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         eulerPhi_width=1,
@@ -778,7 +784,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/003.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '003.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '003_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -792,7 +798,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -807,7 +814,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/004.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '004.mdp.template'),
                     posixpath.join(generate_basename, '004_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
@@ -829,7 +836,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '004_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/004.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '004.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         eulerPsi_width=1,
@@ -842,7 +849,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/004.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '004.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '004_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -857,7 +864,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -872,7 +880,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/005.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '005.mdp.template'),
                     posixpath.join(generate_basename, '005_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
@@ -904,7 +912,7 @@ class BFEEGromacs:
         polar_theta_width = 1
         polar_theta_lower = polar_theta_center - polar_theta_width * np.ceil(10 / polar_theta_width)
         polar_theta_upper = polar_theta_center + polar_theta_width * np.ceil(10 / polar_theta_width)
-        generateColvars(f'{sys.path[0]}/templates/gromacs/005.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '005.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         polarTheta_width=polar_theta_width,
@@ -917,7 +925,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/005.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '005.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '005_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -933,7 +941,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -948,7 +957,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/006.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '006.mdp.template'),
                     posixpath.join(generate_basename, '006_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
@@ -980,7 +989,7 @@ class BFEEGromacs:
         polar_phi_width = 1
         polar_phi_lower = polar_phi_center - polar_phi_width * np.ceil(10 / polar_phi_width)
         polar_phi_upper = polar_phi_center + polar_phi_width * np.ceil(10 / polar_phi_width)
-        generateColvars(f'{sys.path[0]}/templates/gromacs/006.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '006.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         polarPhi_width=polar_phi_width,
@@ -993,7 +1002,7 @@ class BFEEGromacs:
         # generate the reference file
         self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/006.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '006.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '006_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -1010,7 +1019,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -1025,7 +1035,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/007_min.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '007_min.mdp.template'),
                     posixpath.join(generate_basename, '007_Minimize'),
                     timeStep=0.002,
                     numSteps=5000,
@@ -1033,7 +1043,7 @@ class BFEEGromacs:
                     pressure=1.01325,
                     logger=self.logger)
         # equilibration
-        generateMDP(f'{sys.path[0]}/templates/gromacs/007.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '007.mdp.template'),
                     posixpath.join(generate_basename, '007_Equilibration'),
                     timeStep=0.002,
                     numSteps=5000000,
@@ -1041,7 +1051,7 @@ class BFEEGromacs:
                     pressure=1.01325,
                     logger=self.logger)
         # free-energy calculation
-        generateMDP(f'{sys.path[0]}/templates/gromacs/007.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '007.mdp.template'),
                     posixpath.join(generate_basename, '007_PMF'),
                     timeStep=0.002,
                     numSteps=80000000,
@@ -1088,14 +1098,14 @@ class BFEEGromacs:
         r_upper_shift = 2.1
         r_upper_boundary = r_center + r_upper_shift
         # colvars file for equilibration
-        generateColvars(f'{sys.path[0]}/templates/gromacs/007_eq.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '007_eq.colvars.template'),
                         colvars_inputfile_basename_eq,
                         logger=self.logger,
                         ligand_selection='BFEE_Ligand',
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # colvars file for free-energy calculation
-        generateColvars(f'{sys.path[0]}/templates/gromacs/007.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '007.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         r_width=r_width,
@@ -1115,7 +1125,7 @@ class BFEEGromacs:
         new_box_y = np.around(convert(self.system.dimensions[1], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         new_box_z = np.around(convert(self.system.dimensions[2], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         # generate shell script for equlibration
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/007_eq.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '007_eq.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '007.1_generate_eq_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -1148,7 +1158,7 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename_eq + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # generate shell script for free-energy calculation
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/007.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '007.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '007.2_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
@@ -1166,7 +1176,8 @@ class BFEEGromacs:
                             COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
                                                                      posixpath.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
-        shutil.copyfile(f'{sys.path[0]}/templates/gromacs/find_min_max.awk', posixpath.join(generate_basename, 'find_min_max.awk'))
+        with pkg_resources.path(__package__, 'find_min_max.awk') as p:
+            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
         if not posixpath.exists(posixpath.join(generate_basename, 'output')):
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
@@ -1181,7 +1192,7 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # # generate the MDP file for equlibration
-        generateMDP(f'{sys.path[0]}/templates/gromacs/008.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_Equilibration'),
                     logger=self.logger,
                     timeStep=0.002,
@@ -1189,7 +1200,7 @@ class BFEEGromacs:
                     temperature=self.temperature,
                     pressure=1.01325)
         # generate the MDP file
-        generateMDP(f'{sys.path[0]}/templates/gromacs/008.mdp.template',
+        generateMDP(pkg_resources.read_text(__package__, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_PMF'),
                     logger=self.logger,
                     timeStep=0.002,
@@ -1201,7 +1212,7 @@ class BFEEGromacs:
             self.ligandOnly.write(posixpath.join(generate_basename, 'colvars_ligand_only.ndx'), name='BFEE_Ligand_Only')
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '008_colvars')
-        generateColvars(f'{sys.path[0]}/templates/gromacs/008.colvars.template',
+        generateColvars(pkg_resources.read_text(__package__, '008.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
                         rmsd_lower_boundary=0.0,
@@ -1217,7 +1228,7 @@ class BFEEGromacs:
         # write out the whole ligand-only system as reference
         self.ligandOnlySystem.select_atoms('all').write(posixpath.join(generate_basename, 'reference_ligand_only.xyz'))
         # generate the shell script for making the tpr file for equilibration
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/008_eq.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '008_eq.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '008.1_generate_eq_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
@@ -1228,7 +1239,7 @@ class BFEEGromacs:
                             TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyTopologyFile),
                                                                 posixpath.abspath(generate_basename)).replace('\\', '/'),)
         # generate the shell script for making the tpr file for free-energy calculation
-        generateShellScript(f'{sys.path[0]}/templates/gromacs/008.generate_tpr_sh.template',
+        generateShellScript(pkg_resources.read_text(__package__, '008.generate_tpr_sh.template'),
                             posixpath.join(generate_basename, '008.2_generate_tpr'),
                             logger=self.logger,
                             MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
