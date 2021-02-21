@@ -6,6 +6,14 @@ from BFEE2.commonTools import fileParser
 from BFEE2 import configTemplate, scriptTemplate
 from BFEE2.templates_gromacs.BFEEGromacs import BFEEGromacs
 
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Try backported to PY<37 `importlib_resources`.
+    import importlib_resources as pkg_resources
+
+import templates_namd
+
 class inputGenerator():
     ''' generate all the inputs and define corresponding slots '''
 
@@ -366,7 +374,8 @@ class inputGenerator():
             # connect to VMD
             if userProvidedPullingTop == '' and userProvidedPullingCoor == '':
                 if forceFieldType == 'charmm':
-                    shutil.copyfile(f'{sys.path[0]}/templates/scripts/solvate.tcl', f'{path}/BFEE/007_r/000_solvate.tcl')
+                    with pkg_resources.path(templates_namd, 'solvate.tcl') as p:
+                        shutil.copyfile(p, f'{path}/BFEE/007_r/000_solvate.tcl')
                     # if vmd path is defined
                     # then execute vmd automatically
                     if vmdPath != '':
@@ -395,7 +404,8 @@ class inputGenerator():
             fParser.saveFile(
                 'all', f'{path}/BFEE/fep.pdb', 'pdb'
             )
-            shutil.copyfile(f'{sys.path[0]}/templates/scripts/fep.tcl', f'{path}/BFEE/fep.tcl')
+            with pkg_resources.path(templates_namd, 'fep.tcl') as p:
+                shutil.copyfile(p, f'{path}/BFEE/fep.tcl')
 
             # remove protein for the unbound state
             if forceFieldType == 'charmm':
