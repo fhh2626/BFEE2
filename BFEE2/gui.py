@@ -9,6 +9,8 @@ from PySide2.QtGui import QIcon, QFont
 import BFEE2.postTreatment as postTreatment
 import BFEE2.inputGenerator as inputGenerator
 from BFEE2.commonTools import commonSlots, ploter, fileParser
+# use appdirs to manage persistent configuration
+from appdirs import user_config_dir
 
 VERSION = 'BFEEstimator v2.1alpha'
 
@@ -18,6 +20,11 @@ class mainSettings(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.config_dir = user_config_dir('BFEE2', 'chinfo')
+        # test if config directory exists
+        if not os.path.exists(self.config_dir):
+            # create it if not exists
+            os.makedirs(self.config_dir)
         self._initUI()
         self._initSingalsSlots()
         self.setWindowTitle('Settings')
@@ -86,10 +93,10 @@ class mainSettings(QWidget):
 
     def _readConfig(self):
         ''' read the config saving paths for third-party softwares '''
-        if not os.path.exists(f'{sys.path[0]}/3rdSoft.ini'):
+        if not os.path.exists(f'{self.config_dir}/3rdSoft.ini'):
             return
 
-        with open(f'{sys.path[0]}/3rdSoft.ini', 'r') as cFile:
+        with open(f'{self.config_dir}/3rdSoft.ini', 'r') as cFile:
             line = cFile.readline()
             self.vmdLineEdit.setText(line.strip())
             #line = cFile.readline()
@@ -100,7 +107,7 @@ class mainSettings(QWidget):
     def _writeConfig(self):
         ''' write the config saving paths for third-party softwares '''
 
-        with open(f'{sys.path[0]}/3rdSoft.ini', 'w') as cFile:
+        with open(f'{self.config_dir}/3rdSoft.ini', 'w') as cFile:
             cFile.write(self.vmdLineEdit.text() + '\n')
             #cFile.write(self.gromacsLineEdit.text() + '\n')
             #cFile.write(self.tleapLineEdit.text() + '\n')
