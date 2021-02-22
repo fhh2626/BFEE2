@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 ## binding free energy estimator (BFEE) v2.0 alpha
 ## by Haohao Fu (fhh2626_at_gmail.com)
 ##
