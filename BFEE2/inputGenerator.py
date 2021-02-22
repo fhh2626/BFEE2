@@ -4,7 +4,7 @@ import os, sys, shutil, subprocess
 import numpy as np
 from BFEE2.commonTools import fileParser
 from BFEE2 import configTemplate, scriptTemplate
-from BFEE2.templates_gromacs.BFEEGromacs import BFEEGromacs
+from BFEE2.BFEEGromacs import BFEEGromacs
 
 try:
     import importlib.resources as pkg_resources
@@ -12,7 +12,7 @@ except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
 
-import templates_namd
+from BFEE2 import templates_namd
 
 class inputGenerator():
     ''' generate all the inputs and define corresponding slots '''
