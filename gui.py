@@ -199,6 +199,17 @@ class geometricAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
 
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+        
+
         self.geometricAdvancedSettingsButtonLayout = QHBoxLayout()
         self.geometricAdvancedSettingsOKButton = QPushButton('OK')
         #self.geometricAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -209,6 +220,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -280,6 +292,25 @@ class alchemicalAdvancedSettings(QWidget):
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
+        # minimize before sampling in each window
+        self.minBeforeSample = QGroupBox('Minimization before sampling')
+        self.minBeforeSampleLayout = QVBoxLayout()
+
+        self.minBeforeSampleCheckbox = QCheckBox('Minimize before sampling in each window')
+        self.minBeforeSampleCheckbox.setChecked(False)
+        self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
+        self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
+
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -289,6 +320,8 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
+        self.mainLayout.addWidget(self.minBeforeSample)
+        self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1268,6 +1301,7 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
+                            self.geometricAdvancedSettings.memProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except fileParser.SelectionError:
@@ -1311,6 +1345,8 @@ Unknown error!'
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:

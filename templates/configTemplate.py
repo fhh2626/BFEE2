@@ -29,7 +29,9 @@ class configTemplate:
                             fepFile = '',
                             fepWindowNum = 20,
                             fepForward = True,
-                            fepDoubleWide = False
+                            fepDoubleWide = False,
+                            fepMinBeforeSample = False,
+                            membraneProtein = False
                             ):
         ''' the namd config file template
             Inputs:
@@ -51,6 +53,8 @@ class configTemplate:
                 fepWindowNum (int): number of fep windows
                 fepForward (bool): whether this is a forward fep simulation
                 fepDouble (bool): whether this is a double-wide fep simulation
+                fepMinBeforeSample (bool): whether do minimization before sampling in each FEP window
+                membraneProtein (bool): whether simulating a membrame protein
             Return:
                 string: a NAMD config string if succeed, and empty string otherwise
             '''
@@ -140,7 +144,6 @@ langevinpistonperiod 200                        \n\
 langevinpistondecay  100                        \n\
 langevinpistontemp   {temperature}              \n\
 usegrouppressure     yes                        \n\
-useflexiblecell      no                         \n\
 PME                  yes                        \n\
 PMETolerance         10e-6                      \n\
 PMEInterpOrder       4                          \n\
@@ -154,6 +157,16 @@ rigiditerations      400                        \n\
 stepspercycle        10                         \n\
 splitpatch           hydrogen                   \n\
 margin               2                          \n'
+
+        # membrane protein
+        if membraneProtein:
+            configString += f'\
+useflexiblecell      yes                        \n\
+useConstantRatio     yes                        \n'
+        else:
+            configString += f'\
+useflexiblecell      no                         \n\
+useConstantRatio     no                         \n'
 
         # colvars definition
         if cvFile != '':
@@ -195,16 +208,30 @@ alchEquilSteps 100000                           \n'
 
             if fepForward:
                 if not fepDoubleWide:
-                    configString += f'\
+                    if fepMinBeforeSample:
+                        # minimize before sampling
+                        configString += f'\
 runFEPmin 0.0 1.0 {1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                    else:
+                        configString += f'\
+runFEP 0.0 1.0 {1.0/fepWindowNum} 500000\n'
+
                 else:
                     # double wide simulation
                     configString += f'\
 runFEP 0.0 1.0 {1.0/fepWindowNum} 500000 true\n'
+
             else:
+                # backward
                 if not fepDoubleWide:
-                    configString += f'\
+                    if fepMinBeforeSample:
+                        # minimize before sampling
+                        configString += f'\
 runFEPmin 1.0 0.0 {-1.0/fepWindowNum} 500000 1000 {temperature}\n'
+                    else:
+                        configString += f'\
+runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000\n'
+
                 else:
                     # double wide simulation
                     configString += f'\

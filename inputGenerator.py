@@ -26,6 +26,8 @@ class inputGenerator():
         selectionLig,
         stratification = [1,1,1,1],
         doubleWide = False,
+        minBeforeSample = False,
+        membraneProtein = False,
         vmdPath = ''
     ):
         ''' generate all the input files for NAMD alchemical simulation
@@ -40,6 +42,8 @@ class inputGenerator():
                 selectionLig (string): MDAnalysis-style selection of the ligand
                 stratification (list of int, 8): number of windows for each simulation
                 doubleWide (bool): whether double-wide simulations are carried out
+                minBeforeSample (bool): minimization before sampling in each FEP window
+                membraneProtein (bool): whether simulating a membrane protein
                 vmdPath (string): path to vmd '''
 
         assert(len(stratification) == 4)
@@ -54,7 +58,7 @@ class inputGenerator():
         self._copyFiles(
             path, topFile, topType, coorFile, coorType, forceFieldType, forceFieldFiles,
             selectionPro, selectionLig, selectionPro, '', '',
-            'alchemical', vmdPath)
+            'alchemical', membraneProtein, vmdPath)
 
         # get relative force field path
         relativeFFPath = []
@@ -63,7 +67,8 @@ class inputGenerator():
             relativeFFPath.append(f'../{name}')
         
         self._generateAlchemicalNAMDConfig(
-            path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide
+            path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
+            membraneProtein
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification
@@ -83,6 +88,7 @@ class inputGenerator():
         userProvidedPullingTop = '',
         userProvidedPullingCoor = '',
         stratification = [1,1,1,1,1,1,1,1],
+        membraneProtein = False,
         vmdPath = ''
     ):
         ''' generate all the input files for NAMD Geometric simulation
@@ -100,6 +106,7 @@ class inputGenerator():
                 userProvidedPullingTop (string): user-provided large solvation box for pulling simulation
                 userProvidedPullingCoor (string): user-provided large solvation box for pulling simulation
                 stratification (list of int, 8): number of windows for each simulation
+                membraneProtein (bool): whether simulation a membrane protein
                 vmdPath (string): path to vmd '''
 
         assert(len(stratification) == 8)
@@ -116,7 +123,7 @@ class inputGenerator():
         self._copyFiles(
             path, topFile, topType, coorFile, coorType, forceFieldType, forceFieldFiles,
             selectionPro, selectionLig, selectionRef, userProvidedPullingTop, userProvidedPullingCoor,
-            'geometric', vmdPath)
+            'geometric', membraneProtein, vmdPath)
 
         # get relative force field path
         relativeFFPath = []
@@ -125,7 +132,7 @@ class inputGenerator():
             relativeFFPath.append(f'../{name}')
         
         self._generateGeometricNAMDConfig(
-            path, forceFieldType, relativeFFPath, temperature, stratification
+            path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
         )
         self._generateGeometricColvarsConfig(
             path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification
@@ -266,7 +273,8 @@ class inputGenerator():
         selectionRef,
         userProvidedPullingTop = '',
         userProvidedPullingCoor = '',
-        jobType='geometric',
+        jobType = 'geometric',
+        membraneProtein = False,
         vmdPath = ''
     ):
         ''' copy original and generate necessary topology/structure files
@@ -284,6 +292,7 @@ class inputGenerator():
                 userProvidedPullingTop (string): user-provided large solvation box for pulling simulation
                 userProvidedPullingCoor (string): user-provided large solvation box for pulling simulation
                 jobType (string): 'geometric' or 'alchemical'
+                membraneProtein (bool): whether simulating a membrane protein
                 vmdPath (string): path to vmd, space is forbidden '''
         
         # copy force fields
@@ -326,18 +335,34 @@ class inputGenerator():
 
             # remove protein for step 8
             # this cannot be done in pure python
-            fParser.saveFile(
-                f'not {selectionPro}', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb', 'pdb'
-            )
+            if not membraneProtein:
+                fParser.saveFile(
+                    f'not {selectionPro}', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb', 'pdb'
+                )
+            else:
+                # membrane protein
+                fParser.saveFile(
+                    f'{selectionLig}', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb', 'pdb'
+                )
             # connect to VMD
             if forceFieldType == 'charmm':
-                with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl', 'w') as rScript:
-                    rScript.write(
-                        scriptTemplate.removeProteinTemplate.substitute(
-                            path='../complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
-                            outputPath=f'./ligandOnly'
+                if not membraneProtein:
+                    with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.removeProteinTemplate.substitute(
+                                path='../complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
+                                outputPath=f'./ligandOnly'
+                            )
                         )
-                    )
+                else:
+                    # membrane protein
+                    with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.removeMemProteinTemplate.substitute(
+                                path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
+                                outputPath=f'./ligandOnly'
+                            )
+                        )
                 # if vmd path is defined
                 # then execute vmd automatically
                 if vmdPath != '':
@@ -356,7 +381,9 @@ class inputGenerator():
                     )
             # xyz and ndx for step 8
             fParserStep8 = fileParser.fileParser(f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb')
-            fParserStep8.saveFile('all', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.xyz', 'xyz')
+            if not membraneProtein:
+                # otherwise the xyz file will be generated by vmd
+                fParserStep8.saveFile('all', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.xyz', 'xyz')
             fParserStep8.saveNDX(
                 [selectionLig], ['ligand'], f'{path}/BFEE/008_RMSDUnbound/ligandOnly.ndx', True
             )
@@ -366,7 +393,11 @@ class inputGenerator():
             # connect to VMD
             if userProvidedPullingTop == '' and userProvidedPullingCoor == '':
                 if forceFieldType == 'charmm':
-                    shutil.copyfile(f'{sys.path[0]}/templates/scripts/solvate.tcl', f'{path}/BFEE/007_r/000_solvate.tcl')
+                    if not membraneProtein:
+                        shutil.copyfile(f'{sys.path[0]}/templates/scripts/solvate.tcl', f'{path}/BFEE/007_r/000_solvate.tcl')
+                    else:
+                        # membrane protein
+                        shutil.copyfile(f'{sys.path[0]}/templates/scripts/solvate_mem.tcl', f'{path}/BFEE/007_r/000_solvate.tcl')
                     # if vmd path is defined
                     # then execute vmd automatically
                     if vmdPath != '':
@@ -399,13 +430,28 @@ class inputGenerator():
 
             # remove protein for the unbound state
             if forceFieldType == 'charmm':
-                with open(f'{path}/BFEE/000_removeProtein.tcl', 'w') as rScript:
-                    rScript.write(
-                        scriptTemplate.removeProteinTemplate.substitute(
-                            path='./complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
-                            outputPath=f'./ligandOnly'
+                if not membraneProtein:
+                    with open(f'{path}/BFEE/000_removeProtein.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.removeProteinTemplate.substitute(
+                                path='./complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
+                                outputPath=f'./ligandOnly'
+                            )
                         )
+                else:
+                    # membrane protein
+                    # fake ligandOnly.pdb, only used to generate ndx
+                    # putting this here to guarantee ligandOnly.pdb is currected overwritten
+                    fParser.saveFile(
+                        f'{selectionLig}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
                     )
+                    with open( f'{path}/BFEE/000_removeProtein.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.removeMemProteinFepTemplate.substitute(
+                                path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
+                                outputPath=f'./ligandOnly', outputFepPath=f'./fep_ligandOnly'
+                            )
+                        )
                 # if vmd path is defined
                 # then execute vmd automatically
                 if vmdPath != '':
@@ -422,15 +468,20 @@ class inputGenerator():
                             outputPath=f'./ligandOnly'
                         )
                     )
-            fParser.saveFile(
-                f'not {selectionPro}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
-            )
-            fParser.saveFile(
-                f'not {selectionPro}', f'{path}/BFEE/fep_ligandOnly.pdb', 'pdb'
-            )
+            
+            if not membraneProtein:
+                # otherwise the these files will be generated by vmd
+                fParser.saveFile(
+                    f'not {selectionPro}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
+                )
+                fParser.saveFile(
+                    f'not {selectionPro}', f'{path}/BFEE/fep_ligandOnly.pdb', 'pdb'
+                )
             # xyz and ndx
             fParserLigandOnly = fileParser.fileParser( f'{path}/BFEE/ligandOnly.pdb')
-            fParserLigandOnly.saveFile('all', f'{path}/BFEE/ligandOnly.xyz', 'xyz')
+            if not membraneProtein:
+                # otherwise the xyz file will be generated by vmd
+                fParserLigandOnly.saveFile('all', f'{path}/BFEE/ligandOnly.xyz', 'xyz')
             fParserLigandOnly.saveNDX(
                 [selectionLig], ['ligand'], f'{path}/BFEE/ligandOnly.ndx', True
             )
@@ -442,7 +493,9 @@ class inputGenerator():
         forceFields,
         temperature,
         stratification = [1,1,1,1],
-        doubleWide = False
+        doubleWide = False,
+        minBeforeSample = False,
+        membraneProtein = False
     ):
         ''' generate NAMD config fils for the alchemical route
             Inputs:
@@ -451,7 +504,9 @@ class inputGenerator():
                 forceFieldFiles (list of strings): list of CHARMM force field files
                 temperature (float): temperature of the simulation
                 stratification (list of int, 4): number of windows for each simulation
-                doubleWide (bool): whether double-wide simulations are carried out  '''
+                doubleWide (bool): whether double-wide simulations are carried out
+                minBeforeSample (bool): minimization before sampling in each FEP window
+                membraneProtein (bool): whether simulating a membrane protein  '''
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -461,9 +516,17 @@ class inputGenerator():
 
         # read the original topology and coordinate file
         fParser = fileParser.fileParser(f'{path}/BFEE/complex.{topType}', f'{path}/BFEE/complex.{coorType}')
-
         # pbc
         pbc = fParser.measurePBC()
+
+        # read the ligandOnly topology and coordinate file
+        if os.path.exists(f'{path}/BFEE/ligandOnly.{topType}'):
+            fParserLig = fileParser.fileParser(f'{path}/BFEE/ligandOnly.{topType}', f'{path}/BFEE/ligandOnly.{coorType}')
+            # pbc
+            pbcLig = fParserLig.measurePBC()
+        else:
+            pbcLig = pbc
+
 
         # 000_eq
         with open(f'{path}/BFEE/000_eq/eq.conf', 'w') as namdConfig:
@@ -471,14 +534,14 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
-                    'output/eq', temperature, 5000000, 'colvars.in', ''
+                    'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein
                 )
             )
         with open(f'{path}/BFEE/000_eq/eq_ligandOnly.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    '', '', '', pbc,
+                    '', '', '', pbcLig,
                     'output/eq_ligandOnly', temperature, 1000000, 'colvars_ligandOnly.in',
                     ''
                 )
@@ -489,9 +552,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                    f'output/fep_backward.coor', f'output/fep_backward.vel', f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], True
+                    stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein
                 )
             )
         with open(f'{path}/BFEE/001_MoleculeBound/fep_backward.conf', 'w') as namdConfig:
@@ -500,7 +563,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], False
+                    stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein
                 )
             )
         
@@ -511,7 +574,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                        stratification[0], False, True
+                        stratification[0], False, True, membraneProtein=membraneProtein
                     )
                 )
 
@@ -522,7 +585,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_forward.in', 
-                    ''
+                    '', membraneProtein=membraneProtein
                 )
             )
         with open(f'{path}/BFEE/002_RestraintBound/ti_backward.conf', 'w') as namdConfig:
@@ -531,7 +594,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_backward.in', 
-                    ''
+                    '', membraneProtein=membraneProtein
                 )
             )
 
@@ -540,10 +603,10 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
-                    f'../000_eq/output/eq_ligandOnly.xsc', '',
+                    f'output/fep_backward.coor', f'output/fep_backward.vel', 
+                    f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], True
+                    stratification[0], True, False, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/fep_backward.conf', 'w') as namdConfig:
@@ -553,7 +616,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], False
+                    stratification[0], False, False, minBeforeSample
                 )
             )
 
@@ -913,7 +976,8 @@ class inputGenerator():
         forceFieldType,
         forceFields,
         temperature,
-        stratification = [1,1,1,1,1,1,1,1]
+        stratification = [1,1,1,1,1,1,1,1],
+        membraneProtein = False,
     ):
         ''' generate NAMD config fils for the geometric route
             Inputs:
@@ -921,7 +985,8 @@ class inputGenerator():
                 forceFieldType (string): 'charmm' or 'amber'
                 forceFieldFiles (list of strings): list of CHARMM force field files
                 temperature (float): temperature of the simulation
-                stratification (list of int, 8): number of windows for each simulation  '''
+                stratification (list of int, 8): number of windows for each simulation
+                membraneProtein (bool): whether simulating a membrane protein  '''
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -935,13 +1000,26 @@ class inputGenerator():
         # pbc
         pbc = fParser.measurePBC()
 
+        # read the ligandOnly topology and coordinate file
+        if os.path.exists(f'{path}/BFEE/008_RMSDUnbound/ligandOnly.{topType}'):
+            fParserLig = fileParser.fileParser(
+                f'{path}/BFEE/008_RMSDUnbound/ligandOnly.{topType}', 
+                f'{path}/BFEE/008_RMSDUnbound/ligandOnly.{coorType}'
+            )
+            # pbc
+            pbcLig = fParserLig.measurePBC()
+        else:
+            pbcLig = pbc
+        
+
         # 000_eq
         with open(f'{path}/BFEE/000_eq/eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
-                    'output/eq', temperature, 5000000, 'colvars.in'
+                    'output/eq', temperature, 5000000, 'colvars.in',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -951,7 +1029,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in'
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -964,7 +1043,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in'
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -974,7 +1054,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -987,7 +1068,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -997,7 +1079,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -1010,7 +1093,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -1020,7 +1104,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -1033,7 +1118,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -1043,7 +1129,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -1056,7 +1143,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -1066,7 +1154,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
-                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -1079,19 +1168,27 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
         # r
         # eq
+        # the extended water box
+        if not membraneProtein:
+            pbcStep7 = pbc + np.array([[24,24,24],[0,0,0]])
+        else:
+            pbcStep7 = pbc + np.array([[0,0,32],[0,0,0]])
+
         with open(f'{path}/BFEE/007_r/eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     '', '', '', 
-                    pbc + np.array([[22,22,22],[0,0,0]]),
-                    'output/eq', temperature, 5000000, 'colvars_eq.in', ''
+                    pbcStep7,
+                    'output/eq', temperature, 5000000, 'colvars_eq.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
         # abf
@@ -1100,7 +1197,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
-                    'output/abf_1', temperature, 5000000, 'colvars_1.in', ''
+                    'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    membraneProtein=membraneProtein
                 )
             )
 
@@ -1113,7 +1211,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', ''
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        membraneProtein=membraneProtein
                     )
                 )
 
@@ -1124,7 +1223,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     '', '', '', 
-                    pbc,
+                    pbcLig,
                     'output/eq', temperature, 1000000
                 )
             )
