@@ -6,11 +6,8 @@ from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabW
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
 from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
 from PySide2.QtGui import QIcon, QFont
-import BFEE2.postTreatment as postTreatment
-import BFEE2.inputGenerator as inputGenerator
-from BFEE2.commonTools import commonSlots, ploter, fileParser
-# use appdirs to manage persistent configuration
-from appdirs import user_config_dir
+import postTreatment, inputGenerator
+from commonTools import commonSlots, ploter, fileParser
 
 VERSION = 'BFEEstimator v2.1alpha'
 
@@ -20,11 +17,6 @@ class mainSettings(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.config_dir = user_config_dir('BFEE2', 'chinfo')
-        # test if config directory exists
-        if not os.path.exists(self.config_dir):
-            # create it if not exists
-            os.makedirs(self.config_dir)
         self._initUI()
         self._initSingalsSlots()
         self.setWindowTitle('Settings')
@@ -93,10 +85,10 @@ class mainSettings(QWidget):
 
     def _readConfig(self):
         ''' read the config saving paths for third-party softwares '''
-        if not os.path.exists(f'{self.config_dir}/3rdSoft.ini'):
+        if not os.path.exists(f'{sys.path[0]}/3rdSoft.ini'):
             return
 
-        with open(f'{self.config_dir}/3rdSoft.ini', 'r') as cFile:
+        with open(f'{sys.path[0]}/3rdSoft.ini', 'r') as cFile:
             line = cFile.readline()
             self.vmdLineEdit.setText(line.strip())
             #line = cFile.readline()
@@ -107,7 +99,7 @@ class mainSettings(QWidget):
     def _writeConfig(self):
         ''' write the config saving paths for third-party softwares '''
 
-        with open(f'{self.config_dir}/3rdSoft.ini', 'w') as cFile:
+        with open(f'{sys.path[0]}/3rdSoft.ini', 'w') as cFile:
             cFile.write(self.vmdLineEdit.text() + '\n')
             #cFile.write(self.gromacsLineEdit.text() + '\n')
             #cFile.write(self.tleapLineEdit.text() + '\n')
@@ -207,6 +199,17 @@ class geometricAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
 
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+        
+
         self.geometricAdvancedSettingsButtonLayout = QHBoxLayout()
         self.geometricAdvancedSettingsOKButton = QPushButton('OK')
         #self.geometricAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -217,6 +220,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -288,6 +292,25 @@ class alchemicalAdvancedSettings(QWidget):
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
+        # minimize before sampling in each window
+        self.minBeforeSample = QGroupBox('Minimization before sampling')
+        self.minBeforeSampleLayout = QVBoxLayout()
+
+        self.minBeforeSampleCheckbox = QCheckBox('Minimize before sampling in each window')
+        self.minBeforeSampleCheckbox.setChecked(False)
+        self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
+        self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
+
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -297,6 +320,8 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
+        self.mainLayout.addWidget(self.minBeforeSample)
+        self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1276,6 +1301,7 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
+                            self.geometricAdvancedSettings.memProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except fileParser.SelectionError:
@@ -1319,6 +1345,8 @@ Unknown error!'
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:
