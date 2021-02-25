@@ -1040,6 +1040,18 @@ class mainUI(QMainWindow):
 
         return f
 
+    def _changeFFButtonState(self):
+        ''' enable/disable the add and clear button of force field section '''
+
+        if self.forceFieldCombobox.currentText() == 'CHARMM':
+            self.forceFieldAddButton.setEnabled(True)
+            self.forceFieldClearButton.setEnabled(True)
+            self.forceFieldFilesBox.setEnabled(True)
+        elif self.forceFieldCombobox.currentText() == 'Amber':
+            self.forceFieldAddButton.setEnabled(False)
+            self.forceFieldClearButton.setEnabled(False)
+            self.forceFieldFilesBox.setEnabled(False)
+
     def _showAboutBox(self):
         ''' the about message box '''
 
@@ -1474,6 +1486,8 @@ Unknown error!'
         self.psfButton.clicked.connect(commonSlots.openFileDialog('psf/parm', self.psfLineEdit))
         self.coorButton.clicked.connect(commonSlots.openFileDialog('pdb/rst', self.coorLineEdit))
 
+        # force field selection
+        self.forceFieldCombobox.currentTextChanged.connect(self._changeFFButtonState)
         self.forceFieldAddButton.clicked.connect(commonSlots.openFilesDialog('prm', self.forceFieldFilesBox))
         self.forceFieldClearButton.clicked.connect(self.forceFieldFilesBox.clear)
 
