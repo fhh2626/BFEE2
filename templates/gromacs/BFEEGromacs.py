@@ -646,7 +646,7 @@ class BFEEGromacs:
                         rmsd_bin_width=0.005,
                         rmsd_lower_boundary=0.0,
                         rmsd_upper_boundary=0.5,
-                        rmsd_wall_constant=8.368,
+                        rmsd_wall_constant=0.8368,
                         ligand_selection='BFEE_Ligand',
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str,
@@ -1101,7 +1101,7 @@ class BFEEGromacs:
                         r_width=r_width,
                         r_lower_boundary=r_lower_boundary,
                         r_upper_boundary=r_upper_boundary,
-                        r_wall_constant=8.368,
+                        r_wall_constant=0.5*4.184,
                         ligand_selection='BFEE_Ligand',
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
@@ -1206,7 +1206,7 @@ class BFEEGromacs:
                         rmsd_bin_width=0.005,
                         rmsd_lower_boundary=0.0,
                         rmsd_upper_boundary=0.5,
-                        rmsd_wall_constant=8.368,
+                        rmsd_wall_constant=0.8368,
                         ligand_selection='BFEE_Ligand_Only',
                         logger=self.logger)
         # generate the reference file for ligand only
