@@ -1235,6 +1235,10 @@ Standard Binding Free Energy:\n\
         ''' generate input files for binding free energy simulation '''
         def f():
             path = QFileDialog.getExistingDirectory(None, 'Select a directory')
+            # cancel
+            if path == '':
+                return
+
             iGenerator = inputGenerator.inputGenerator()
 
             # third-party softwares and user-provided solvation boxes
