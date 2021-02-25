@@ -14,6 +14,12 @@ except ImportError:
 
 from BFEE2 import templates_namd
 
+# an runtime error
+# directory already exists
+class DirectoryExistError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
 class inputGenerator():
     ''' generate all the inputs and define corresponding slots '''
 
@@ -232,9 +238,9 @@ class inputGenerator():
                 path (string): the path for putting BFEE input files into
                 jobType (string): geometric or alchemical '''
 
-        # if the folder already exists, simply remove it
+        # if the folder already exists, raise an error
         if os.path.exists(f'{path}/BFEE'):
-            shutil.rmtree(f'{path}/BFEE')
+            raise DirectoryExistError('Directory exists')
         os.mkdir(f'{path}/BFEE')
         os.mkdir(f'{path}/BFEE/000_eq')
         os.mkdir(f'{path}/BFEE/000_eq/output')

@@ -1293,6 +1293,15 @@ Standard Binding Free Energy:\n\
                     forceFieldType = 'charmm'
                 elif self.forceFieldCombobox.currentText() == 'Amber':
                     forceFieldType = 'amber'
+
+                # make sure there are CHARMM FF files
+                if forceFieldFiles == []:
+                    QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+CHARMM force field files must be specified!'
+                        )
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
 
@@ -1335,6 +1344,14 @@ force fields!'
                                 f'\
 Selection corresponding to nothing!\n\
 Check you selection again!'
+                        )
+                        return
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE directory already exists!'
                         )
                         return
                     except PermissionError:
@@ -1391,6 +1408,13 @@ Selection corresponding to nothing!\n\
 Check you selection again!'
                         )
                         return
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE directory already exists!'
+                        )
                     except:
                         QMessageBox.warning(
                                 self, 
