@@ -365,7 +365,7 @@ class inputGenerator():
             # connect to VMD
             if forceFieldType == 'charmm':
                 if not membraneProtein:
-                    with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeProteinTemplate.substitute(
                                 path='../complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
@@ -374,7 +374,7 @@ class inputGenerator():
                         )
                 else:
                     # membrane protein
-                    with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinTemplate.substitute(
                                 path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
@@ -385,11 +385,11 @@ class inputGenerator():
                 # then execute vmd automatically
                 if vmdPath != '':
                     subprocess.run(
-                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.tcl'],
+                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl'],
                         cwd=f'{path}/BFEE/008_RMSDUnbound'
                     )
             elif forceFieldType == 'amber':
-                with open( f'{path}/BFEE/008_RMSDUnbound/000_removeProtein.cpptraj', 'w') as rScript:
+                with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.cpptraj', 'w') as rScript:
                     rScript.write(
                         scriptTemplate.removeProteinAmberTemplate.substitute(
                             path='../complex', 
@@ -413,16 +413,16 @@ class inputGenerator():
                 if forceFieldType == 'charmm':
                     if not membraneProtein:
                         with pkg_resources.path(templates_namd, 'solvate.tcl') as p:
-                            shutil.copyfile(p, f'{path}/BFEE/007_r/000_solvate.tcl')
+                            shutil.copyfile(p, f'{path}/BFEE/007_r/007.0_solvate.tcl')
                     else:
                         # membrane protein
                         with pkg_resources.path(templates_namd, 'solvate_mem.tcl') as p:
-                            shutil.copyfile(p, f'{path}/BFEE/007_r/000_solvate.tcl')
+                            shutil.copyfile(p, f'{path}/BFEE/007_r/007.0_solvate.tcl')
                     # if vmd path is defined
                     # then execute vmd automatically
                     if vmdPath != '':
                         subprocess.run(
-                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/007_r/000_solvate.tcl'],
+                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/007_r/007.0_solvate.tcl'],
                             cwd=f'{path}/BFEE/007_r'
                         )
             else:
@@ -452,7 +452,7 @@ class inputGenerator():
             # remove protein for the unbound state
             if forceFieldType == 'charmm':
                 if not membraneProtein:
-                    with open(f'{path}/BFEE/000_removeProtein.tcl', 'w') as rScript:
+                    with open(f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeProteinTemplate.substitute(
                                 path='./complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
@@ -466,7 +466,7 @@ class inputGenerator():
                     fParser.saveFile(
                         f'{selectionLig}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
                     )
-                    with open( f'{path}/BFEE/000_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinFepTemplate.substitute(
                                 path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
@@ -477,11 +477,11 @@ class inputGenerator():
                 # then execute vmd automatically
                 if vmdPath != '':
                     subprocess.run(
-                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/000_removeProtein.tcl'],
+                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5_removeProtein.tcl'],
                         cwd=f'{path}/BFEE'
                     )
             elif forceFieldType == 'amber':
-                with open( f'{path}/BFEE/000_removeProtein.cpptraj', 'w') as rScript:
+                with open( f'{path}/BFEE/002.5_removeProtein.cpptraj', 'w') as rScript:
                     rScript.write(
                         scriptTemplate.removeProteinAmberTemplate.substitute(
                             path='./complex', 
