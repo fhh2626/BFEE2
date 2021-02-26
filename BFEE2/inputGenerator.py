@@ -546,7 +546,7 @@ class inputGenerator():
 
 
         # 000_eq
-        with open(f'{path}/BFEE/000_eq/eq.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/000_eq/000.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -554,7 +554,7 @@ class inputGenerator():
                     'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein
                 )
             )
-        with open(f'{path}/BFEE/000_eq/eq_ligandOnly.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/000_eq/000.2_eq_ligandOnly.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -565,7 +565,7 @@ class inputGenerator():
             )
 
         # 001_MoleculeBound
-        with open(f'{path}/BFEE/001_MoleculeBound/fep_forward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/001_MoleculeBound/001.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -574,7 +574,7 @@ class inputGenerator():
                     stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein
                 )
             )
-        with open(f'{path}/BFEE/001_MoleculeBound/fep_backward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/001_MoleculeBound/001.1_fep_backward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -585,7 +585,7 @@ class inputGenerator():
             )
         
         if doubleWide:
-            with open(f'{path}/BFEE/001_MoleculeBound/fep_doubleWide.conf', 'w') as namdConfig:
+            with open(f'{path}/BFEE/001_MoleculeBound/001_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -596,7 +596,7 @@ class inputGenerator():
                 )
 
         # 002_RestraintBound
-        with open(f'{path}/BFEE/002_RestraintBound/ti_forward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/002_RestraintBound/002.2_ti_forward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -605,7 +605,7 @@ class inputGenerator():
                     '', membraneProtein=membraneProtein
                 )
             )
-        with open(f'{path}/BFEE/002_RestraintBound/ti_backward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/002_RestraintBound/002.1_ti_backward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -616,7 +616,7 @@ class inputGenerator():
             )
 
         # 003_MoleculeUnbound
-        with open(f'{path}/BFEE/003_MoleculeUnbound/fep_forward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/003_MoleculeUnbound/003.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -626,7 +626,7 @@ class inputGenerator():
                     stratification[0], True, False, minBeforeSample
                 )
             )
-        with open(f'{path}/BFEE/003_MoleculeUnbound/fep_backward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/003_MoleculeUnbound/003.1_fep_backward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -638,7 +638,7 @@ class inputGenerator():
             )
 
         if doubleWide:
-            with open(f'{path}/BFEE/003_MoleculeUnbound/fep_doubleWide.conf', 'w') as namdConfig:
+            with open(f'{path}/BFEE/003_MoleculeUnbound/003_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -650,7 +650,7 @@ class inputGenerator():
                 )
 
         # 004_RestraintUnbound
-        with open(f'{path}/BFEE/004_RestraintUnbound/ti_forward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/004_RestraintUnbound/004.2_ti_forward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -660,7 +660,7 @@ class inputGenerator():
                     ''
                 )
             )
-        with open(f'{path}/BFEE/004_RestraintUnbound/ti_backward.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
@@ -1030,7 +1030,7 @@ class inputGenerator():
         
 
         # 000_eq
-        with open(f'{path}/BFEE/000_eq/eq.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/000_eq/000_eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1041,7 +1041,7 @@ class inputGenerator():
             )
 
         # RMSD bound
-        with open(f'{path}/BFEE/001_RMSDBound/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1054,7 +1054,7 @@ class inputGenerator():
         # stratification
         if stratification[0] > 1:
             for i in range(1, stratification[0]):
-                with open(f'{path}/BFEE/001_RMSDBound/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1066,7 +1066,7 @@ class inputGenerator():
                 )
 
         # Theta
-        with open(f'{path}/BFEE/002_EulerTheta/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1079,7 +1079,7 @@ class inputGenerator():
         # stratification
         if stratification[1] > 1:
             for i in range(1, stratification[1]):
-                with open(f'{path}/BFEE/002_EulerTheta/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1091,7 +1091,7 @@ class inputGenerator():
                 )
 
         # Phi
-        with open(f'{path}/BFEE/003_EulerPhi/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1104,7 +1104,7 @@ class inputGenerator():
         # stratification
         if stratification[2] > 1:
             for i in range(1, stratification[2]):
-                with open(f'{path}/BFEE/003_EulerPhi/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1116,7 +1116,7 @@ class inputGenerator():
                 )
 
         # Psi
-        with open(f'{path}/BFEE/004_EulerPsi/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1129,7 +1129,7 @@ class inputGenerator():
         # stratification
         if stratification[3] > 1:
             for i in range(1, stratification[3]):
-                with open(f'{path}/BFEE/004_EulerPsi/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1141,7 +1141,7 @@ class inputGenerator():
                 )
 
         # theta
-        with open(f'{path}/BFEE/005_PolarTheta/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1154,7 +1154,7 @@ class inputGenerator():
         # stratification
         if stratification[4] > 1:
             for i in range(1, stratification[4]):
-                with open(f'{path}/BFEE/005_PolarTheta/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1166,7 +1166,7 @@ class inputGenerator():
                 )
 
         # phi
-        with open(f'{path}/BFEE/006_PolarPhi/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1179,7 +1179,7 @@ class inputGenerator():
         # stratification
         if stratification[5] > 1:
             for i in range(1, stratification[5]):
-                with open(f'{path}/BFEE/006_PolarPhi/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
@@ -1198,7 +1198,7 @@ class inputGenerator():
         else:
             pbcStep7 = pbc + np.array([[0,0,32],[0,0,0]])
 
-        with open(f'{path}/BFEE/007_r/eq.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/007_r/007.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
@@ -1209,7 +1209,7 @@ class inputGenerator():
                 )
             )
         # abf
-        with open(f'{path}/BFEE/007_r/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/007_r/007.2_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
@@ -1222,7 +1222,7 @@ class inputGenerator():
         # stratification
         if stratification[6] > 1:
             for i in range(1, stratification[6]):
-                with open(f'{path}/BFEE/007_r/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
@@ -1235,7 +1235,7 @@ class inputGenerator():
 
         # RMSD unbound
         # eq
-        with open(f'{path}/BFEE/008_RMSDUnbound/eq.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
@@ -1245,7 +1245,7 @@ class inputGenerator():
                 )
             )
         # abf
-        with open(f'{path}/BFEE/008_RMSDUnbound/abf_1.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
@@ -1257,7 +1257,7 @@ class inputGenerator():
         # stratification
         if stratification[7] > 1:
             for i in range(1, stratification[7]):
-                with open(f'{path}/BFEE/008_RMSDUnbound/abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/008_RMSDUnbound/step8.2_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
