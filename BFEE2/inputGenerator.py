@@ -12,8 +12,7 @@ except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
 
-from BFEE2 import templates_namd
-
+from BFEE2 import templates_namd, templates_readme
 # an runtime error
 # directory already exists
 class DirectoryExistError(RuntimeError):
@@ -181,10 +180,14 @@ class inputGenerator():
                 selectionLig (string): MDAnalysis-style selection of the ligand
                 selectionSol (string): MDAnalysis-style selection of the solvent '''
         
-        # if the folder already exists, simply remove it
+        # if the folder already exists, raise an error
         if os.path.exists(f'{path}/BFEE'):
-            shutil.rmtree(f'{path}/BFEE')
+            raise DirectoryExistError('Directory exists')
         os.mkdir(f'{path}/BFEE')
+
+        # readme file 
+        with pkg_resources.path(templates_readme, 'Readme_Gromacs_Geometrical.txt') as p:
+            shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
 
         bfee = BFEEGromacs(
             pdbFile, 
@@ -351,6 +354,10 @@ class inputGenerator():
 
         if jobType == 'geometric':
 
+            # readme file 
+            with pkg_resources.path(templates_readme, 'Readme_NAMD_Geometrical.txt') as p:
+                shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
+
             # remove protein for step 8
             # this cannot be done in pure python
             if not membraneProtein:
@@ -440,6 +447,11 @@ class inputGenerator():
                 )
 
         if jobType == 'alchemical':
+
+            # readme file 
+            with pkg_resources.path(templates_readme, 'Readme_NAMD_Alchemical.txt') as p:
+                shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
+
             # fep file
             fParser.setBeta('all', 0)
             fParser.setBeta(selectionLig, 1)
