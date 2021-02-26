@@ -18,7 +18,7 @@ TOP_FILE=$TOP_FILE_TEMPLATE
 
 # generate the tpr file
 OUTPUT_BASENAME=$(basename "$(pwd)")
-TPR_FILE="$OUTPUT_BASENAME.tpr"
+TPR_FILE="$OUTPUT_BASENAME.eq.tpr"
 NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
 echo "Making gromacs tpr file ($TPR_FILE)..."
 $GMX_BIN grompp -f $MDP_FILE -c $GRO_FILE -p $TOP_FILE -o $TPR_FILE -po $NEW_MDP_FILE

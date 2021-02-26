@@ -15,11 +15,11 @@ To calculate the binding free energy:
 7.1.  run 006_polar_phi/006_generate_tpr.sh
 7.2.  run 006_polar_phi/006_polar_phi.tpr
 8.1.  run 007_r/007.1_generate_eq_tpr.sh
-8.2.  run 007_r/007_r_eq.tpr
+8.2.  run 007_r/007_r.eq.tpr
 8.3.  run 007_r/007.2_generate_tpr.sh
 8.4   run 007_r/007_r.tpr
 9.1.  run 008_RMSD_unbound/008.1_generate_eq_tpr.sh
-9.2.  run 008_RMSD_unbound/008_RMSD_unbound_eq.tpr
+9.2.  run 008_RMSD_unbound/008_RMSD_unbound.eq.tpr
 9.3.  run 008_RMSD_unbound/008.2_generate_tpr.sh
 9.4.  run 008_RMSD_unbound/008_RMSD_unbound.tpr
 10.   do post-treatment using BFEE
