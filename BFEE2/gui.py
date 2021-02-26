@@ -216,6 +216,17 @@ class geometricAdvancedSettings(QWidget):
 
         self.memProLayout.addWidget(self.memProCheckbox)
         self.memPro.setLayout(self.memProLayout)
+
+        # parallel runs for error estimation
+        self.parallelRuns = QGroupBox('Parallel runs')
+        self.parallelRunsLayout = QHBoxLayout()
+
+        self.parallelRunsLabel = QLabel('Number of parallel runs: ')
+        self.parallelRunsLineEdit = QLineEdit('1')
+
+        self.parallelRunsLayout.addWidget(self.parallelRunsLabel)
+        self.parallelRunsLayout.addWidget(self.parallelRunsLineEdit)
+        self.parallelRuns.setLayout(self.parallelRunsLayout)
         
 
         self.geometricAdvancedSettingsButtonLayout = QHBoxLayout()
@@ -229,6 +240,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.memPro)
+        self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1335,6 +1347,7 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
                             self.geometricAdvancedSettings.memProCheckbox.isChecked(),
+                            int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except fileParser.SelectionError:
@@ -1351,7 +1364,7 @@ Check you selection again!'
                                 self, 
                                 'Error', 
                                 f'\
-./BFEE directory already exists!'
+./BFEE* directory already exists!'
                         )
                         return
                     except PermissionError:

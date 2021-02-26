@@ -103,6 +103,7 @@ class inputGenerator():
         userProvidedPullingCoor = '',
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
+        parallelRuns = 1,
         vmdPath = ''
     ):
         ''' generate all the input files for NAMD Geometric simulation
@@ -121,6 +122,7 @@ class inputGenerator():
                 userProvidedPullingCoor (string): user-provided large solvation box for pulling simulation
                 stratification (list of int, 8): number of windows for each simulation
                 membraneProtein (bool): whether simulation a membrane protein
+                parallelRuns (int): generate files for duplicate runs
                 vmdPath (string): path to vmd '''
 
         assert(len(stratification) == 8)
@@ -151,6 +153,8 @@ class inputGenerator():
         self._generateGeometricColvarsConfig(
             path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification
         )
+
+        self._duplicateFileFolder(path, parallelRuns)
 
     def generateGromacsGeometricFiles(
         self, 
@@ -1695,3 +1699,13 @@ class inputGenerator():
                         'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0
                     )
                 )
+
+    def _duplicateFileFolder(self,path, number):
+        ''' duplicate the ./BFEE folder
+            Inputs:
+                path (string): the directory for generation of all the files
+                number (int): the number of copies '''
+        for i in range(number - 1):
+            if os.path.exists(f'{path}/BFEE_{i}'):
+                raise DirectoryExistError('Directory exists')
+            shutil.copytree(f'{path}/BFEE', f'{path}/BFEE_{i}')
