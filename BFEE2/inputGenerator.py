@@ -1054,6 +1054,16 @@ class inputGenerator():
                     membraneProtein=membraneProtein
                 )
             )
+        with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                )
+            )
+
 
         # stratification
         if stratification[0] > 1:
@@ -1068,6 +1078,16 @@ class inputGenerator():
                         membraneProtein=membraneProtein
                     )
                 )
+                with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', 
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                    )
+                )
 
         # Theta
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.conf', 'w') as namdConfig:
@@ -1077,6 +1097,15 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein
+                )
+            )
+        with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
                 )
             )
 
@@ -1093,6 +1122,16 @@ class inputGenerator():
                         membraneProtein=membraneProtein
                     )
                 )
+                with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                    )
+                )
 
         # Phi
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.conf', 'w') as namdConfig:
@@ -1102,6 +1141,15 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein
+                )
+            )
+        with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
                 )
             )
 
@@ -1118,6 +1166,16 @@ class inputGenerator():
                         membraneProtein=membraneProtein
                     )
                 )
+                with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                    )
+                )
 
         # Psi
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.conf', 'w') as namdConfig:
@@ -1127,6 +1185,15 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
                     membraneProtein=membraneProtein
+                )
+            )
+        with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
                 )
             )
 
@@ -1143,6 +1210,16 @@ class inputGenerator():
                         membraneProtein=membraneProtein
                     )
                 )
+                with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                    )
+                )
 
         # theta
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.conf', 'w') as namdConfig:
@@ -1154,6 +1231,16 @@ class inputGenerator():
                     membraneProtein=membraneProtein
                 )
             )
+        with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                )
+            )
+
 
         # stratification
         if stratification[4] > 1:
@@ -1168,6 +1255,16 @@ class inputGenerator():
                         membraneProtein=membraneProtein
                     )
                 )
+                with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                    )
+                )
 
         # phi
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.conf', 'w') as namdConfig:
@@ -1177,6 +1274,15 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein
+                )
+            )
+        with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
                 )
             )
 
@@ -1191,6 +1297,16 @@ class inputGenerator():
                         f'output/abf_{i}.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
+                    )
+                )
+                with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1222,6 +1338,15 @@ class inputGenerator():
                     membraneProtein=membraneProtein
                 )
             )
+        with open(f'{path}/BFEE/007_r/007.2_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
+                    'output/abf_1.coor', 'output/abf_1.vel', 'output/abf_1.xsc', '',
+                    'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    CVRestartFile=f'output/abf_1', membraneProtein=membraneProtein
+                )
+            )
 
         # stratification
         if stratification[6] > 1:
@@ -1234,6 +1359,16 @@ class inputGenerator():
                         f'output/abf_{i}.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
+                    )
+                )
+                with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1257,17 +1392,36 @@ class inputGenerator():
                     'output/abf_1', temperature, 5000000, 'colvars_1.in'
                 )
             )
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.extend.conf', 'w') as namdConfig:
+            namdConfig.write(
+                self.cTemplate.namdConfigTemplate(
+                    forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
+                    'output/abf_1.coor', 'output/abf_1.vel', 'output/abf_1.xsc', '',
+                    'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
+                    CVRestartFile=f'output/abf_1'
+                )
+            )
 
         # stratification
         if stratification[7] > 1:
             for i in range(1, stratification[7]):
-                with open(f'{path}/BFEE/008_RMSDUnbound/step8.2_abf_{i+1}.conf', 'w') as namdConfig:
+                with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.conf', 'w') as namdConfig:
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in'
+                    )
+                )
+                with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
+                    namdConfig.write(
+                        self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
+                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
+                        f'output/abf_{i+1}.xsc',
+                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in',
+                        CVRestartFile=f'output/abf_{i+1}'
                     )
                 )
 
