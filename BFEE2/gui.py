@@ -1376,7 +1376,8 @@ Cannot read input files due to the permission reason!\n\
 Restart the program or check the authority of the files!'
                         )
                         return
-                    except:
+                    except Exception as e:
+                        print(e)
                         QMessageBox.warning(
                                 self, 
                                 'Error', 
@@ -1428,7 +1429,9 @@ Check you selection again!'
                                 f'\
 ./BFEE directory already exists!'
                         )
-                    except:
+                        return
+                    except Exception as e:
+                        print(e)
                         QMessageBox.warning(
                                 self, 
                                 'Error', 
@@ -1452,17 +1455,35 @@ Unknown error!'
                         QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                         return
 
-                if self.selectStrategyCombobox.currentText() == 'Geometric':                
-                    iGenerator.generateGromacsGeometricFiles(
-                        path=path,
-                        topFile=self.topLineEdit.text(),
-                        pdbFile=self.gromacsPdbLineEdit.text(),
-                        ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
-                        ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
-                        selectionPro=self.selectProteineLineEdit.text(),
-                        selectionLig=self.selectLigandLineEdit.text(),
-                        temperature=float(self.temperatureLineEdit.text())
-                    )
+                if self.selectStrategyCombobox.currentText() == 'Geometric':
+                    try:              
+                        iGenerator.generateGromacsGeometricFiles(
+                            path=path,
+                            topFile=self.topLineEdit.text(),
+                            pdbFile=self.gromacsPdbLineEdit.text(),
+                            ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
+                            ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
+                            selectionPro=self.selectProteineLineEdit.text(),
+                            selectionLig=self.selectLigandLineEdit.text(),
+                            temperature=float(self.temperatureLineEdit.text())
+                        )
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE directory already exists!'
+                        )
+                        return
+                    except Exception as e:
+                        print(e)
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
                     QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')
                     return
