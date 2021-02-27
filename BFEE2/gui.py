@@ -410,6 +410,11 @@ class mainUI(QMainWindow):
         self.helpAction.setStatusTip('Open user manual')
         self.helpAction.triggered.connect(self._openDocFile)
 
+        # python API
+        self.pythonAPIAction = QAction('&Python API', self)
+        self.pythonAPIAction.setStatusTip('Open Python API Documentation')
+        self.pythonAPIAction.triggered.connect(self._openPythonAPIFile)
+
         # about
         self.aboutAction = QAction('&About', self)
         self.aboutAction.setStatusTip('About BFEEstimator')
@@ -431,6 +436,7 @@ class mainUI(QMainWindow):
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
+        self.helpMenu.addAction(self.pythonAPIAction)
         self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
 
@@ -1078,6 +1084,12 @@ class mainUI(QMainWindow):
 
         with pkg_resources.path(doc, 'Doc.pdf') as docFile:
             webbrowser.open(docFile)
+
+    def _openPythonAPIFile(self):
+        ''' open Python API Documentation file '''
+
+        with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
+            webbrowser.open(pythonAPIFile)
 
     def _showAboutBox(self):
         ''' the about message box '''
