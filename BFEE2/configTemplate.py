@@ -349,10 +349,10 @@ colvar {{                                   \n\
 
         if angle == 'polarTheta':
             string += f'\
-    customFunction acos(i3) * 180 / 3.1415926\n'
+    customFunction acos(-i2) * 180 / 3.1415926\n'
         elif angle == 'polarPhi':
             string += f'\
-    customFunction atan2(i2, i1) * 180 / 3.1415926\n'
+    customFunction atan2(i3, i1) * 180 / 3.1415926\n'
 
         if setBoundary:
             string += f'\
