@@ -1,6 +1,7 @@
 # the GUI of new BFEE
 
 import sys, os
+import webbrowser
 from PySide2 import QtCore
 from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
@@ -11,6 +12,14 @@ import BFEE2.inputGenerator as inputGenerator
 from BFEE2.commonTools import commonSlots, ploter, fileParser
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
+
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Try backported to PY<37 `importlib_resources`.
+    import importlib_resources as pkg_resources
+
+from BFEE2 import doc
 
 VERSION = 'BFEEstimator v2.1alpha'
 
@@ -399,7 +408,7 @@ class mainUI(QMainWindow):
         # help
         self.helpAction = QAction('&Help', self)
         self.helpAction.setStatusTip('Open user manual')
-        #self.helpAction.triggered.connect()
+        self.helpAction.triggered.connect(self._openDocFile)
 
         # about
         self.aboutAction = QAction('&About', self)
@@ -1063,6 +1072,12 @@ class mainUI(QMainWindow):
             self.forceFieldAddButton.setEnabled(False)
             self.forceFieldClearButton.setEnabled(False)
             self.forceFieldFilesBox.setEnabled(False)
+
+    def _openDocFile(self):
+        ''' open Documentation file '''
+
+        with pkg_resources.path(doc, 'Doc.pdf') as docFile:
+            webbrowser.open(docFile)
 
     def _showAboutBox(self):
         ''' the about message box '''
