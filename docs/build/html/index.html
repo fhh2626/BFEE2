@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to BFEE2’s documentation! &#8212; BFEE2 2.1.1alpha3 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-BFEE2.BFEEGromacs">
+<span id="welcome-to-bfee2-s-documentation"></span><h1>Welcome to BFEE2’s documentation!<a class="headerlink" href="#module-BFEE2.BFEEGromacs" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs">
+<em class="property">class </em><code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">BFEEGromacs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">structureFile</span></em>, <em class="sig-param"><span class="n">topologyFile</span></em>, <em class="sig-param"><span class="n">ligandOnlyStructureFile</span></em>, <em class="sig-param"><span class="n">ligandOnlyTopologyFile</span></em>, <em class="sig-param"><span class="n">baseDirectory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The entry class for handling gromacs inputs in BFEE.</p>
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.logger">
+<code class="sig-name descname">logger</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>logger object for debugging</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.handler">
+<code class="sig-name descname">handler</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>output stream of the debug output</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>logging.StreamHandler</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.baseDirectory">
+<code class="sig-name descname">baseDirectory</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.baseDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>output directory of the generated files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.structureFile">
+<code class="sig-name descname">structureFile</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.structureFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>filename of the structure file (either in PDB or GRO format) of the
+protein-ligand binding complex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.topologyFile">
+<code class="sig-name descname">topologyFile</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.topologyFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>filename of the GROMACS topology file of the protein-ligand binding
+complex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.ligandOnlyStructureFile">
+<code class="sig-name descname">ligandOnlyStructureFile</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.ligandOnlyStructureFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>filename of the structure file (either in PDB or GRO format) of the
+ligand-only system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.system">
+<code class="sig-name descname">system</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.system" title="Permalink to this definition">¶</a></dt>
+<dd><p>MDAnalysis universe of the protein-ligand binding system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.universe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.ligandOnlySystem">
+<code class="sig-name descname">ligandOnlySystem</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.ligandOnlySystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>MDAnalysis universe of the ligand-only system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.universe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.basenames">
+<code class="sig-name descname">basenames</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.basenames" title="Permalink to this definition">¶</a></dt>
+<dd><p>subdirectory names of all eight steps</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.ligand">
+<code class="sig-name descname">ligand</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.ligand" title="Permalink to this definition">¶</a></dt>
+<dd><p>selected HEAVY ATOMS of the ligand in the protein-ligand binding
+complex. This attribute does not exist until the call of
+setLigandHeavyAtomsGroup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.groups.AtomGroup</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.ligandOnly">
+<code class="sig-name descname">ligandOnly</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.ligandOnly" title="Permalink to this definition">¶</a></dt>
+<dd><p>selected HEAVY ATOMS of the ligand in the ligand-only system.
+This attribute does not exist until the call of setLigandHeavyAtomsGroup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.groups.AtomGroup</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.protein">
+<code class="sig-name descname">protein</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.protein" title="Permalink to this definition">¶</a></dt>
+<dd><p>selected HEAVY ATOMS of the protein in the protein-ligand binding
+complex. This attribute does not exist until the call of
+setProteinHeavyAtomsGroup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.groups.AtomGroup</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.solvent">
+<code class="sig-name descname">solvent</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.solvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>selected atoms of the solvents in the protein-ligand binding complex.
+This attribute does not exist until the call of setSolventAtomsGroup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>MDAnalysis.core.groups.AtomGroup</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.temperature">
+<code class="sig-name descname">temperature</code><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>the temperature of simulations (default : 300.0)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname">__init__(structureFile, topologyFile, ligandOnlyStructureFile,</code></dt>
+<dd><blockquote>
+<div><p>ligandOnlyTopologyFile, baseDirectory=None)</p>
+</div></blockquote>
+<p>constructor of the class</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.saveStructure">
+<code class="sig-name descname">saveStructure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outputFile</span></em>, <em class="sig-param"><span class="n">atomSelection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.saveStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.saveStructure" title="Permalink to this definition">¶</a></dt>
+<dd><p>a helper method for selecting a group of atoms and save it</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.setProteinHeavyAtomsGroup">
+<code class="sig-name descname">setProteinHeavyAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setProteinHeavyAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.setProteinHeavyAtomsGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>select the heavy atoms of the protein</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.setLigandHeavyAtomsGroup">
+<code class="sig-name descname">setLigandHeavyAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setLigandHeavyAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.setLigandHeavyAtomsGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>select the heavy atoms of the ligand in both the protein-ligand complex
+and the ligand-only systems</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.setSolventAtomsGroup">
+<code class="sig-name descname">setSolventAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setSolventAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.setSolventAtomsGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>select the solvent atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.setTemperature">
+<code class="sig-name descname">setTemperature</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setTemperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.setTemperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>set the temperature</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generateGromacsIndex">
+<code class="sig-name descname">generateGromacsIndex</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outputFile</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generateGromacsIndex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generateGromacsIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a GROMACS index file for atom selection in Colvars</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate000">
+<code class="sig-name descname">generate000</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate000"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate000" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for running an equilibrium simulation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate001">
+<code class="sig-name descname">generate001</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate001"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate001" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the RMSD of the ligand
+with respect to its bound state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate002">
+<code class="sig-name descname">generate002</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate002"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate002" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the pitch (theta) angle of
+the ligand</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate003">
+<code class="sig-name descname">generate003</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate003"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate003" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the roll (phi) angle of
+the ligand</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate004">
+<code class="sig-name descname">generate004</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate004"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate004" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the yaw (psi) angle of
+the ligand</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate005">
+<code class="sig-name descname">generate005</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate005"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate005" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the polar theta angle of
+the ligand relative to the protein</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate006">
+<code class="sig-name descname">generate006</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate006"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate006" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the polar phi angle of
+the ligand relative to the protein</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate007">
+<code class="sig-name descname">generate007</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate007"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate007" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the distance between the
+the ligand and the protein</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="BFEE2.BFEEGromacs.BFEEGromacs.generate008">
+<code class="sig-name descname">generate008</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.generate008"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.BFEEGromacs.generate008" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate files for determining the PMF along the RMSD of the ligand
+with respect to its unbound state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id0">
+<code class="sig-name descname">saveStructure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outputFile</span></em>, <em class="sig-param"><span class="n">selection</span><span class="o">=</span><span class="default_value">'all'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.saveStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputFile</strong> (<em>str</em>) – filename of the output file</p></li>
+<li><p><strong>selection</strong> (<em>str</em>) – MDAnalysis atom selection string</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id1">
+<code class="sig-name descname">setLigandHeavyAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setLigandHeavyAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>selection</strong> (<em>str</em>) – MDAnalysis atom selection string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id2">
+<code class="sig-name descname">setProteinHeavyAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setProteinHeavyAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>selection</strong> (<em>str</em>) – MDAnalysis atom selection string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id3">
+<code class="sig-name descname">setSolventAtomsGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setSolventAtomsGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>selection</strong> (<em>str</em>) – MDAnalysis atom selection string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id4">
+<code class="sig-name descname">setTemperature</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newTemperature</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#BFEEGromacs.setTemperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>newTemperature</strong> (<em>float</em>) – new value of the temperature</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.generateColvars">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">generateColvars</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">colvarsTemplate</span></em>, <em class="sig-param"><span class="n">outputPrefix</span></em>, <em class="sig-param"><span class="n">logger</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#generateColvars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.generateColvars" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a Colvars configuration file from a template suffixed with ‘.dat’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputPrefix</strong> (<em>str</em>) – prefix (no .dat extension) of the output Colvars configuration file</p></li>
+<li><p><strong>logger</strong> (<em>Logging.logger</em>) – logger for debugging</p></li>
+<li><p><strong>**kwargs</strong> – additional arguments passed to safe_substitute()</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.generateMDP">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">generateMDP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MDPTemplate</span></em>, <em class="sig-param"><span class="n">outputPrefix</span></em>, <em class="sig-param"><span class="n">timeStep</span></em>, <em class="sig-param"><span class="n">numSteps</span></em>, <em class="sig-param"><span class="n">temperature</span></em>, <em class="sig-param"><span class="n">pressure</span></em>, <em class="sig-param"><span class="n">logger</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#generateMDP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.generateMDP" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a GROMACS mdp file from a template</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>MDPTemplate</strong> (<em>str</em>) – template MDP file with $dt and $nsteps</p></li>
+<li><p><strong>outputPrefix</strong> (<em>str</em>) – prefix (no .mdp extension) of the output MDP file</p></li>
+<li><p><strong>timeStep</strong> (<em>float</em>) – timestep for running the simulation</p></li>
+<li><p><strong>numSteps</strong> (<em>int</em>) – number of steps for running the simulation</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – simulation temperature</p></li>
+<li><p><strong>pressure</strong> (<em>float</em>) – simulation pressure</p></li>
+<li><p><strong>logger</strong> (<em>Logging.logger</em>) – logger for debugging</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.generateShellScript">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">generateShellScript</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shellTemplate</span></em>, <em class="sig-param"><span class="n">outputPrefix</span></em>, <em class="sig-param"><span class="n">logger</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#generateShellScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.generateShellScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a shell script from a template</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputPrefix</strong> (<em>str</em>) – prefix (no .sh extension) of the output Colvars configuration file</p></li>
+<li><p><strong>logger</strong> (<em>Logging.logger</em>) – logger for debugging</p></li>
+<li><p><strong>**kwargs</strong> – additional arguments passed to safe_substitute()</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.get_cell">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">get_cell</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">atom_positions</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#get_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.get_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>mimic the VMD script get_cell.tcl to calculate the cell units</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atom_positions</strong> (<em>numpy.array</em>) – a numpy array containing the XYZ coordinates of N atoms. The shape
+should be (N, 3).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a shape of (3,3) array contains periodic cell information</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.mearsurePolarAngles">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">mearsurePolarAngles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">proteinCenter</span></em>, <em class="sig-param"><span class="n">ligandCenter</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#mearsurePolarAngles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.mearsurePolarAngles" title="Permalink to this definition">¶</a></dt>
+<dd><p>measure the polar angles between the protein and the ligand</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proteinCenter</strong> (<em>numpy.array</em>) – center-of-mass of the protein</p></li>
+<li><p><strong>ligandCenter</strong> (<em>numpy.array</em>) – center-of-mass of the ligand</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a (theta, phi) tuple where theta and phi are measured in degrees</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.measure_center">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">measure_center</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">atom_positions</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#measure_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.measure_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>mimic the VMD command “measure center”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atom_positions</strong> (<em>numpy.array</em>) – a numpy array containing the XYZ coordinates of N atoms. The shape
+should be (N, 3).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a shape of (3,) array contains the geometric center</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.measure_minmax">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">measure_minmax</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">atom_positions</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#measure_minmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.measure_minmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>mimic the VMD command “measure minmax”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atom_positions</strong> (<em>numpy.array</em>) – a numpy array containing the XYZ coordinates of N atoms. The shape
+should be (N, 3).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a shape of (2, 3) array, where the first subarray has the minimum
+values in XYZ directions, and the second subarray has the maximum
+values in XYZ directions.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="BFEE2.BFEEGromacs.scanGromacsTopologyInclude">
+<code class="sig-prename descclassname">BFEE2.BFEEGromacs.</code><code class="sig-name descname">scanGromacsTopologyInclude</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gmxTopFile</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/BFEE2/BFEEGromacs.html#scanGromacsTopologyInclude"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#BFEE2.BFEEGromacs.scanGromacsTopologyInclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>scan the files included by a gromacs topology file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gmxTopFile</strong> (<em>str</em>) – filename of the gromacs topology file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>tuple</em> – a (list, list) tuple.
+The first list contains the absolute pathnames of included files.
+The second list contains the strings in the quotation marks for handling
+relative paths.</p></li>
+<li><p><strong>logger</strong> (<em>Logging.logger</em>) – logger for debugging</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">BFEE2</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Haohao Fu, Haochuan Chen, Wensheng Cai and Chris Chipot.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
