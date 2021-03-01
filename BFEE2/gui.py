@@ -1,6 +1,6 @@
 # the GUI of new BFEE
 
-import sys, os
+import sys, os, shutil
 import webbrowser
 from PySide2 import QtCore
 from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
@@ -1383,8 +1383,10 @@ force fields!'
                                 'Error', 
                                 f'\
 Selection corresponding to nothing!\n\
-Check you selection again!'
+Check your selection again!'
                         )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
                         return
                     except inputGenerator.DirectoryExistError:
                         QMessageBox.warning(
@@ -1446,8 +1448,10 @@ Restart the program or check the authority of the files!'
                                 'Error', 
                                 f'\
 Selection corresponding to nothing!\n\
-Check you selection again!'
+Check your selection again!'
                         )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
                         return
                     except inputGenerator.DirectoryExistError:
                         QMessageBox.warning(
