@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, 
 from PySide2.QtGui import QIcon, QFont
 import BFEE2.postTreatment as postTreatment
 import BFEE2.inputGenerator as inputGenerator
+import BFEE2.BFEEGromacs as BFEEGromacs
 from BFEE2.commonTools import commonSlots, ploter, fileParser
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
@@ -1505,6 +1506,17 @@ Unknown error!'
                                 f'\
 ./BFEE directory already exists!'
                         )
+                        return
+                    except BFEEGromacs.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check your selection again!'
+                        )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
                         return
                     except Exception as e:
                         print(e)
