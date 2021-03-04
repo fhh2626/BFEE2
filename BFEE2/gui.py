@@ -1335,13 +1335,14 @@ Standard Binding Free Energy:\n\
                     forceFieldType = 'amber'
 
                 # make sure there are CHARMM FF files
-                if forceFieldFiles == []:
+                if forceFieldFiles == [] and forceFieldType == 'charmm':
                     QMessageBox.warning(
                                 self, 
                                 'Error', 
                                 f'\
 CHARMM force field files must be specified!'
                         )
+                    return
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
 
