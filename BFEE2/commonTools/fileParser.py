@@ -176,7 +176,7 @@ class fileParser:
         vector = self.measureCenter(selectionLig) - self.measureCenter(selectionPro)
         vector /= np.linalg.norm(vector)
 
-        return (float(int(math.degrees(np.arccos(vector[2])))), float(int(math.degrees(np.arctan2(vector[1], vector[0])))))
+        return (float(int(math.degrees(np.arccos(-vector[1])))), float(int(math.degrees(np.arctan2(vector[2], vector[0])))))
 
     def setBeta(self, selection, beta):
         ''' set beta for the selected atoms

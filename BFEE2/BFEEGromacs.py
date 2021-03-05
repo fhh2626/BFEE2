@@ -19,6 +19,12 @@ except ImportError:
 
 from BFEE2 import templates_gromacs
 
+# an runtime error
+# selection corresponding to nothing
+class SelectionError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
 def scanGromacsTopologyInclude(gmxTopFile, logger=None):
     """
     scanGromacsTopologyInclude(gmxTopFile)
@@ -509,6 +515,8 @@ class BFEEGromacs:
         """
         self.logger.info(f'Saving a new structure file at {outputFile} with selection ({selection}).')
         selected_atoms = self.system.select_atoms(selection)
+        if len(selected_atoms) == 0:
+            raise SelectionError('Empty selection!')
         selected_atoms.write(outputFile)
 
     def setProteinHeavyAtomsGroup(self, selection):
@@ -520,6 +528,8 @@ class BFEEGromacs:
         """
         self.logger.info(f'Setup the atoms group of the protein by selection: {selection}')
         self.protein = self.system.select_atoms(selection)
+        if len(self.protein) == 0:
+            raise SelectionError('Empty selection!')
     
     def setLigandHeavyAtomsGroup(self, selection):
         """
@@ -530,7 +540,11 @@ class BFEEGromacs:
         """
         self.logger.info(f'Setup the atoms group of the ligand by selection: {selection}')
         self.ligand = self.system.select_atoms(selection)
+        if len(self.ligand) == 0:
+            raise SelectionError('Empty selection!')
         self.ligandOnly = self.ligandOnlySystem.select_atoms(selection)
+        if len(self.ligandOnly) == 0:
+            raise SelectionError('Empty selection!')
 
     def setSolventAtomsGroup(self, selection):
         """
@@ -541,6 +555,8 @@ class BFEEGromacs:
         """
         self.logger.info(f'Setup the atoms group of the solvent molecule by selection: {selection}')
         self.solvent = self.system.select_atoms(selection)
+        if len(self.solvent) == 0:
+            raise SelectionError('Empty selection!')
 
     def setTemperature(self, newTemperature):
         """
@@ -709,7 +725,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
-        generateColvars(pkg_resources.read_text(templates_gromacs, '002.mdp.template'),
+        generateColvars(pkg_resources.read_text(templates_gromacs, '002.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         eulerTheta_width=1,

@@ -41,7 +41,7 @@ $GMX_BIN mdrun -s $MIN_TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME
 
 # generate the tpr file
 OUTPUT_BASENAME=$(basename "$(pwd)")
-TPR_FILE="$OUTPUT_BASENAME.tpr"
+TPR_FILE="$OUTPUT_BASENAME.eq.tpr"
 NEW_MDP_FILE="$OUTPUT_BASENAME.mdp"
 NEW_GRO_FILE="$DEFAULT_OUTPUT_FILENAME.gro"
 echo "Making gromacs tpr file ($TPR_FILE)..."

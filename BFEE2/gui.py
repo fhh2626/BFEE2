@@ -1,6 +1,7 @@
 # the GUI of new BFEE
 
-import sys, os
+import sys, os, shutil
+import webbrowser
 from PySide2 import QtCore
 from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
 from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
@@ -8,11 +9,20 @@ from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, 
 from PySide2.QtGui import QIcon, QFont
 import BFEE2.postTreatment as postTreatment
 import BFEE2.inputGenerator as inputGenerator
+import BFEE2.BFEEGromacs as BFEEGromacs
 from BFEE2.commonTools import commonSlots, ploter, fileParser
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 
-VERSION = 'BFEEstimator v2.1alpha'
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Try backported to PY<37 `importlib_resources`.
+    import importlib_resources as pkg_resources
+
+from BFEE2 import doc
+
+VERSION = 'BFEEstimator v2.1.2'
 
 class mainSettings(QWidget):
     ''' settings in the menubar
@@ -207,6 +217,28 @@ class geometricAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
 
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+
+        # parallel runs for error estimation
+        self.parallelRuns = QGroupBox('Parallel runs')
+        self.parallelRunsLayout = QHBoxLayout()
+
+        self.parallelRunsLabel = QLabel('Number of parallel runs: ')
+        self.parallelRunsLineEdit = QLineEdit('1')
+
+        self.parallelRunsLayout.addWidget(self.parallelRunsLabel)
+        self.parallelRunsLayout.addWidget(self.parallelRunsLineEdit)
+        self.parallelRuns.setLayout(self.parallelRunsLayout)
+        
+
         self.geometricAdvancedSettingsButtonLayout = QHBoxLayout()
         self.geometricAdvancedSettingsOKButton = QPushButton('OK')
         #self.geometricAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -217,6 +249,8 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.memPro)
+        self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -288,6 +322,25 @@ class alchemicalAdvancedSettings(QWidget):
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
+        # minimize before sampling in each window
+        self.minBeforeSample = QGroupBox('Minimization before sampling')
+        self.minBeforeSampleLayout = QVBoxLayout()
+
+        self.minBeforeSampleCheckbox = QCheckBox('Minimize before sampling in each window')
+        self.minBeforeSampleCheckbox.setChecked(False)
+        self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
+        self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
+
+        # membrane protein
+        self.memPro = QGroupBox('Membrane protein')
+        self.memProLayout = QHBoxLayout()
+
+        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox.setChecked(False)
+
+        self.memProLayout.addWidget(self.memProCheckbox)
+        self.memPro.setLayout(self.memProLayout)
+
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
         #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
@@ -297,6 +350,8 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
+        self.mainLayout.addWidget(self.minBeforeSample)
+        self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -354,7 +409,12 @@ class mainUI(QMainWindow):
         # help
         self.helpAction = QAction('&Help', self)
         self.helpAction.setStatusTip('Open user manual')
-        #self.helpAction.triggered.connect()
+        self.helpAction.triggered.connect(self._openDocFile)
+
+        # python API
+        self.pythonAPIAction = QAction('&Python API', self)
+        self.pythonAPIAction.setStatusTip('Open Python API Documentation')
+        self.pythonAPIAction.triggered.connect(self._openPythonAPIFile)
 
         # about
         self.aboutAction = QAction('&About', self)
@@ -377,6 +437,7 @@ class mainUI(QMainWindow):
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
+        self.helpMenu.addAction(self.pythonAPIAction)
         self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
 
@@ -1007,6 +1068,30 @@ class mainUI(QMainWindow):
 
         return f
 
+    def _changeFFButtonState(self):
+        ''' enable/disable the add and clear button of force field section '''
+
+        if self.forceFieldCombobox.currentText() == 'CHARMM':
+            self.forceFieldAddButton.setEnabled(True)
+            self.forceFieldClearButton.setEnabled(True)
+            self.forceFieldFilesBox.setEnabled(True)
+        elif self.forceFieldCombobox.currentText() == 'Amber':
+            self.forceFieldAddButton.setEnabled(False)
+            self.forceFieldClearButton.setEnabled(False)
+            self.forceFieldFilesBox.setEnabled(False)
+
+    def _openDocFile(self):
+        ''' open Documentation file '''
+
+        with pkg_resources.path(doc, 'Doc.pdf') as docFile:
+            webbrowser.open(docFile)
+
+    def _openPythonAPIFile(self):
+        ''' open Python API Documentation file '''
+
+        with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
+            webbrowser.open(pythonAPIFile)
+
     def _showAboutBox(self):
         ''' the about message box '''
 
@@ -1190,6 +1275,10 @@ Standard Binding Free Energy:\n\
         ''' generate input files for binding free energy simulation '''
         def f():
             path = QFileDialog.getExistingDirectory(None, 'Select a directory')
+            # cancel
+            if path == '':
+                return
+
             iGenerator = inputGenerator.inputGenerator()
 
             # third-party softwares and user-provided solvation boxes
@@ -1244,6 +1333,16 @@ Standard Binding Free Energy:\n\
                     forceFieldType = 'charmm'
                 elif self.forceFieldCombobox.currentText() == 'Amber':
                     forceFieldType = 'amber'
+
+                # make sure there are CHARMM FF files
+                if forceFieldFiles == [] and forceFieldType == 'charmm':
+                    QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+CHARMM force field files must be specified!'
+                        )
+                    return
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
 
@@ -1276,6 +1375,8 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
+                            self.geometricAdvancedSettings.memProCheckbox.isChecked(),
+                            int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except fileParser.SelectionError:
@@ -1284,7 +1385,17 @@ force fields!'
                                 'Error', 
                                 f'\
 Selection corresponding to nothing!\n\
-Check you selection again!'
+Check your selection again!'
+                        )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
+                        return
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE* directory already exists!'
                         )
                         return
                     except PermissionError:
@@ -1296,7 +1407,8 @@ Cannot read input files due to the permission reason!\n\
 Restart the program or check the authority of the files!'
                         )
                         return
-                    except:
+                    except Exception as e:
+                        print(e)
                         QMessageBox.warning(
                                 self, 
                                 'Error', 
@@ -1319,6 +1431,8 @@ Unknown error!'
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:
@@ -1336,10 +1450,21 @@ Restart the program or check the authority of the files!'
                                 'Error', 
                                 f'\
 Selection corresponding to nothing!\n\
-Check you selection again!'
+Check your selection again!'
+                        )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
+                        return
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE directory already exists!'
                         )
                         return
-                    except:
+                    except Exception as e:
+                        print(e)
                         QMessageBox.warning(
                                 self, 
                                 'Error', 
@@ -1363,17 +1488,46 @@ Unknown error!'
                         QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                         return
 
-                if self.selectStrategyCombobox.currentText() == 'Geometric':                
-                    iGenerator.generateGromacsGeometricFiles(
-                        path=path,
-                        topFile=self.topLineEdit.text(),
-                        pdbFile=self.gromacsPdbLineEdit.text(),
-                        ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
-                        ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
-                        selectionPro=self.selectProteineLineEdit.text(),
-                        selectionLig=self.selectLigandLineEdit.text(),
-                        temperature=float(self.temperatureLineEdit.text())
-                    )
+                if self.selectStrategyCombobox.currentText() == 'Geometric':
+                    try:              
+                        iGenerator.generateGromacsGeometricFiles(
+                            path=path,
+                            topFile=self.topLineEdit.text(),
+                            pdbFile=self.gromacsPdbLineEdit.text(),
+                            ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
+                            ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
+                            selectionPro=self.selectProteineLineEdit.text(),
+                            selectionLig=self.selectLigandLineEdit.text(),
+                            temperature=float(self.temperatureLineEdit.text())
+                        )
+                    except inputGenerator.DirectoryExistError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+./BFEE directory already exists!'
+                        )
+                        return
+                    except BFEEGromacs.SelectionError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Selection corresponding to nothing!\n\
+Check your selection again!'
+                        )
+                        if os.path.exists(f'{path}/BFEE'):
+                            shutil.rmtree(f'{path}/BFEE')
+                        return
+                    except Exception as e:
+                        print(e)
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unknown error!'
+                        )
+                        return
                 elif self.selectStrategyCombobox.currentText() == 'Alchemical':
                     QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')
                     return
@@ -1438,6 +1592,8 @@ Unknown error!'
         self.psfButton.clicked.connect(commonSlots.openFileDialog('psf/parm', self.psfLineEdit))
         self.coorButton.clicked.connect(commonSlots.openFileDialog('pdb/rst', self.coorLineEdit))
 
+        # force field selection
+        self.forceFieldCombobox.currentTextChanged.connect(self._changeFFButtonState)
         self.forceFieldAddButton.clicked.connect(commonSlots.openFilesDialog('prm', self.forceFieldFilesBox))
         self.forceFieldClearButton.clicked.connect(self.forceFieldFilesBox.clear)
 
