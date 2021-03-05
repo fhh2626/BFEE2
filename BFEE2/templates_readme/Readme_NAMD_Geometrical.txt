@@ -20,8 +20,11 @@ To calculate the binding free energy:
       run 007_r/007.0_solvate.tcl using VMD
 3.12. run 007_r/007.1_eq.conf
 3.13. run 007_r/007.2_abf_1.conf
-4.1.  (if you didn't link BFEE with VMD before generating inputs)
-      run 008_RMSDUnbound/008.0_removeProtein.tcl using VMD
+4.1.  CHARMM user:
+        (if you didn't link BFEE with VMD before generating inputs)
+        run 008_RMSDUnbound/008.0_removeProtein.tcl using VMD
+      Amber user:
+        run 008.0_removeProtein.cpptraj using cpptraj
 4.2.  run 008_RMSDUnbound/008.1_eq.conf
 4.3.  run 008_RMSDUnbound/008.2_abf_1.conf
 (steps 2-4 can be done in parallel)
