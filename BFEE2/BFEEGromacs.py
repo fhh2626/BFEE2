@@ -725,7 +725,7 @@ class BFEEGromacs:
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
         colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
-        generateColvars(pkg_resources.read_text(templates_gromacs, '002.mdp.template'),
+        generateColvars(pkg_resources.read_text(templates_gromacs, '002.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
                         eulerTheta_width=1,
