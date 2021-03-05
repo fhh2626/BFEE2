@@ -443,7 +443,12 @@ class inputGenerator():
                     fParserStep7.rotateSystem('x', 90)
 
                 fParserStep7.saveFile(
-                    'all', f'{path}/BFEE/007_r/complexLargeBox.pdb', 'pdb'
+                    'all', f'{path}/BFEE/007_r/complex_largeBox.pdb', 'pdb',
+                    True, f'{path}/BFEE/007_r/complex_largeBox.{topType}'
+                )
+
+                fParserStep7.saveFile(
+                    'all', f'{path}/BFEE/007_r/complex_largeBox.xyz', 'xyz'
                 )
 
         if jobType == 'alchemical':
