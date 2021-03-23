@@ -352,7 +352,9 @@ colvar {{                                   \n\
     customFunction acos(-i2) * 180 / 3.1415926\n'
         elif angle == 'polarPhi':
             string += f'\
-    customFunction atan2(i3, i1) * 180 / 3.1415926\n'
+    customFunction atan2(i3, i1) * 180 / 3.1415926\n\
+    period  360                             \n\
+    wrapAround 0.0                          \n'
 
         if setBoundary:
             string += f'\
