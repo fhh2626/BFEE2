@@ -535,7 +535,7 @@ colvar {{                         \n\
 harmonic {{                       \n\
   colvars       translation       \n\
   centers       0.0               \n\
-  forceConstant 10.0              \n\
+  forceConstant 100.0             \n\
 }}                                \n\
                                   \n\
 colvar {{                         \n\
@@ -550,6 +550,6 @@ colvar {{                         \n\
 harmonic {{                       \n\
   colvars       orientation       \n\
   centers       (1.0, 0.0, 0.0, 0.0)    \n\
-  forceConstant 200.0             \n\
+  forceConstant 2000.0            \n\
 }}                                \n'
         return string
