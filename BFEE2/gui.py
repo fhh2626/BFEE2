@@ -1413,7 +1413,8 @@ Restart the program or check the authority of the files!'
                                 self, 
                                 'Error', 
                                 f'\
-Unknown error!'
+Unknown error! The error message is: \n\
+{e}\n'
                         )
                         return
 
@@ -1469,7 +1470,8 @@ Check your selection again!'
                                 self, 
                                 'Error', 
                                 f'\
-Unknown error!'
+Unknown error! The error message is: \n\
+{e}\n'
                         )
                         return
 
