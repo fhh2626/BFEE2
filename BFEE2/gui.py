@@ -1553,6 +1553,8 @@ Unknown error!'
                     return
 
             QMessageBox.information(self, 'Input generation', f'Input files have been generated successfully!')
+            
+            del iGenerator
 
         return f 
 
