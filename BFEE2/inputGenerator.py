@@ -19,6 +19,12 @@ class DirectoryExistError(RuntimeError):
     def __init__(self, arg):
         self.args = arg
 
+# an runtime error
+# file type is unknown
+class FileTypeUnknownError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
 class inputGenerator():
     ''' generate all the inputs and define corresponding slots '''
 
@@ -232,10 +238,13 @@ class inputGenerator():
 
         if coorPostfix == '.pdb':
             coorType = 'pdb'
+        elif coorPostfix == '.coor':
+            coorType = 'namdbin'
         elif coorPostfix == '.rst7' or coorPostfix == '.rst' or coorPostfix == '.inpcrd':
             coorType = 'inpcrd'
 
-        assert(topType != '' and coorType != '')
+        if topType == '' or coorType == '':
+            raise FileTypeUnknownError('File type unknown')
 
         return topType, coorType
 

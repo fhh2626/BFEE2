@@ -1398,6 +1398,15 @@ Check your selection again!'
 ./BFEE* directory already exists!'
                         )
                         return
+                    except inputGenerator.FileTypeUnknownError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unkwn input file types! The following file types are supported:\n\
+psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd '
+                        )
+                        return
                     except PermissionError:
                         QMessageBox.warning(
                                 self, 
@@ -1462,6 +1471,15 @@ Check your selection again!'
                                 'Error', 
                                 f'\
 ./BFEE directory already exists!'
+                        )
+                        return
+                    except inputGenerator.FileTypeUnknownError:
+                        QMessageBox.warning(
+                                self, 
+                                'Error', 
+                                f'\
+Unkwn input file types! The following file types are supported:\n\
+psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd '
                         )
                         return
                     except Exception as e:
