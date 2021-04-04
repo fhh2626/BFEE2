@@ -294,11 +294,11 @@ class alchemicalAdvancedSettings(QWidget):
         self.stratificationLayout = QGridLayout()
 
         self.boundLigandLabel = QLabel('Ligand/Bound state:')
-        self.boundLigandLineEdit = QLineEdit('20')
+        self.boundLigandLineEdit = QLineEdit('50')
         self.unboundLigandLabel = QLabel('Ligand/Unbound state:')
         self.unboundLigandLineEdit = QLineEdit('20')
         self.boundRestraintsLabel = QLabel('Restraints/Bound state:')
-        self.boundRestraintsLineEdit = QLineEdit('20')
+        self.boundRestraintsLineEdit = QLineEdit('50')
         self.unboundRestraintsLabel = QLabel('Restraints/Unbound state:')
         self.unboundRestraintsLineEdit = QLineEdit('20')
 

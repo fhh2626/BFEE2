@@ -1360,7 +1360,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
-                    'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
+                    'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein
                 )
             )
@@ -1369,7 +1369,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/abf_1.coor', 'output/abf_1.vel', 'output/abf_1.xsc', '',
-                    'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
+                    'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
                     CVRestartFile=f'output/abf_1', membraneProtein=membraneProtein
                 )
             )
@@ -1383,7 +1383,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
                         f'output/abf_{i}.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
                 )
@@ -1393,7 +1393,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
                         f'output/abf_{i+1}.xsc',
-                        '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
+                        '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
                     )
                 )
