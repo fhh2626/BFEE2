@@ -22,7 +22,7 @@ copyright = '2021, Haohao Fu, Haochuan Chen, Wensheng Cai and Chris Chipot'
 author = 'Haohao Fu, Haochuan Chen, Wensheng Cai and Chris Chipot'
 
 # The full version, including alpha/beta/rc tags
-release = '2.1.1alpha3'
+release = '2.1.3dev'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'autodocsumm',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,7 +51,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

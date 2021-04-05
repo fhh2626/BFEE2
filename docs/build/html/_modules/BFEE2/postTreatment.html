@@ -1,0 +1,566 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>BFEE2.postTreatment &mdash; BFEE2 2.1.3dev documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> BFEE2
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">BFEE2</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>BFEE2.postTreatment</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for BFEE2.postTreatment</h1><div class="highlight"><pre>
+<span></span><span class="c1"># post-treatment of BFEE</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="c1"># Boltazann constant for NAMD unit convention</span>
+<span class="n">BOLTZMANN</span> <span class="o">=</span> <span class="mf">0.0019872041</span>
+<span class="n">BOLTZMANN_GMX</span> <span class="o">=</span> <span class="mf">0.0019872041</span> <span class="o">*</span> <span class="mf">4.184</span>
+
+<span class="c1"># standard concentration</span>
+<span class="n">CSTAR</span> <span class="o">=</span> <span class="mi">1661</span>
+<span class="n">CSTAR_GMX</span> <span class="o">=</span> <span class="mf">1.661</span>
+
+<div class="viewcode-block" id="postTreatment"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment">[docs]</a><span class="k">class</span> <span class="nc">postTreatment</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39; the post-treatment of BFEE outputs &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="postTreatment.__init__"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">jobType</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; do post treatment, internally, all the unit should be converted into</span>
+<span class="sd">            the NAMD/Colvars unit</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                temperature (float): temperature of the simulation</span>
+<span class="sd">                unit (string): unit convention used by MD engine, &#39;namd&#39; or &#39;gromacs&#39;</span>
+<span class="sd">                jobType (string): &#39;geometric&#39; or &#39;alchemical&#39; &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;namd&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">=</span> <span class="n">BOLTZMANN</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">CSTAR</span> <span class="o">=</span> <span class="n">CSTAR</span>
+        <span class="k">elif</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;gromacs&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">=</span> <span class="n">BOLTZMANN_GMX</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">CSTAR</span> <span class="o">=</span> <span class="n">CSTAR_GMX</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">*</span> <span class="n">temperature</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="postTreatment._readPMF"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._readPMF">[docs]</a>    <span class="k">def</span> <span class="nf">_readPMF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; read a 1D PMF file</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                filePath (string): the path of the PMF file</span>
+<span class="sd">            Return:</span>
+<span class="sd">                np.array (float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)) &#39;&#39;&#39;</span>
+        
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">filePath</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="postTreatment._geometricRestraintContribution"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._geometricRestraintContribution">[docs]</a>    <span class="k">def</span> <span class="nf">_geometricRestraintContribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmf</span><span class="p">,</span> <span class="n">forceConstant</span><span class="p">,</span> <span class="n">rmsd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unbound</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; calculate the contribution of RMSD and angle restraints</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...))</span>
+<span class="sd">                forceConstant (float): the force constant of the restraint</span>
+<span class="sd">                rmsd (bool): whether the contribution of RMSD is being calculated</span>
+<span class="sd">                unbound (bool): whether unbound-state contribution is being calculated</span>
+<span class="sd">            Return:</span>
+<span class="sd">                float: contribution of the geometric restraint &#39;&#39;&#39;</span>
+
+        <span class="n">width</span> <span class="o">=</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rmsd</span><span class="p">:</span>
+            <span class="c1"># for RMSD, the restraintCenter is zero</span>
+            <span class="n">restraintCenter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># the minimum of pmf</span>
+            <span class="n">restraintCenter</span> <span class="o">=</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+        <span class="c1"># integration</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">numerator</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">denominator</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstant</span> <span class="o">*</span> <span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">restraintCenter</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
+        
+        <span class="n">contribution</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+        
+        <span class="k">if</span> <span class="n">unbound</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">contribution</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">contribution</span></div>
+
+<div class="viewcode-block" id="postTreatment._geometricRestraintContributionBulk"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._geometricRestraintContributionBulk">[docs]</a>    <span class="k">def</span> <span class="nf">_geometricRestraintContributionBulk</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">forceConstantTheta</span><span class="p">,</span> <span class="n">forceConstantPhi</span><span class="p">,</span> <span class="n">forceConstantPsi</span>
+    <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; contribution of rotational restraints in the unbounded state</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                theta (float): restraining center of the theta angle</span>
+<span class="sd">                forceConstantTheta (float): restraining force constant for Theta</span>
+<span class="sd">                forceConstantPhi (float): restraining force constant for Phi</span>
+<span class="sd">                forceConstantPsi (float): restraining force constant for Psi</span>
+<span class="sd">            Return:</span>
+<span class="sd">                float: contribution of the geometric restraint in the unbound state &#39;&#39;&#39;</span>
+
+        <span class="c1"># all the units in radian</span>
+        <span class="n">theta0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="c1"># periodic CV then the u(phi) and u(psi) should be the same in all cases</span>
+        <span class="n">phi0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+        <span class="n">psi0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+
+        <span class="n">forceConstantTheta</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantPhi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantPsi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">contributionTheta</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">contributionPhi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">contributionPsi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># integration</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">contributionTheta</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">1000.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> \
+                 <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstantTheta</span> <span class="o">*</span> <span class="p">((</span><span class="n">theta</span> <span class="o">-</span> <span class="n">theta0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+            <span class="n">phi</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+            <span class="n">contributionPhi</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> \
+                 <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstantPhi</span><span class="o">*</span> <span class="p">((</span><span class="n">phi</span> <span class="o">-</span> <span class="n">phi0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+            <span class="n">psi</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+            <span class="n">contributionPsi</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> \
+                 <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstantPsi</span><span class="o">*</span> <span class="p">((</span><span class="n">psi</span> <span class="o">-</span> <span class="n">psi0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">contributionTheta</span> <span class="o">*</span> <span class="n">contributionPhi</span> <span class="o">*</span> <span class="n">contributionPsi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span></div>
+
+<div class="viewcode-block" id="postTreatment._geometricJacobianCorrection"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._geometricJacobianCorrection">[docs]</a>    <span class="k">def</span> <span class="nf">_geometricJacobianCorrection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmf</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; correct the Jacobian contribution of separation pmf</span>
+<span class="sd">            Input:</span>
+<span class="sd">                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf &#39;&#39;&#39;</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="postTreatment._geometricCalculateSI"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._geometricCalculateSI">[docs]</a>    <span class="k">def</span> <span class="nf">_geometricCalculateSI</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">rStar</span><span class="p">,</span> <span class="n">pmf</span><span class="p">,</span> <span class="n">polarTheta</span><span class="p">,</span> <span class="n">polarPhi</span><span class="p">,</span> <span class="n">forceConstantPolarTheta</span><span class="p">,</span> <span class="n">forceConstantPolarPhi</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; calculation the contribution of S* and I* in the separation simulation</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                rStar (float): r* in integration</span>
+<span class="sd">                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf</span>
+<span class="sd">                polarTheta0 (float): restraining center of polarTheta</span>
+<span class="sd">                polarPhi0 (float): restraining center of polarPhi</span>
+<span class="sd">                forceConstantPolarTheta (float): restraining force constant for polarTheta</span>
+<span class="sd">                forceConstantPolarPhi (float): restraining force constant for polarPhi</span>
+<span class="sd">            Return:</span>
+<span class="sd">                float: contribution of S* and I* in the separation simulation &#39;&#39;&#39;</span>
+
+        <span class="k">assert</span><span class="p">(</span><span class="n">rStar</span> <span class="o">&lt;=</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">polarTheta0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">polarTheta</span><span class="p">)</span>
+        <span class="n">polarPhi0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">polarPhi</span><span class="p">)</span>
+
+        <span class="n">forceConstantPolarTheta</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantPolarPhi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">contributionPolarTheta</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">contributionPolarPhi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># integration</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+            <span class="n">polarTheta</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+            <span class="n">contributionPolarTheta</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">polarTheta</span><span class="p">)</span> <span class="o">*</span> \
+                <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstantPolarTheta</span> <span class="o">*</span> <span class="p">(</span><span class="n">polarTheta</span> <span class="o">-</span> <span class="n">polarTheta0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">polarPhi</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+            <span class="n">contributionPolarPhi</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> \
+                <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">forceConstantPolarPhi</span> <span class="o">*</span> <span class="p">(</span><span class="n">polarPhi</span> <span class="o">-</span> <span class="n">polarPhi0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">S</span> <span class="o">=</span> <span class="n">rStar</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">contributionPolarTheta</span> <span class="o">*</span> <span class="n">contributionPolarPhi</span>
+
+        <span class="c1"># w(r*)</span>
+        <span class="n">wrStar</span> <span class="o">=</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">rStar</span><span class="p">:</span>
+                <span class="n">wrStar</span> <span class="o">=</span> <span class="n">y</span>
+                <span class="k">break</span>
+
+        <span class="c1"># integration</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pmf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pmf</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">I</span> <span class="o">+=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">wrStar</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">rStar</span><span class="p">:</span>
+                <span class="k">break</span>
+        
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span> <span class="o">*</span> <span class="n">I</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">CSTAR</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="postTreatment.geometricBindingFreeEnergy"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment.geometricBindingFreeEnergy">[docs]</a>    <span class="k">def</span> <span class="nf">geometricBindingFreeEnergy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePathes</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; calculate binding free energy for geometric route</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                filePathes (list of strings, 8): pathes of PMF files for step1 - step8</span>
+<span class="sd">                parameters (np.array, floats, 8): (forceConstant1, FC2, FC3, FC4, FC5, FC6, r*, FC8)</span>
+<span class="sd">            Return:</span>
+<span class="sd">                np.array, float, 10: (contributions for step1, 2, 3, 4 ... 8, bulk restraining contribution, free energy) &#39;&#39;&#39;</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filePathes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+
+        <span class="n">pmfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">filePathes</span><span class="p">:</span>
+            <span class="n">pmfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_readPMF</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_geometricJacobianCorrection</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+
+        <span class="n">contributions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricCalculateSI</span><span class="p">(</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">pmfs</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">pmfs</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">1</span><span class="p">])],</span> <span class="n">pmfs</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">1</span><span class="p">])],</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContribution</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricRestraintContributionBulk</span><span class="p">(</span>
+            <span class="n">pmfs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pmfs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">contributions</span><span class="p">[:</span><span class="mi">9</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;namd&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">contributions</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;gromacs&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">contributions</span> <span class="o">/</span> <span class="mf">4.184</span></div>
+
+<div class="viewcode-block" id="postTreatment._alchemicalRestraintContributionBulk"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._alchemicalRestraintContributionBulk">[docs]</a>    <span class="k">def</span> <span class="nf">_alchemicalRestraintContributionBulk</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">eulerTheta</span><span class="p">,</span> <span class="n">polarTheta</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> 
+        <span class="n">forceConstantTheta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">forceConstantPhi</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">forceConstantPsi</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">forceConstanttheta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">forceConstantphi</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">forceConstantR</span><span class="o">=</span><span class="mi">10</span>
+    <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; contribution of (standard concentration corrected) rotational </span>
+<span class="sd">            and orienetational restraints in the unbounded state</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                eulerTheta (float): restraining center of the Euler angle theta</span>
+<span class="sd">                polarTheta (float): restraining center of the polar angle theta</span>
+<span class="sd">                R (float): restraining center of anger R</span>
+<span class="sd">                forceConstantTheta (float): restraining force constant for euler Theta</span>
+<span class="sd">                forceConstantPhi (float): restraining force constant for euler Phi</span>
+<span class="sd">                forceConstantPsi (float): restraining force constant for euler Psi</span>
+<span class="sd">                forceConstanttheta (float): restraining force constant for polar theta</span>
+<span class="sd">                forceConstantphi (float): restraining force constant for polar phi</span>
+<span class="sd">                forceConstantR (float): restraining force constant for distance R</span>
+<span class="sd">            Return:</span>
+<span class="sd">                float: contribution of the geometric restraint in the unbound state &#39;&#39;&#39;</span>
+
+        <span class="c1"># degrees to rad</span>
+        <span class="n">eulerTheta</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">eulerTheta</span> <span class="o">+</span> <span class="mi">90</span><span class="p">)</span>
+        <span class="n">polarTheta</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">polarTheta</span><span class="p">)</span>
+        <span class="n">forceConstantTheta</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantPhi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantPsi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstanttheta</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">forceConstantphi</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">180</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">contribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">CSTAR</span> <span class="o">/</span> <span class="p">((</span><span class="n">R</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">eulerTheta</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">polarTheta</span><span class="p">))</span> <span class="o">*</span> \
+            <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">forceConstantTheta</span> <span class="o">*</span> <span class="n">forceConstantPhi</span> <span class="o">*</span> <span class="n">forceConstantPsi</span> <span class="o">*</span> <span class="n">forceConstanttheta</span> <span class="o">*</span> \
+            <span class="n">forceConstantphi</span> <span class="o">*</span> <span class="n">forceConstantR</span> <span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">BOLTZMANN</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">contribution</span></div>
+
+<div class="viewcode-block" id="postTreatment._alchemicalFepoutFile"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment._alchemicalFepoutFile">[docs]</a>    <span class="k">def</span> <span class="nf">_alchemicalFepoutFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">,</span> <span class="n">fileType</span> <span class="o">=</span> <span class="s1">&#39;fepout&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; parse a fepout/log file and return the total free energy change</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                filePath (string): path of the fepout file</span>
+<span class="sd">                fileType (string): &#39;fepout&#39; (decouping atoms) or &#39;log&#39; (decoupling restraints)</span>
+<span class="sd">            Return:</span>
+<span class="sd">                float: free-energy change &#39;&#39;&#39;</span>
+
+        
+        <span class="n">freeEnergy</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># for TI simulation results of the .log file</span>
+        <span class="n">Lambda</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dA_dLambda</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filePath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fepoutFile</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fepoutFile</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">fileType</span> <span class="o">==</span> <span class="s1">&#39;fepout&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;#Free energy&#39;</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">fileType</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;dA/dLambda&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                <span class="n">splitedLine</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">fileType</span> <span class="o">==</span> <span class="s1">&#39;fepout&#39;</span><span class="p">:</span>
+                    <span class="n">freeEnergy</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">splitedLine</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">fileType</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+                    <span class="n">Lambda</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">splitedLine</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+                    <span class="n">dA_dLambda</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">splitedLine</span><span class="p">[</span><span class="mi">6</span><span class="p">]))</span>
+
+        <span class="c1"># integraion of TI results</span>
+        <span class="k">if</span> <span class="n">fileType</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+            <span class="c1"># backward simulation</span>
+            <span class="k">if</span> <span class="n">Lambda</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">Lambda</span><span class="p">[</span><span class="mi">7</span><span class="p">]:</span>
+                <span class="n">Lambda</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                <span class="n">dA_dLambda</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+            <span class="c1"># step 2</span>
+            <span class="k">if</span> <span class="n">Lambda</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">Lambda</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Lambda</span><span class="p">)):</span>
+                    <span class="n">freeEnergy</span> <span class="o">+=</span> <span class="n">dA_dLambda</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">Lambda</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Lambda</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">7</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># step 4</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Lambda</span><span class="p">)):</span>
+                    <span class="n">freeEnergy</span> <span class="o">+=</span> <span class="n">dA_dLambda</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">Lambda</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Lambda</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">freeEnergy</span></div>
+
+<div class="viewcode-block" id="postTreatment.alchemicalBindingFreeEnergy"><a class="viewcode-back" href="../../index.html#BFEE2.postTreatment.postTreatment.alchemicalBindingFreeEnergy">[docs]</a>    <span class="k">def</span> <span class="nf">alchemicalBindingFreeEnergy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePathes</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; calculate binding free energy for geometric route</span>
+<span class="sd">            Inputs:</span>
+<span class="sd">                filePathes (list of strings, 8): pathes of alchemical output files</span>
+<span class="sd">                                                 (step1-forward, step1-backward, step2-forward ...)</span>
+<span class="sd">                parameters (np.array, floats, 9): (eulerTheta, polarTheta, r, forceConstant1, FC2, FC3, FC4, FC5, FC6)</span>
+<span class="sd">            Return:</span>
+<span class="sd">                np.array, float, 6: (contributions for step1, 2, 3, 4, bulk restraining contribution, free energy)</span>
+<span class="sd">                np.array, float, 6: errors corresponding each contribution &#39;&#39;&#39;</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">9</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filePathes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
+
+        <span class="c1"># get free energies from fep outputs</span>
+        <span class="n">freeEnergies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filePathes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">filePathes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">freeEnergies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alchemicalFepoutFile</span><span class="p">(</span><span class="n">filePathes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;fepout&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">freeEnergies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alchemicalFepoutFile</span><span class="p">(</span><span class="n">filePathes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;log&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># backward file can be empty</span>
+                <span class="n">freeEnergies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">contributions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1.414</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99999</span>
+
+        <span class="k">if</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1.414</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99999</span>
+
+        <span class="k">if</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">-</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1.414</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99999</span>
+
+        <span class="k">if</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">+</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">freeEnergies</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1.414</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contributions</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">freeEnergies</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99999</span>
+
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alchemicalRestraintContributionBulk</span><span class="p">(</span><span class="o">*</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">errors</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">contributions</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">contributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">contributions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">contributions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">contributions</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">contributions</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">errors</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span><span class="n">errors</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">errors</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">errors</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">contributions</span><span class="p">,</span> <span class="n">errors</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Haohao Fu, Haochuan Chen, Wensheng Cai and Chris Chipot.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
