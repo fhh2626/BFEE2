@@ -52,6 +52,12 @@
 
 <span class="kn">from</span> <span class="nn">BFEE2</span> <span class="kn">import</span> <span class="n">templates_gromacs</span>
 
+<span class="c1"># an runtime error</span>
+<span class="c1"># selection corresponding to nothing</span>
+<div class="viewcode-block" id="SelectionError"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.SelectionError">[docs]</a><span class="k">class</span> <span class="nc">SelectionError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">arg</span></div>
+
 <div class="viewcode-block" id="scanGromacsTopologyInclude"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.scanGromacsTopologyInclude">[docs]</a><span class="k">def</span> <span class="nf">scanGromacsTopologyInclude</span><span class="p">(</span><span class="n">gmxTopFile</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    scanGromacsTopologyInclude(gmxTopFile)</span>
@@ -542,6 +548,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saving a new structure file at </span><span class="si">{</span><span class="n">outputFile</span><span class="si">}</span><span class="s1"> with selection (</span><span class="si">{</span><span class="n">selection</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
         <span class="n">selected_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SelectionError</span><span class="p">(</span><span class="s1">&#39;Empty selection!&#39;</span><span class="p">)</span>
         <span class="n">selected_atoms</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">outputFile</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BFEEGromacs.setProteinHeavyAtomsGroup"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.BFEEGromacs.setProteinHeavyAtomsGroup">[docs]</a>    <span class="k">def</span> <span class="nf">setProteinHeavyAtomsGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">):</span>
@@ -552,7 +560,9 @@
 <span class="sd">            MDAnalysis atom selection string</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Setup the atoms group of the protein by selection: </span><span class="si">{</span><span class="n">selection</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">protein</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protein</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protein</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SelectionError</span><span class="p">(</span><span class="s1">&#39;Empty selection!&#39;</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="BFEEGromacs.setLigandHeavyAtomsGroup"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.BFEEGromacs.setLigandHeavyAtomsGroup">[docs]</a>    <span class="k">def</span> <span class="nf">setLigandHeavyAtomsGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -563,7 +573,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Setup the atoms group of the ligand by selection: </span><span class="si">{</span><span class="n">selection</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ligand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ligandOnly</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ligandOnlySystem</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ligand</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SelectionError</span><span class="p">(</span><span class="s1">&#39;Empty selection!&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ligandOnly</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ligandOnlySystem</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ligandOnly</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SelectionError</span><span class="p">(</span><span class="s1">&#39;Empty selection!&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BFEEGromacs.setSolventAtomsGroup"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.BFEEGromacs.setSolventAtomsGroup">[docs]</a>    <span class="k">def</span> <span class="nf">setSolventAtomsGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -573,7 +587,9 @@
 <span class="sd">            MDAnalysis atom selection string</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Setup the atoms group of the solvent molecule by selection: </span><span class="si">{</span><span class="n">selection</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solvent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">select_atoms</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solvent</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SelectionError</span><span class="p">(</span><span class="s1">&#39;Empty selection!&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BFEEGromacs.setTemperature"><a class="viewcode-back" href="../../index.html#BFEE2.BFEEGromacs.BFEEGromacs.setTemperature">[docs]</a>    <span class="k">def</span> <span class="nf">setTemperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newTemperature</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -742,7 +758,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">generateGromacsIndex</span><span class="p">(</span><span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">generate_basename</span><span class="p">,</span> <span class="s1">&#39;colvars.ndx&#39;</span><span class="p">))</span>
         <span class="c1"># generate the colvars configuration</span>
         <span class="n">colvars_inputfile_basename</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">generate_basename</span><span class="p">,</span> <span class="s1">&#39;002_colvars&#39;</span><span class="p">)</span>
-        <span class="n">generateColvars</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">templates_gromacs</span><span class="p">,</span> <span class="s1">&#39;002.mdp.template&#39;</span><span class="p">),</span>
+        <span class="n">generateColvars</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">templates_gromacs</span><span class="p">,</span> <span class="s1">&#39;002.colvars.template&#39;</span><span class="p">),</span>
                         <span class="n">colvars_inputfile_basename</span><span class="p">,</span>
                         <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span>
                         <span class="n">eulerTheta_width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -1360,7 +1376,7 @@
       &copy;2021, Haohao Fu, Haochuan Chen, Wensheng Cai and Chris Chipot.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>
