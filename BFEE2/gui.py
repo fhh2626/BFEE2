@@ -22,7 +22,7 @@ except ImportError:
 
 from BFEE2 import doc
 
-VERSION = 'BFEEstimator v2.1.2'
+VERSION = 'BFEEstimator v2.1.3'
 
 class mainSettings(QWidget):
     """settings in the menubar
