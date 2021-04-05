@@ -49,6 +49,7 @@ class inputGenerator():
         doubleWide = False,
         minBeforeSample = False,
         membraneProtein = False,
+        pinDownPro = True,
         vmdPath = ''
     ):
         """generate all the input files for NAMD alchemical simulation
@@ -70,6 +71,7 @@ class inputGenerator():
                                               Defaults to False.
             membraneProtein (bool, optional): whether simulating a membrane protein.
                                               Defaults to False.
+            pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
             vmdPath (str, optional): path to vmd. Defaults to ''.
         """
 
@@ -98,7 +100,7 @@ class inputGenerator():
             membraneProtein
         )
         self._generateAlchemicalColvarsConfig(
-            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification
+            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro
         )
 
     def generateNAMDGeometricFiles(
@@ -116,6 +118,7 @@ class inputGenerator():
         userProvidedPullingCoor = '',
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
+        pinDownPro = True,
         parallelRuns = 1,
         vmdPath = ''
     ):
@@ -140,6 +143,7 @@ class inputGenerator():
             stratification (list, optional): number of windows for each simulation. 
                                              Defaults to [1,1,1,1,1,1,1,1].
             membraneProtein (bool, optional): whether simulation a membrane protein. Defaults to False.
+            pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
             parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
             vmdPath (str, optional): path to vmd. Defaults to ''.
         """ 
@@ -170,7 +174,7 @@ class inputGenerator():
             path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
         )
         self._generateGeometricColvarsConfig(
-            path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification
+            path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification, pinDownPro
         )
 
         self._duplicateFileFolder(path, parallelRuns)
@@ -746,7 +750,7 @@ class inputGenerator():
             )
 
     def _generateAlchemicalColvarsConfig(
-        self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1]
+        self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1], pinDownPro=True
     ):
         """generate Colvars config fils for geometric route
 
@@ -759,6 +763,7 @@ class inputGenerator():
             selectionRef (str): MDAnalysis-style selection of the reference group for pulling simulation
             stratification (list of int, 4, optional): number of windows for each simulation. 
                                                        Defaults to [1,1,1,1].
+            pinDownPro (bool, optinal): Whether pinning down the protein. Defaults to True.
         """
 
         assert(len(stratification) == 4)
@@ -902,9 +907,10 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('r', 10, distance)
             )
-            colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-            )
+            if pinDownPro:
+                colvarsConfig.write(
+                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                )
 
         # 002_RestraintBound
         with open(f'{path}/BFEE/002_RestraintBound/colvars_forward.in', 'w') as colvarsConfig:
@@ -965,9 +971,10 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], True, 10)
             )
-            colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-            )
+            if pinDownPro:
+                colvarsConfig.write(
+                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                )
         with open(f'{path}/BFEE/002_RestraintBound/colvars_backward.in', 'w') as colvarsConfig:
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
@@ -1026,9 +1033,10 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('r', 0, distance, stratification[1], False, 10)
             )
-            colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-            )
+            if pinDownPro:
+                colvarsConfig.write(
+                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                )
 
         # 003_MoleculeUnbound
         with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
@@ -1502,7 +1510,15 @@ class inputGenerator():
                 )
 
     def _generateGeometricColvarsConfig(
-        self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1,1,1,1,1]
+        self, 
+        path, 
+        topType, 
+        coorType, 
+        selectionPro, 
+        selectionLig, 
+        selectionRef, 
+        stratification=[1,1,1,1,1,1,1,1], 
+        pinDownPro=True
     ):
         """generate Colvars config fils for geometric route
 
@@ -1513,8 +1529,9 @@ class inputGenerator():
             selectionPro (str): MDAnalysis-style selection of the protein
             selectionLig (str): MDAnalysis-style selection of the ligand
             selectionRef (str): MDAnalysis-style selection of the reference group for pulling simulation
-            stratification (list of int, 8): number of windows for each simulation. 
-                                             Defaults to [1,1,1,1,1,1,1,1].
+            stratification (list of int, 8, optional): number of windows for each simulation. 
+                                                       Defaults to [1,1,1,1,1,1,1,1].
+            pinDownPro (bool, optional): Whether pinning down the protein. Defaults to True.
         """    
 
         assert(len(stratification) == 8)
@@ -1553,9 +1570,10 @@ class inputGenerator():
                         'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0
                     )
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 002_Theta
         for i in range(stratification[1]):
@@ -1582,9 +1600,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 003_Phi
         for i in range(stratification[2]):
@@ -1619,9 +1638,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 004_Psi
         for i in range(stratification[3]):
@@ -1664,9 +1684,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 005_polarTheta
         for i in range(stratification[4]):
@@ -1719,9 +1740,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 006_polarPhi
         for i in range(stratification[5]):
@@ -1782,9 +1804,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         # 007_r
         # eq
@@ -1909,9 +1932,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
-                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
+                    )
 
         # 008_RMSDUnbound
         for i in range(stratification[7]):

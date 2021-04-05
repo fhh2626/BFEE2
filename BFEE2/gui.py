@@ -224,6 +224,16 @@ class geometricAdvancedSettings(QWidget):
         self.stratificationLayout.addWidget(self.stratificationRMSDUnboundLineEdit, 1, 7)
 
         self.stratification.setLayout(self.stratificationLayout)
+        
+        # pinning down the protein
+        self.pinDownPro = QGroupBox('Pinning down the protein')
+        self.pinDownProLayout = QHBoxLayout()
+        
+        self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
+        self.pinDownProCheckbox.setChecked(True)
+
+        self.pinDownProLayout.addWidget(self.pinDownProCheckbox)
+        self.pinDownPro.setLayout(self.pinDownProLayout)
 
         # membrane protein
         self.memPro = QGroupBox('Membrane protein')
@@ -257,6 +267,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
+        self.mainLayout.addWidget(self.pinDownPro)
         self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -341,6 +352,16 @@ class alchemicalAdvancedSettings(QWidget):
         self.minBeforeSampleCheckbox.setChecked(False)
         self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
         self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
+        
+        # pinning down the protein
+        self.pinDownPro = QGroupBox('Pinning down the protein')
+        self.pinDownProLayout = QHBoxLayout()
+        
+        self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
+        self.pinDownProCheckbox.setChecked(True)
+
+        self.pinDownProLayout.addWidget(self.pinDownProCheckbox)
+        self.pinDownPro.setLayout(self.pinDownProLayout)
 
         # membrane protein
         self.memPro = QGroupBox('Membrane protein')
@@ -361,6 +382,7 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
+        self.mainLayout.addWidget(self.pinDownPro)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.memPro)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -1417,6 +1439,7 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
                             self.geometricAdvancedSettings.memProCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text()
                         )
@@ -1484,6 +1507,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:
