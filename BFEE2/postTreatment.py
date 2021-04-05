@@ -12,15 +12,18 @@ CSTAR = 1661
 CSTAR_GMX = 1.661
 
 class postTreatment:
-    ''' the post-treatment of BFEE outputs '''
+    """the post-treatment of BFEE outputs
+    """
 
     def __init__(self, temperature, unit, jobType):
-        ''' do post treatment, internally, all the unit should be converted into
-            the NAMD/Colvars unit
-            Inputs:
-                temperature (float): temperature of the simulation
-                unit (string): unit convention used by MD engine, 'namd' or 'gromacs'
-                jobType (string): 'geometric' or 'alchemical' '''
+        """do post treatment, internally, all the unit should be converted into
+           the NAMD/Colvars unit
+
+        Args:
+            temperature (float): temperature of the simulation
+            unit (str): unit convention used by MD engine, 'namd' or 'gromacs'
+            jobType (str): 'geometric' or 'alchemical'
+        """
 
         if unit == 'namd':
             self.BOLTZMANN = BOLTZMANN
@@ -34,11 +37,14 @@ class postTreatment:
         self.temperature = float(temperature)
 
     def _readPMF(self, filePath):
-        ''' read a 1D PMF file
-            Inputs:
-                filePath (string): the path of the PMF file
-            Return:
-                np.array (float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)) '''
+        """read a 1D PMF file
+
+        Args:
+            filePath (str): the path of the PMF file
+
+        Returns:
+            np.array (float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...))
+        """
         
         data = np.loadtxt(filePath)
         x = data[:,0]
@@ -47,14 +53,17 @@ class postTreatment:
         return np.array((x, y))
 
     def _geometricRestraintContribution(self, pmf, forceConstant, rmsd=False, unbound=False):
-        ''' calculate the contribution of RMSD and angle restraints
-            Inputs:
-                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...))
-                forceConstant (float): the force constant of the restraint
-                rmsd (bool): whether the contribution of RMSD is being calculated
-                unbound (bool): whether unbound-state contribution is being calculated
-            Return:
-                float: contribution of the geometric restraint '''
+        """calculate the contribution of RMSD and angle restraints
+
+        Args:
+            pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...))
+            forceConstant (float): the force constant of the restraint
+            rmsd (bool): whether the contribution of RMSD is being calculated. Defaults to False.
+            unbound (bool, optional): whether unbound-state contribution is being calculated. Defaults to False.
+
+        Returns:
+            float: contribution of the geometric restraint
+        """
 
         width = pmf[0][1] - pmf[0][0]
 
@@ -82,14 +91,17 @@ class postTreatment:
     def _geometricRestraintContributionBulk(
         self, theta, forceConstantTheta, forceConstantPhi, forceConstantPsi
     ):
-        ''' contribution of rotational restraints in the unbounded state
-            Inputs:
-                theta (float): restraining center of the theta angle
-                forceConstantTheta (float): restraining force constant for Theta
-                forceConstantPhi (float): restraining force constant for Phi
-                forceConstantPsi (float): restraining force constant for Psi
-            Return:
-                float: contribution of the geometric restraint in the unbound state '''
+        """contribution of rotational restraints in the unbounded state
+
+        Args:
+            theta (float): restraining center of the theta angle
+            forceConstantTheta (float): restraining force constant for Theta
+            forceConstantPhi (float): restraining force constant for Phi
+            forceConstantPsi (float): restraining force constant for Psi
+
+        Returns:
+            float: contribution of the geometric restraint in the unbound state
+        """
 
         # all the units in radian
         theta0 = math.radians(theta)
@@ -121,9 +133,11 @@ class postTreatment:
         return -math.log((contributionTheta * contributionPhi * contributionPsi) / 8 / math.pi**2) / self.beta
 
     def _geometricJacobianCorrection(self, pmf):
-        ''' correct the Jacobian contribution of separation pmf
-            Input:
-                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf '''
+        """correct the Jacobian contribution of separation pmf
+
+        Args:
+            pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf
+        """
         
         for i in range(len(pmf[0])):
             pmf[1][i] += 2 * self.BOLTZMANN * self.temperature * math.log(pmf[0][i])
@@ -132,16 +146,19 @@ class postTreatment:
 
     def _geometricCalculateSI(
         self, rStar, pmf, polarTheta, polarPhi, forceConstantPolarTheta, forceConstantPolarPhi):
-        ''' calculation the contribution of S* and I* in the separation simulation
-            Inputs:
-                rStar (float): r* in integration
-                pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf
-                polarTheta0 (float): restraining center of polarTheta
-                polarPhi0 (float): restraining center of polarPhi
-                forceConstantPolarTheta (float): restraining force constant for polarTheta
-                forceConstantPolarPhi (float): restraining force constant for polarPhi
-            Return:
-                float: contribution of S* and I* in the separation simulation '''
+        """calculation the contribution of S* and I* in the separation simulation
+
+        Args:
+            rStar (float): r* in integration
+            pmf (np.array, float, 2*N): ((x0,x1,x2, ...), (y0, y1, y2, ...)), separation pmf
+            polarTheta0 (float): restraining center of polarTheta
+            polarPhi0 (float): restraining center of polarPhi
+            forceConstantPolarTheta (float): restraining force constant for polarTheta
+            forceConstantPolarPhi (float): restraining force constant for polarPhi
+
+        Returns:
+            float: contribution of S* and I* in the separation simulation
+        """
 
         assert(rStar <= pmf[0][-1])
 
@@ -183,12 +200,15 @@ class postTreatment:
         return -1 / self.beta * math.log(S * I / self.CSTAR)
 
     def geometricBindingFreeEnergy(self, filePathes, parameters):
-        ''' calculate binding free energy for geometric route
-            Inputs:
-                filePathes (list of strings, 8): pathes of PMF files for step1 - step8
-                parameters (np.array, floats, 8): (forceConstant1, FC2, FC3, FC4, FC5, FC6, r*, FC8)
-            Return:
-                np.array, float, 10: (contributions for step1, 2, 3, 4 ... 8, bulk restraining contribution, free energy) '''
+        """calculate binding free energy for geometric route
+
+        Args:
+            filePathes (list of strings, 8): pathes of PMF files for step1 - step8
+            parameters (np.array, floats, 8): (forceConstant1, FC2, FC3, FC4, FC5, FC6, r*, FC8)
+
+        Returns:
+            np.array, float, 10: (contributions for step1, 2, 3, 4 ... 8, bulk restraining contribution, free energy)
+        """
 
         assert len(parameters) == 8
         assert len(filePathes) == 8
@@ -226,20 +246,23 @@ class postTreatment:
         forceConstantTheta=0.1, forceConstantPhi=0.1, forceConstantPsi=0.1,
         forceConstanttheta=0.1, forceConstantphi=0.1, forceConstantR=10
     ):
-        ''' contribution of (standard concentration corrected) rotational 
-            and orienetational restraints in the unbounded state
-            Inputs:
-                eulerTheta (float): restraining center of the Euler angle theta
-                polarTheta (float): restraining center of the polar angle theta
-                R (float): restraining center of anger R
-                forceConstantTheta (float): restraining force constant for euler Theta
-                forceConstantPhi (float): restraining force constant for euler Phi
-                forceConstantPsi (float): restraining force constant for euler Psi
-                forceConstanttheta (float): restraining force constant for polar theta
-                forceConstantphi (float): restraining force constant for polar phi
-                forceConstantR (float): restraining force constant for distance R
-            Return:
-                float: contribution of the geometric restraint in the unbound state '''
+        """contribution of (standard concentration corrected) rotational 
+           and orienetational restraints in the unbounded state
+
+        Args:
+            eulerTheta (float): restraining center of the Euler angle theta
+            polarTheta (float): restraining center of the polar angle theta
+            R (float): restraining center of anger R
+            forceConstantTheta (float): restraining force constant for euler Theta. Defaults to 0.1.
+            forceConstantPhi (float, optional): restraining force constant for euler Phi. Defaults to 0.1.
+            forceConstantPsi (float, optional): restraining force constant for euler Psi. Defaults to 0.1.
+            forceConstanttheta (float, optional): restraining force constant for polar theta. Defaults to 0.1.
+            forceConstantphi (float, optional): restraining force constant for polar phi. Defaults to 0.1.
+            forceConstantR (int, optional): restraining force constant for distance R. Defaults to 10.
+
+        Returns:
+            float: contribution of the geometric restraint in the unbound state
+        """
 
         # degrees to rad
         eulerTheta = math.radians(eulerTheta + 90)
@@ -258,13 +281,15 @@ class postTreatment:
         return contribution
 
     def _alchemicalFepoutFile(self, filePath, fileType = 'fepout'):
-        ''' parse a fepout/log file and return the total free energy change
-            Inputs:
-                filePath (string): path of the fepout file
-                fileType (string): 'fepout' (decouping atoms) or 'log' (decoupling restraints)
-            Return:
-                float: free-energy change '''
+        """parse a fepout/log file and return the total free energy change
 
+        Args:
+            filePath (str): path of the fepout file
+            fileType (str): 'fepout' (decouping atoms) or 'log' (decoupling restraints). Defaults to 'fepout'.
+
+        Returns:
+            float: free-energy change
+        """
         
         freeEnergy = 0
 
@@ -306,14 +331,18 @@ class postTreatment:
         return freeEnergy
 
     def alchemicalBindingFreeEnergy(self, filePathes, parameters):
-        ''' calculate binding free energy for geometric route
-            Inputs:
-                filePathes (list of strings, 8): pathes of alchemical output files
-                                                 (step1-forward, step1-backward, step2-forward ...)
-                parameters (np.array, floats, 9): (eulerTheta, polarTheta, r, forceConstant1, FC2, FC3, FC4, FC5, FC6)
-            Return:
+        """calculate binding free energy for geometric route
+
+        Args:
+            filePathes (list of strings, 8): pathes of alchemical output files
+                                             (step1-forward, step1-backward, step2-forward ...)
+            parameters (np.array, floats, 9): (eulerTheta, polarTheta, r, forceConstant1, FC2, FC3, FC4, FC5, FC6)
+
+        Returns:
+            tuple:
                 np.array, float, 6: (contributions for step1, 2, 3, 4, bulk restraining contribution, free energy)
-                np.array, float, 6: errors corresponding each contribution '''
+                np.array, float, 6: errors corresponding each contribution
+        """
 
         assert len(parameters) == 9
         assert len(filePathes) == 8

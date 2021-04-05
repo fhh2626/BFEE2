@@ -12,16 +12,19 @@ class SelectionError(RuntimeError):
         self.args = arg
 
 class fileParser:
-    ''' topology and coordinate parser,
-        this class implements basic method for the topology and
-        coordinate file, used by BFEE '''
+    """topology and coordinate parser,
+       this class implements basic method for the topology and
+       coordinate file, used by BFEE
+    """    
 
     def __init__(self, topFile, coorFile=''):
-        ''' initialize fileParser, on coorFile is not provided, then 
-            topFile is considered as a top-coor file, such as mol2
-            inputs: 
-                topFile (string): path of the topology (psf, parm) file
-                coorFile (string): path of the coordinate (pdb, rst) file '''
+        """initialize fileParser, on coorFile is not provided, then 
+           topFile is considered as a top-coor file, such as mol2
+
+        Args:
+            topFile (str): path of the topology (psf, parm) file
+            coorFile (str): path of the coordinate (pdb, rst) file. Defaults to ''.
+        """        
 
         coorPostfix = os.path.splitext(coorFile)[-1]
         if coorPostfix == '.rst7' or coorPostfix == '.rst' or coorPostfix == '.inpcrd':
@@ -41,15 +44,20 @@ class fileParser:
         self.topPath = topFile
 
     def saveFile(self, selection, targetPath, targetType, saveTop=False, topPath=''):
-        ''' save the coordinate file to the target type 
-            this function cannot really 'save' the topology file,
-            it can only copy the original topology to the target path
-            inputs:
-                selection (string): selection of atoms to save
-                targetPath (string): path for the coor file to be saved
-                targetType (string): type of the coor file (pdb, xyz)
-                saveTop (bool): whether the topology file will be saved
-                topPath (string): path for the topology file to be saved '''
+        """save the coordinate file to the target type 
+           this function cannot really 'save' the topology file,
+           it can only copy the original topology to the target path
+
+        Args:
+            selection (str): selection of atoms to save
+            targetPath (str): path for the coor file to be saved
+            targetType (str): type of the coor file (pdb, xyz)
+            saveTop (bool): whether the topology file will be saved. Defaults to False.
+            topPath (str, optional): path for the topology file to be saved. Defaults to ''.
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+        """ 
 
         atoms = self.uObject.select_atoms(selection)
 
@@ -62,11 +70,17 @@ class fileParser:
             shutil.copyfile(self.topPath, topPath)
 
     def saveNDX(self, selections, names, targetPath, nonHydrogen=True):
-        ''' save an ndx file, including the selections
-            inputs:
-                selections (list of strings): the selections for the ndx file
-                names (list of strings): the name in ndx of each selection
-                targetPath (string): path for the file to be saved'''
+        """save an ndx file, including the selections
+
+        Args:
+            selections (list of str): the selections for the ndx file
+            names (list of str): the name in ndx of each selection
+            targetPath (str): path for the file to be saved
+            nonHydrogen (bool, optional): whether only non-H atoms are considered. Defaults to True.
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+        """
 
         assert(len(selections) == len(names))
 
@@ -84,12 +98,19 @@ class fileParser:
             atoms.write(targetPath, 'ndx', name=name, mode='a')
 
     def getResid(self, selection):
-        ''' return a string listing the resid of the selection
-            may be used to generate amber masks
-            Inputs:
-                selection (string): MDAnalysis selection
-            Return:
-                string: a list of resid, e.g. (4,5,6,7,8,9,10) '''
+        """return a string listing the resid of the selection
+           may be used to generate amber masks
+
+        Args:
+            selection (str): MDAnalysis selection
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+
+        Returns:
+            str: a list of resid, e.g. (4,5,6,7,8,9,10)
+        """        
+
         atoms = self.uObject.select_atoms(selection)
         
         if len(atoms) == 0:
@@ -98,11 +119,17 @@ class fileParser:
         return ','.join([str(num+1) for num in atoms.residues.ix])
 
     def measureMinmax(self, selection):
-        ''' mimic VMD measure minmax
-            inputs:
-                selection (string): selection of atoms
-            return:
-                np.array (2*3, float): ((minX, minY, minZ), (maxX, maxY, maxZ)) '''
+        """mimic VMD measure minmax
+
+        Args:
+            selection (str): selection of atoms
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+            
+        Returns:
+            np.array (2*3, float): ((minX, minY, minZ), (maxX, maxY, maxZ))
+        """        
 
         atoms = self.uObject.select_atoms(selection)
         
@@ -121,11 +148,17 @@ class fileParser:
         return np.array([[min_x, min_y, min_z],[max_x, max_y, max_z]])
 
     def measureCenter(self, selection):
-        ''' mimic vmd measure center
-            inputs:
-                selection (string): selection of atoms
-            return:
-                np.array (3, float): (x, y, z) '''
+        """mimic vmd measure center
+
+        Args:
+            selection (str): selection of atoms
+            
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+
+        Returns:
+            np.array (3, float): (x, y, z)
+        """        
 
         atoms = self.uObject.select_atoms(selection)
         
@@ -141,23 +174,27 @@ class fileParser:
         return np.array([center_x, center_y, center_z])
 
     def measureDistance(self, selection1, selection2):
-        ''' measure the distance between the center of mass
-            of two atom groups
-            Inputs:
-                selection1 (string): selection of atom group 1
-                selection2 (string): selection of atom group 2
-            Return:
-                float: distance between the center of mass of the 
-                       two atom groups '''
+        """measure the distance between the center of mass
+           of two atom groups
+
+        Args:
+            selection1 (str): selection of atom group 1
+            selection2 (str): selection of atom group 2
+
+        Returns:
+            float: distance between the center of mass of the two atom groups
+        """        
 
         center1 = self.measureCenter(selection1)
         center2 = self.measureCenter(selection2)
         return round(np.linalg.norm(center2 - center1), 1)
 
     def measurePBC(self):
-        ''' measure periodic boundary condition of the file 
-            return:
-                np.array (2*3, float): ((lengthX, lengthY, lengthZ), (centerX, centerY, centerZ)) '''
+        """measure periodic boundary condition of the file
+
+        Returns:
+            np.array (2*3, float): ((lengthX, lengthY, lengthZ), (centerX, centerY, centerZ))
+        """        
 
         minmaxArray = self.measureMinmax('all')
         vec = minmaxArray[1] - minmaxArray[0]
@@ -166,12 +203,15 @@ class fileParser:
         return np.array((vec, center))
 
     def measurePolarAngles(self, selectionPro, selectionLig):
-        ''' calculation the polar angles based on selectionPro and selectionLig
-            inputs:
-                selectionPro (string): selection of the host molecule
-                selectionLig (string): selection of the ligand molecule
-            return:
-                np.array (2, float): (theta, phi) in degrees'''
+        """calculation the polar angles based on selectionPro and selectionLig
+
+        Args:
+            selectionPro (str): selection of the host molecule
+            selectionLig (str): selection of the ligand molecule
+
+        Returns:
+            np.array (2, float): (theta, phi) in degrees
+        """        
         
         vector = self.measureCenter(selectionLig) - self.measureCenter(selectionPro)
         vector /= np.linalg.norm(vector)
@@ -179,10 +219,15 @@ class fileParser:
         return (float(int(math.degrees(np.arccos(-vector[1])))), float(int(math.degrees(np.arctan2(vector[2], vector[0])))))
 
     def setBeta(self, selection, beta):
-        ''' set beta for the selected atoms
-            Inputs:
-                selection (string): selection of atoms to change beta
-                beta (int): beta value '''
+        """set beta for the selected atoms
+
+        Args:
+            selection (str): selection of atoms to change beta
+            beta (int): beta value
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+        """        
 
         atoms = self.uObject.select_atoms(selection)
         
@@ -192,18 +237,22 @@ class fileParser:
         atoms.tempfactors = beta
 
     def moveSystem(self, moveVector):
-        ''' move all the atoms in the loaded file
-            inputs:
-                moveVector (np.array, 3, float): the vector of moving '''
+        """move all the atoms in the loaded file
+
+        Args:
+            moveVector (np.array, 3, float): the vector of moving
+        """        
 
         allAtoms = self.uObject.select_atoms('all')
         transformations.translate(moveVector)(allAtoms)
 
     def rotateSystem(self, axis, degrees):
-        ''' rotate all the atoms in the loaded file
-            inputs:
-                axis (string): 'x' or 'y' or 'z'
-                degrees (float): degrees to move by '''
+        """rotate all the atoms in the loaded file
+
+        Args:
+            axis (str): 'x' or 'y' or 'z'
+            degrees (float): degrees to move by
+        """        
 
         assert(axis == 'x' or axis == 'y' or axis == 'z')
 
@@ -217,8 +266,9 @@ class fileParser:
         transformations.rotate.rotateby(degrees, axisVector, ag=allAtoms)(allAtoms)
 
     def centerSystem(self):
-        ''' move all the atoms in the loaded file, 
-            such that the center of system be (0,0,0) '''
+        """move all the atoms in the loaded file, 
+           such that the center of system be (0,0,0)
+        """
 
         vec = self.measurePBC()[1] * -1.0
         self.moveSystem(vec)

@@ -26,10 +26,12 @@ class FileTypeUnknownError(RuntimeError):
         self.args = arg
 
 class inputGenerator():
-    ''' generate all the inputs and define corresponding slots '''
+    """generate all the inputs and define corresponding slots
+    """
 
     def __init__(self):
-        ''' simply initialize the configTemplate objects '''
+        """simply initialize the configTemplate objects
+        """
 
         self.cTemplate = configTemplate.configTemplate()
 
@@ -49,21 +51,27 @@ class inputGenerator():
         membraneProtein = False,
         vmdPath = ''
     ):
-        ''' generate all the input files for NAMD alchemical simulation
-            Inputs:
-                path (string): the directory for generation of all the files
-                topFile (string): the path of the topology (psf, parm) file
-                coorFile (string): the path of the coordinate (pdb, rst7) file
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): list of CHARMM force field files
-                temperature (float): temperature of the simulation
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                stratification (list of int, 8): number of windows for each simulation
-                doubleWide (bool): whether double-wide simulations are carried out
-                minBeforeSample (bool): minimization before sampling in each FEP window
-                membraneProtein (bool): whether simulating a membrane protein
-                vmdPath (string): path to vmd '''
+        """generate all the input files for NAMD alchemical simulation
+
+        Args:
+            path (str): the directory for generation of all the files
+            topFile (str): the path of the topology (psf, parm) file
+            coorFile (str): the path of the coordinate (pdb, rst7) file
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): list of CHARMM force field files
+            temperature (float): temperature of the simulation
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            stratification (list of int, 8, optional): number of windows for each simulation.
+                                                       Defaults to [1,1,1,1].
+            doubleWide (bool, optional): whether double-wide simulations are carried out. 
+                                         Defaults to False.
+            minBeforeSample (bool, optional): minimization before sampling in each FEP window.
+                                              Defaults to False.
+            membraneProtein (bool, optional): whether simulating a membrane protein.
+                                              Defaults to False.
+            vmdPath (str, optional): path to vmd. Defaults to ''.
+        """
 
         assert(len(stratification) == 4)
         assert(forceFieldType == 'charmm' or forceFieldType == 'amber')
@@ -111,24 +119,30 @@ class inputGenerator():
         parallelRuns = 1,
         vmdPath = ''
     ):
-        ''' generate all the input files for NAMD Geometric simulation
-            Inputs:
-                path (string): the directory for generation of all the files
-                topFile (string): the path of the topology (psf, parm) file
-                coorFile (string): the path of the coordinate (pdb, rst7) file
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): list of CHARMM force field files
-                temperature (float): temperature of the simulation
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                selectionRef (string): MDAnalysis-style selection of the reference group for pulling simulation,
-                                       by default, this is the protein
-                userProvidedPullingTop (string): user-provided large solvation box for pulling simulation
-                userProvidedPullingCoor (string): user-provided large solvation box for pulling simulation
-                stratification (list of int, 8): number of windows for each simulation
-                membraneProtein (bool): whether simulation a membrane protein
-                parallelRuns (int): generate files for duplicate runs
-                vmdPath (string): path to vmd '''
+        """generate all the input files for NAMD geometric simulation
+
+        Args:
+            path (str): the directory for generation of all the files
+            topFile (str): the path of the topology (psf, parm) file
+            coorFile (str): the path of the coordinate (pdb, rst7) file
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): list of CHARMM force field files
+            temperature (float): temperature of the simulation
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            selectionRef (str, optional): MDAnalysis-style selection of the reference group for pulling simulation,
+                                          by default, this is the protein. 
+                                          Defaults to ''.
+            userProvidedPullingTop (str, optional): user-provided large solvation box for pulling simulation.
+                                                    Defaults to ''.
+            userProvidedPullingCoor (str, optional): user-provided large solvation box for pulling simulation. 
+                                                     Defaults to ''.
+            stratification (list, optional): number of windows for each simulation. 
+                                             Defaults to [1,1,1,1,1,1,1,1].
+            membraneProtein (bool, optional): whether simulation a membrane protein. Defaults to False.
+            parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
+            vmdPath (str, optional): path to vmd. Defaults to ''.
+        """ 
 
         assert(len(stratification) == 8)
         assert(forceFieldType == 'charmm' or forceFieldType == 'amber')
@@ -173,18 +187,24 @@ class inputGenerator():
         selectionSol='resname TIP3* or resname SPC*',
         temperature=300.0
     ):
-        ''' generate all the input files for Gromacs Geometric simulation
-            This function is based on BFEEGromacs.py
-            contributed by Haochuan Chen (yjcoshc_at_mail.nankai.edu.cn)
-            Inputs:
-                path (string): the directory for generation of all the files
-                topFile (string): the path of the topology (top) file
-                pdbFile (string): the path of the coordinate (pdb) file
-                ligandOnlyTopFile (string): the path of the ligand-only topology (top) file
-                ligandOnlyPdbFile (string): the path of the ligand-only coordinate (pdb) file
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                selectionSol (string): MDAnalysis-style selection of the solvent '''
+        """generate all the input files for Gromacs Geometric simulation
+           This function is based on BFEEGromacs.py
+           contributed by Haochuan Chen (yjcoshc_at_mail.nankai.edu.cn)
+        Args:
+            path (str): the directory for generation of all the files
+            topFile (str): the path of the topology (top) file
+            pdbFile (str): the path of the coordinate (pdb) file
+            ligandOnlyTopFile (str): the path of the ligand-only topology (top) file
+            ligandOnlyPdbFile (str): the path of the ligand-only coordinate (pdb) file
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            selectionSol (str, optional): MDAnalysis-style selection of the solvent. 
+                                          Defaults to 'resname TIP3* or resname SPC*'.
+            temperature (float, optional): Temperature of the simulation. Defaults to 300.0.
+
+        Raises:
+            DirectoryExistError: when {path}/BFEE exists
+        """        
         
         # if the folder already exists, raise an error
         if os.path.exists(f'{path}/BFEE'):
@@ -218,12 +238,21 @@ class inputGenerator():
 
 
     def _determineFileType(self, topFile, coorFile):
-        ''' determine the file type of topology and coordinate files
-            Inputs:
-                topFile (string): the path of the topology (psf, parm) file
-                coorFile (string): the path of the coordinate (pdb, rst7) file
-            Return:
-                tuple of string, 2: (topType, coorType), e.g., (psf, pdb) '''
+        """determine the file type of topology and coordinate files
+
+        Args:
+            topFile (str): the path of the topology (psf, parm) file
+            coorFile (str): the path of the coordinate (pdb, rst7) file
+
+        Raises:
+            FileTypeUnknownError: if the postfix of topFile is not 
+                                  psf, parm, prm7, parm7, prmtop
+                                  or the postfix of coorFile is not
+                                  pdb, coor, rst7, rst, inpcrd
+
+        Returns:
+            tuple of str: (topType, coorType), e.g., (psf, pdb)
+        """
 
         topPostfix = os.path.splitext(topFile)[-1]
         coorPostfix = os.path.splitext(coorFile)[-1]
@@ -249,10 +278,15 @@ class inputGenerator():
         return topType, coorType
 
     def _makeDirectories(self, path, jobType='geometric'):
-        ''' make directories for BFEE calculation
-            Inputs:
-                path (string): the path for putting BFEE input files into
-                jobType (string): geometric or alchemical '''
+        """make directories for BFEE calculation
+
+        Args:
+            path (str): the path for putting BFEE input files into
+            jobType (str, optional): geometric or alchemical. Defaults to 'geometric'.
+
+        Raises:
+            DirectoryExistError: if {path}/BFEE exists
+        """        
 
         # if the folder already exists, raise an error
         if os.path.exists(f'{path}/BFEE'):
@@ -307,23 +341,27 @@ class inputGenerator():
         membraneProtein = False,
         vmdPath = ''
     ):
-        ''' copy original and generate necessary topology/structure files
-            Inputs:
-                path (string): the directory for generation of all the files
-                topFile (string): the path of the topology (psf, parm) file
-                topType (string): the type (psf, parm) of the topology file
-                coorFile (string): the path of the coordinate (pdb, rst7) file
-                coorType (string): the type (pdb, rst) of the coordinate file
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): list of CHARMM force field files
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                selectionRef (string): MDAnalysis-style selection of the reference group for pulling simulation
-                userProvidedPullingTop (string): user-provided large solvation box for pulling simulation
-                userProvidedPullingCoor (string): user-provided large solvation box for pulling simulation
-                jobType (string): 'geometric' or 'alchemical'
-                membraneProtein (bool): whether simulating a membrane protein
-                vmdPath (string): path to vmd, space is forbidden '''
+        """copy original and generate necessary topology/structure files
+
+        Args:
+            path (str): the directory for generation of all the files
+            topFile (str): the path of the topology (psf, parm) file
+            topType (str): the type (psf, parm) of the topology file
+            coorFile (str): the path of the coordinate (pdb, rst7) file
+            coorType (str): the type (pdb, rst) of the coordinate file
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): list of CHARMM force field files
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            selectionRef (str): MDAnalysis-style selection of the reference group for pulling simulation
+            userProvidedPullingTop (str, optional): user-provided large solvation box for pulling simulation. 
+                                                    Defaults to ''.
+            userProvidedPullingCoor (str, optional): user-provided large solvation box for pulling simulation. 
+                                                     Defaults to ''.
+            jobType (str, optional): 'geometric' or 'alchemical'. Defaults to 'geometric'.
+            membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
+            vmdPath (str, optional): path to vmd, space is forbidden. Defaults to ''.
+        """
         
         # copy force fields
         if forceFieldType == 'charmm':
@@ -544,16 +582,22 @@ class inputGenerator():
         minBeforeSample = False,
         membraneProtein = False
     ):
-        ''' generate NAMD config fils for the alchemical route
-            Inputs:
-                path (string): the directory for generation of all the files
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): list of CHARMM force field files
-                temperature (float): temperature of the simulation
-                stratification (list of int, 4): number of windows for each simulation
-                doubleWide (bool): whether double-wide simulations are carried out
-                minBeforeSample (bool): minimization before sampling in each FEP window
-                membraneProtein (bool): whether simulating a membrane protein  '''
+        """generate NAMD config fils for the alchemical route
+
+        Args:
+            path (str): the directory for generation of all the files
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFields (list of str): list of CHARMM force field files
+            temperature (float): temperature of the simulation
+            stratification (list of int, 4, optional): number of windows for each simulation. 
+                                                       Defaults to [1,1,1,1].
+            doubleWide (bool, optional): whether double-wide simulations are carried out. 
+                                         Defaults to False.
+            minBeforeSample (bool, optional): minimization before sampling in each FEP window. 
+                                              Defaults to False.
+            membraneProtein (bool, optional): whether simulating a membrane protein. 
+                                              Defaults to False.
+        """
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -704,15 +748,18 @@ class inputGenerator():
     def _generateAlchemicalColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1]
     ):
-        ''' generate Colvars config fils for geometric route
-            Inputs:
-                path (string): the directory for generation of all the files
-                topType (string): the type (psf, parm) of the topology file
-                coorType (string): the type (pdb, rst) of the topology file
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                selectionRef (string): MDAnalysis-style selection of the reference group for pulling simulation
-                stratification (list of int, 4): number of windows for each simulation ''' 
+        """generate Colvars config fils for geometric route
+
+        Args:
+            path (str): the directory for generation of all the files
+            topType (str): the type (psf, parm) of the topology file
+            coorType (str): the type (pdb, rst) of the topology file
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            selectionRef (str): MDAnalysis-style selection of the reference group for pulling simulation
+            stratification (list of int, 4, optional): number of windows for each simulation. 
+                                                       Defaults to [1,1,1,1].
+        """
 
         assert(len(stratification) == 4)
 
@@ -1026,14 +1073,17 @@ class inputGenerator():
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
     ):
-        ''' generate NAMD config fils for the geometric route
-            Inputs:
-                path (string): the directory for generation of all the files
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): list of CHARMM force field files
-                temperature (float): temperature of the simulation
-                stratification (list of int, 8): number of windows for each simulation
-                membraneProtein (bool): whether simulating a membrane protein  '''
+        """generate NAMD config fils for the geometric route
+
+        Args:
+            path (str): the directory for generation of all the files
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): list of CHARMM force field files
+            temperature (float): temperature of the simulation
+            stratification (list of int, 8): number of windows for each simulation. 
+                                             Defaults to [1,1,1,1,1,1,1,1].
+            membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
+        """
 
         if forceFieldType == 'charmm':
             topType = 'psf'
@@ -1454,15 +1504,18 @@ class inputGenerator():
     def _generateGeometricColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1,1,1,1,1]
     ):
-        ''' generate Colvars config fils for geometric route
-            Inputs:
-                path (string): the directory for generation of all the files
-                topType (string): the type (psf, parm) of the topology file
-                coorType (string): the type (pdb, rst) of the topology file
-                selectionPro (string): MDAnalysis-style selection of the protein
-                selectionLig (string): MDAnalysis-style selection of the ligand
-                selectionRef (string): MDAnalysis-style selection of the reference group for pulling simulation
-                stratification (list of int, 8): number of windows for each simulation ''' 
+        """generate Colvars config fils for geometric route
+
+        Args:
+            path (str): the directory for generation of all the files
+            topType (str): the type (psf, parm) of the topology file
+            coorType (str): the type (pdb, rst) of the topology file
+            selectionPro (str): MDAnalysis-style selection of the protein
+            selectionLig (str): MDAnalysis-style selection of the ligand
+            selectionRef (str): MDAnalysis-style selection of the reference group for pulling simulation
+            stratification (list of int, 8): number of windows for each simulation. 
+                                             Defaults to [1,1,1,1,1,1,1,1].
+        """    
 
         assert(len(stratification) == 8)
 
@@ -1880,11 +1933,16 @@ class inputGenerator():
                     )
                 )
 
-    def _duplicateFileFolder(self,path, number):
-        ''' duplicate the ./BFEE folder
-            Inputs:
-                path (string): the directory for generation of all the files
-                number (int): the number of copies '''
+    def _duplicateFileFolder(self, path, number):
+        """duplicate the ./BFEE folder
+
+        Args:
+            path (string): the directory for generation of all the files
+            number (int): the number of copies
+
+        Raises:
+            DirectoryExistError: if {path}/BFEE_{i} exists
+        """        
         for i in range(number - 1):
             if os.path.exists(f'{path}/BFEE_{i}'):
                 raise DirectoryExistError('Directory exists')

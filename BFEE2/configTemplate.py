@@ -33,31 +33,35 @@ class configTemplate:
                             fepMinBeforeSample = False,
                             membraneProtein = False
                             ):
-        ''' the namd config file template
-            Inputs:
-                forceFieldType (string): 'charmm' or 'amber'
-                forceFieldFiles (list of strings): name of charmm force field files
-                topFile (string): name of the topology file (psf, parm) 
-                coorFile (string): name of the coordinate file (pdb, rst)
-                NAMDRestartCoor (string): name of namd binary restart coor file (if restart from a previous simulation)
-                NAMDRestartVel (string): name of namd binary restart vel file
-                NAMDRestartXsc (string): name of namd restart xsc file
-                PBCCondition (np.array, 2*3): PBC vector, ((lengthX, lengthY, lengthZ),(centerX, centerY, centerZ))
-                outputPrefix (string): prefix of output file
-                temperature (float): temperature of the simulation
-                numSteps (int): number of steps of the simulation
-                cvFile (string): name of Colvars file
-                cvDefinitionFile (string): name of a TCL file defining new CVs
-                CVRestartFile (string): name of Colvars restart file
-                fepFile (string): name of fep file, indicating which atoms will be generated/removed (if run alchemical simulation)
-                fepWindowNum (int): number of fep windows
-                fepForward (bool): whether this is a forward fep simulation
-                fepDouble (bool): whether this is a double-wide fep simulation
-                fepMinBeforeSample (bool): whether do minimization before sampling in each FEP window
-                membraneProtein (bool): whether simulating a membrame protein
-            Return:
-                string: a NAMD config string if succeed, and empty string otherwise
-            '''
+        """the namd config file template
+
+        Args:
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): name of charmm force field files
+            topFile (str): name of the topology file (psf, parm) 
+            coorFile (str): name of the coordinate file (pdb, rst)
+            NAMDRestartCoor (str): name of namd binary restart coor file (if restart from a previous simulation)
+            NAMDRestartVel (str): name of namd binary restart vel file
+            NAMDRestartXsc (str): name of namd restart xsc file
+            PBCCondition (np.array, 2*3): PBC vector, ((lengthX, lengthY, lengthZ),(centerX, centerY, centerZ))
+            outputPrefix (str): prefix of output file
+            temperature (float): temperature of the simulation
+            numSteps (int): number of steps of the simulation
+            cvFile (str): name of Colvars file. Defaults to ''.
+            cvDefinitionFile (str, optional): name of a TCL file defining new CVs. Defaults to ''.
+            CVRestartFile (str, optional): name of Colvars restart file. Defaults to ''.
+            fepFile (str, optional): name of fep file, indicating which atoms will be generated/removed 
+                                     (if run alchemical simulation). Defaults to ''.
+            fepWindowNum (int, optional): number of fep windows. Defaults to 20.
+            fepForward (bool, optional): whether this is a forward fep simulation. Defaults to True.
+            fepDoubleWide (bool, optional): whether this is a double-wide fep simulation. Defaults to False.
+            fepMinBeforeSample (bool, optional): whether do minimization before sampling in each FEP window.
+                                                 Defaults to False.
+            membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
+            
+        Returns:
+            str: a NAMD config string if succeed, and empty string otherwise
+        """
 
         assert(forceFieldType == 'charmm' or forceFieldType == 'amber')
 
@@ -241,14 +245,17 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
 
 
     def cvRMSDTemplate(self, setBoundary, lowerBoundary, upperBoundary, refFile):
-        ''' RMSD CV template
-            Inputs:
-                setBoundary (bool): whether set boundary (for free-energy calculation)
-                lowerBoundary (float): lower boundary of free-energy calculaton
-                upperboundary (float): upper boundary of free-energy calculation
-                refFile (string): path to the reference file
-            Return:
-                string: string of RMSD definition '''
+        """RMSD CV template
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy calculation
+            refFile (str): path to the reference file
+        
+        Returns:
+            str: string of RMSD definition
+        """
 
         string = f'\
 colvar {{                                    \n\
@@ -275,15 +282,18 @@ colvar {{                                    \n\
         return string
 
     def cvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
-        ''' Euler angle template 
-            Inputs:
-                setBoundary (bool): whether set boundary (for free-energy calculation)
-                lowerBoundary (float): lower boundary of free-energy calculaton
-                upperboundary (float): upper boundary of free-energy calculation
-                angle (string): 'eulerTheta', 'eulerPhi' of 'eulerPsi'
-                refFile (string): path to the reference file
-            Return:
-                string: string of Euler angle definition '''
+        """Euler angle template
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy calculation
+            angle (str): 'eulerTheta', 'eulerPhi' of 'eulerPsi'
+            refFile (str): path to the reference file
+            
+        Returns:
+            string: string of Euler angle definition
+        """
 
         assert(angle == 'eulerTheta' or angle == 'eulerPhi' or angle == 'eulerPsi')
         
@@ -331,15 +341,18 @@ colvar {{                              \n\
         return string
 
     def cvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
-        ''' Polar angle template 
-            Inputs:
-                setBoundary (bool): whether set boundary (for free-energy calculation)
-                lowerBoundary (float): lower boundary of free-energy calculaton
-                upperboundary (float): upper boundary of free-energy calculation
-                angle (string): 'polarTheta' or 'polarPhi'
-                refFile (string): path to the reference file
-            Return:
-                string: string of polar angle definition '''
+        """Polar angle template
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy calculation
+            angle (str): 'polarTheta' or 'polarPhi'
+            refFile (str): path to the reference file
+            
+        Return:
+            str: string of polar angle definition
+        """
 
         assert(angle == 'polarTheta' or angle == 'polarPhi')
         
@@ -394,13 +407,16 @@ colvar {{                                   \n\
         return string
 
     def cvRTemplate(self, setBoundary, lowerBoundary, upperBoundary):
-        ''' r distance template
-            Inputs:
-                setBoundary (bool): whether set boundary (for free-energy calculation)
-                lowerBoundary (float): lower boundary of free-energy calculaton
-                upperboundary (float): upper boundary of free-energy calculation
-            Return:
-                string: string of distance r definition '''
+        """r distance template
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy 
+        
+        Returns:
+            str: string of distance r definition
+        """
         
         string = f'\
 colvar {{                            \n\
@@ -430,11 +446,15 @@ colvar {{                            \n\
         return string
 
     def cvHeadTemplate(self, indexFile):
-        ''' return the head of colvars file
-            Inputs:
-                indexFile (string): name of ndx file
-            Return:
-                string: head of colvars file '''
+        """return the head of colvars file
+
+        Args:
+            indexFile (str): name of ndx file
+
+        Returns:
+            str: head of colvars file
+        """
+        
         return f'\
 colvarsTrajFrequency      500              \n\
 colvarsRestartFrequency   50000            \n\
@@ -459,16 +479,21 @@ harmonicWalls {{                           \n\
         return string
 
     def cvHarmonicTemplate(self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant = 0):
-        ''' template for harmonic restraint bias
-            Inputs:
-                cv (string): name of the colvars
-                constant (float): force constant of the restraint
-                center (float): center of the restraint
-                tiWindows (int): number of windows of the TI simulation (if runs a TI simulation)
-                tiForward (bool): whether the TI simulation is forward (if runs a TI simulation)
-                targetForceConstant (int): target force constant of the restraint in TI simulation (if runs a TI simulation)
-            Return:
-                string: string of the harmonic restraint definition '''
+        """[summary]
+
+        Args:
+            cv (str): name of the colvars
+            constant (float): force constant of the restraint
+            center (float): center of the restraint
+            tiWindows (int): number of windows of the TI simulation (if runs a TI simulation). Defaults to 0.
+            tiForward (bool, optional): whether the TI simulation is forward (if runs a TI simulation). Defaults to True.
+            targetForceConstant (int, optional): targeted force constant of the restraint in TI simulation (if runs a TI simulation).
+                                                 Defaults to 0.
+        
+        Returns:
+            str: string of the harmonic restraint definition
+        """        
+
         string = f'\
 harmonic {{                          \n\
     colvars         {cv}             \n\
@@ -516,12 +541,16 @@ metadynamics {{                   \n\
         return string
 
     def cvProteinTemplate(self, centerCoor, refFile):
-        ''' the template of restraining the protein
-            Inputs:
-                centerCoor (np.array, 3): (x,y,z), center of the protein 
-                refFile (string): path of the reference file
-            Return:
-                string: string of the restraining the protein '''
+        """the template of restraining the protein
+
+        Args:
+            centerCoor (np.array, 3): (x,y,z), center of the protein 
+            refFile (str): path of the reference file
+        
+        Return:
+            str: string of the restraining the protein
+        """
+        
         string = f'\
 colvar {{                         \n\
   name translation                \n\

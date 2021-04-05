@@ -25,9 +25,10 @@ from BFEE2 import doc
 VERSION = 'BFEEstimator v2.1.2'
 
 class mainSettings(QWidget):
-    ''' settings in the menubar
-        set pathes of third-party softwares (VMD, gmx and tleap) '''
-
+    """settings in the menubar
+       set pathes of third-party softwares (VMD, gmx and tleap)
+    """
+    
     def __init__(self):
         super().__init__()
         self.config_dir = user_config_dir('BFEE2', 'chinfo')
@@ -43,7 +44,8 @@ class mainSettings(QWidget):
         #self.show()
 
     def _initUI(self):
-        ''' settings GUI '''
+        """settings GUI
+        """
 
         self.mainLayout = QVBoxLayout()
 
@@ -95,14 +97,16 @@ class mainSettings(QWidget):
         self.setLayout(self.mainLayout)
 
     def _initSingalsSlots(self):
-        ''' initialize singals and slots '''
+        """initialize singals and slots
+        """
         self.vmdButton.clicked.connect(commonSlots.openFileDialog('exe', self.vmdLineEdit))
         #self.gromacsButton.clicked.connect(commonSlots.openFileDialog('exe', self.gromacsLineEdit))
         #self.tleapButton.clicked.connect(commonSlots.openFileDialog('exe', self.tleapLineEdit))
         self.settingsOKButton.clicked.connect(self._OKSlot())
 
     def _readConfig(self):
-        ''' read the config saving paths for third-party softwares '''
+        """read the config saving paths for third-party softwares
+        """
         if not os.path.exists(f'{self.config_dir}/3rdSoft.ini'):
             return
 
@@ -115,7 +119,8 @@ class mainSettings(QWidget):
             #self.tleapLineEdit.setText(line.strip())
 
     def _writeConfig(self):
-        ''' write the config saving paths for third-party softwares '''
+        """write the config saving paths for third-party softwares
+        """
 
         with open(f'{self.config_dir}/3rdSoft.ini', 'w') as cFile:
             cFile.write(self.vmdLineEdit.text() + '\n')
@@ -123,16 +128,18 @@ class mainSettings(QWidget):
             #cFile.write(self.tleapLineEdit.text() + '\n')
 
     def _OKSlot(self):
-        ''' the slot corresponding the OK button '''
+        """the slot corresponding the OK button
+        """
         def f(): 
             self._writeConfig()
             self.close()
         return f
 
 class geometricAdvancedSettings(QWidget):
-    ''' advanced settings for the geometric route
-        set pulling direction, non-standard solvent
-        and number of stratification windows '''
+    """advanced settings for the geometric route
+       set pulling direction, non-standard solvent
+       and number of stratification windows
+    """
 
     def __init__(self):
         super().__init__()
@@ -143,7 +150,8 @@ class geometricAdvancedSettings(QWidget):
         #self.show()
 
     def _initUI(self):
-        ''' initialize UI for the geometric advanced settings '''
+        """initialize UI for the geometric advanced settings
+        """
 
         self.mainLayout = QVBoxLayout()
 
@@ -255,7 +263,8 @@ class geometricAdvancedSettings(QWidget):
         self.setLayout(self.mainLayout)
 
     def _initSingalsSlots(self):
-        ''' initialize (connect) signial and slots for geometric advanced settings '''
+        """initialize (connect) signial and slots for geometric advanced settings
+        """
 
         self.nonStandardSolventPsfButton.clicked.connect(
             commonSlots.openFileDialog(
@@ -273,8 +282,9 @@ class geometricAdvancedSettings(QWidget):
 
 
 class alchemicalAdvancedSettings(QWidget):
-    ''' advanced settings for the alchemical route
-        set the number of stratification windows '''
+    """advanced settings for the alchemical route
+       set the number of stratification windows
+    """
 
     def __init__(self):
         super().__init__()
@@ -285,7 +295,8 @@ class alchemicalAdvancedSettings(QWidget):
         #self.show()
 
     def _initUI(self):
-        ''' initialize UI for the alchemical advanced settings '''
+        """initialize UI for the alchemical advanced settings
+        """
 
         self.mainLayout = QVBoxLayout()
 
@@ -356,15 +367,17 @@ class alchemicalAdvancedSettings(QWidget):
         self.setLayout(self.mainLayout)
 
     def _initSingalsSlots(self):
-        ''' initialize (connect) signals and slots for the alchemical advanced settings '''
+        """initialize (connect) signals and slots for the alchemical advanced settings
+        """
 
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
 
 class mainUI(QMainWindow):
-    ''' the main window UI 
-        include the preTreatment, postTreatment and QuickPlot tab
-        the preTreatment tab include NAMD and Gromacs tab
-        the postTreatment tab include geometric and alchemical tab '''
+    """the main window UI 
+       include the preTreatment, postTreatment and QuickPlot tab
+       the preTreatment tab include NAMD and Gromacs tab
+       the postTreatment tab include geometric and alchemical tab
+    """
     
     def __init__(self):
         super().__init__()
@@ -423,7 +436,8 @@ class mainUI(QMainWindow):
 
         
     def _initMainUI(self):
-        ''' initialize main window '''
+        """initialize main window
+        """
         
         # status bar
         #self.statusBar()
@@ -472,7 +486,8 @@ class mainUI(QMainWindow):
         self.setCentralWidget(self.mainWidgit)
 
     def _initPreTreatmentTab(self):
-        ''' initialize pre-treatment tab '''
+        """initialize pre-treatment tab
+        """
 
         self.preTreatmentTab = QWidget()
         
@@ -540,7 +555,8 @@ class mainUI(QMainWindow):
         self.preTreatmentTab.setLayout(self.preTreatmentMainLayout)
 
     def _initNAMDTab(self):
-        ''' initialize NAMD Tab in pre-treatment Tab '''
+        """initialize NAMD Tab in pre-treatment Tab
+        """
 
         self.NAMDTab = QWidget()
         self.NAMDTabMainLayout = QVBoxLayout()
@@ -602,7 +618,8 @@ class mainUI(QMainWindow):
         self.NAMDTab.setLayout(self.NAMDTabMainLayout)
 
     def _initGromacsTab(self):
-        ''' initialize GMX Tab in pre-treatment Tab '''
+        """initialize GMX Tab in pre-treatment Tab
+        """
 
         self.GromacsTab = QWidget()
         self.GromacsTabMainLayout = QVBoxLayout()
@@ -659,7 +676,8 @@ class mainUI(QMainWindow):
         self.GromacsTab.setLayout(self.GromacsTabMainLayout)
 
     def _initPostTreatmentTab(self):
-        ''' initialize pre-treatment tab '''
+        """initialize pre-treatment tab
+        """
 
         self.postTreatmentTab = QWidget()
 
@@ -679,7 +697,8 @@ class mainUI(QMainWindow):
         self.postTreatmentTab.setLayout(self.postTreatmentMainLayout)
 
     def _initGeometricTab(self):
-        ''' initialize geometric tab of post-treatment '''
+        """initialize geometric tab of post-treatment
+        """
 
         self.geometricTab = QWidget()
         self.geometricTabLayout = QVBoxLayout()
@@ -833,7 +852,8 @@ class mainUI(QMainWindow):
         self.geometricTab.setLayout(self.geometricTabLayout)
 
     def _initAlchemicalTab(self):
-        ''' initialize alchemical tab of post-treatment '''
+        """initialize alchemical tab of post-treatment
+        """
 
         self.alchemicalTab = QWidget()
         self.alchemicalTabLayout = QVBoxLayout()
@@ -983,7 +1003,8 @@ class mainUI(QMainWindow):
         self.alchemicalTab.setLayout(self.alchemicalTabLayout)
 
     def _initQuickPlotTab(self):
-        ''' initialize quick-plot tab '''
+        """initialize quick-plot tab
+        """
 
         self.quickPlot = QWidget()
         self.quickPlotLayout = QVBoxLayout()
@@ -1051,14 +1072,16 @@ class mainUI(QMainWindow):
     # slots are defined below
     # otherwise they are defined in slots.py
     def _mainSettings(self):
-        ''' call main settings '''
+        """call main settings
+        """
         def f():
             self.mainSettings.show()
         return f
 
     def _advancedSettings(self, comboBox):
-        ''' call advanced settings in pre-treatment
-            the returned function is depended on the comboBox(strategy type) '''
+        """call advanced settings in pre-treatment
+           the returned function is depended on the comboBox(strategy type)
+        """
 
         def f():
             if comboBox.currentText() == 'Geometric':
@@ -1069,7 +1092,8 @@ class mainUI(QMainWindow):
         return f
 
     def _changeFFButtonState(self):
-        ''' enable/disable the add and clear button of force field section '''
+        """enable/disable the add and clear button of force field section
+        """
 
         if self.forceFieldCombobox.currentText() == 'CHARMM':
             self.forceFieldAddButton.setEnabled(True)
@@ -1081,19 +1105,25 @@ class mainUI(QMainWindow):
             self.forceFieldFilesBox.setEnabled(False)
 
     def _openDocFile(self):
-        ''' open Documentation file '''
+        """open Documentation file
+        """
 
         with pkg_resources.path(doc, 'Doc.pdf') as docFile:
             webbrowser.open(docFile)
 
     def _openPythonAPIFile(self):
-        ''' open Python API Documentation file '''
+        """open Python API Documentation file
+        """
 
         with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
             webbrowser.open(pythonAPIFile)
 
     def _showAboutBox(self):
-        ''' the about message box '''
+        """the about message box
+        
+        Returns:
+            function obj: a slot function that shows that about message box
+        """
 
         def f():
             QMessageBox.about(
@@ -1174,11 +1204,13 @@ Standard Binding Free Energy:\n\
         )
 
     def _showAlchemicalResults(self, unit):
-        ''' calculate binding from the alchemical route,
+        """calculate binding from the alchemical route,
             parameters in the alchemical tab will be read.
             Show a QMessageBox for the result
-            Inputs:
-                unit (string): 'namd' or 'gromacs' '''
+
+        Args:
+            unit (str): 'namd' or 'gromacs'
+        """
         
         pTreat = postTreatment.postTreatment(
             float(self.temperatureLineEdit.text()), unit, 'geometric')
@@ -1251,7 +1283,11 @@ Standard Binding Free Energy:\n\
         )
 
     def _showFinalResults(self):
-        ''' calculate binding free energy and show the final results '''
+        """calculate binding free energy and show the final results
+        
+        Returns:
+            function obj: a slot function that calculates binding free energy and show the final results
+        """
 
         def f():
             if self.postPMFTypeBox.currentText() == 'NAMD':
@@ -1272,7 +1308,12 @@ Standard Binding Free Energy:\n\
         return f
 
     def _generateInputFiles(self):
-        ''' generate input files for binding free energy simulation '''
+        """generate input files for binding free energy simulation
+        
+        Returens:
+            function obj: a slot function that generates input files for binding free energy simulation
+        """
+        
         def f():
             path = QFileDialog.getExistingDirectory(None, 'Select a directory')
             # cancel
@@ -1559,7 +1600,12 @@ Unknown error!'
         return f 
 
     def _mergePMFs(self):
-        ''' merge a series of overlapped pmfs '''
+        """merge a series of overlapped pmfs
+        
+        Returns:
+            function obj: a slot function that merges a series of overlapped pmfs
+        """
+        
         def f():
             if self.mergePmfBox.count() == 0:
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
@@ -1577,7 +1623,12 @@ Unknown error!'
         return f
 
     def _plotPMFs(self):
-        ''' plot a series of overlapped pmfs '''
+        """plot a series of overlapped pmfs
+        
+        Returns:
+            function obj: a slot function that plots a series of overlapped pmfs
+        """
+        
         def f():
             if self.plotPmfBox.count() == 0:
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
@@ -1592,7 +1643,12 @@ Unknown error!'
         return f
 
     def _plotRMSDConvergence(self):
-        ''' plot time evolution of PMF rmsd with respect to zero array '''
+        """plot time evolution of PMF rmsd with respect to zero array
+        
+        Returns:
+            function obj: a slot function that plots time evolution of PMF rmsd with respect to zero array
+        """
+        
         def f():
             path = self.plotPmfConvergenceBox.text()
             if not os.path.exists(path):
@@ -1605,7 +1661,8 @@ Unknown error!'
 
 
     def _initSingalsSlots(self):
-        ''' initialize (connect) singals and slots '''
+        """initialize (connect) singals and slots
+        """
 
         # pre-treatment tab
         self.selectStrategyAdvancedButton.clicked.connect(self._advancedSettings(self.selectStrategyCombobox))

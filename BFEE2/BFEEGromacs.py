@@ -26,26 +26,23 @@ class SelectionError(RuntimeError):
         self.args = arg
 
 def scanGromacsTopologyInclude(gmxTopFile, logger=None):
-    """
-    scanGromacsTopologyInclude(gmxTopFile)
+    """scan the files included by a gromacs topology file
 
-    scan the files included by a gromacs topology file
+    Args:
+        gmxTopFile (str): filename of the gromacs topology file
+        logger (Logging.logger, optional): logger for debugging. Defaults to None.
 
-    Parameters
-    ----------
-    gmxTopFile : str
-        filename of the gromacs topology file
+    Returns:
+        tuple: 
+            tuple:
+                a (list, list) tuple.
+                The first list contains the absolute pathnames of included files.
+                The second list contains the strings in the quotation marks for handling
+                relative paths.
+            Logging.logger:
+                logger for debugging
+    """    
 
-    Returns
-    -------
-    tuple
-        a (list, list) tuple.
-        The first list contains the absolute pathnames of included files.
-        The second list contains the strings in the quotation marks for handling
-        relative paths.
-    logger : Logging.logger
-        logger for debugging
-    """
     topology_dirpath = os.path.dirname(os.path.abspath(gmxTopFile))
     include_files = []
     include_strings = []
@@ -74,24 +71,18 @@ def scanGromacsTopologyInclude(gmxTopFile, logger=None):
 
 
 def measure_minmax(atom_positions):
-    """
-    measure_minmax(atom_positions)
+    """mimic the VMD command "measure minmax"
 
-    mimic the VMD command "measure minmax"
+    Args:
+        atom_positions (numpy.array): a numpy array containing the XYZ coordinates of N atoms. The shape 
+                                      should be (N, 3).
 
-    Parameters
-    ----------
-    atom_positions : numpy.array
-        a numpy array containing the XYZ coordinates of N atoms. The shape 
-        should be (N, 3).
+    Returns:
+        Numpy.array: a shape of (2, 3) array, where the first subarray has the minimum 
+                     values in XYZ directions, and the second subarray has the maximum
+                     values in XYZ directions.
+    """    
 
-    Returns
-    -------
-    Numpy.array
-        a shape of (2, 3) array, where the first subarray has the minimum 
-        values in XYZ directions, and the second subarray has the maximum
-        values in XYZ directions.
-    """
     xyz_array = np.transpose(atom_positions)
     min_x = np.min(xyz_array[0])
     max_x = np.max(xyz_array[0])
@@ -103,22 +94,15 @@ def measure_minmax(atom_positions):
 
 
 def measure_center(atom_positions):
-    """
-    measure_center(atom_positions)
+    """mimic the VMD command "measure center"
 
-    mimic the VMD command "measure center"
+    Args:
+        atom_positions (numpy.array): a numpy array containing the XYZ coordinates of N atoms. The shape should be (N, 3).
 
-    Parameters
-    ----------
-    atom_positions : numpy.array
-        a numpy array containing the XYZ coordinates of N atoms. The shape 
-        should be (N, 3).
+    Returns:
+        Numpy.array: a shape of (3,) array contains the geometric center
+    """    
 
-    Returns
-    -------
-    Numpy.array
-        a shape of (3,) array contains the geometric center
-    """
     xyz_array = np.transpose(atom_positions)
     center_x = np.average(xyz_array[0])
     center_y = np.average(xyz_array[1])
@@ -127,22 +111,15 @@ def measure_center(atom_positions):
 
 
 def get_cell(atom_positions):
-    """
-    get_cell(atom_positions)
+    """mimic the VMD script get_cell.tcl to calculate the cell units
 
-    mimic the VMD script get_cell.tcl to calculate the cell units
+    Args:
+        atom_positions (numpy.array): a numpy array containing the XYZ coordinates of N atoms. The shape should be (N, 3).
 
-    Parameters
-    ----------
-    atom_positions : numpy.array
-        a numpy array containing the XYZ coordinates of N atoms. The shape 
-        should be (N, 3).
+    Returns:
+         Numpy.array: a shape of (3,3) array contains periodic cell information
+    """    
 
-    Returns
-    -------
-    Numpy.array
-        a shape of (3,3) array contains periodic cell information
-    """
     minmax_array = measure_minmax(atom_positions)
     vec = minmax_array[1] - minmax_array[0]
     cell_basis_vector1 = np.array([vec[0], 0, 0])
@@ -154,28 +131,18 @@ def get_cell(atom_positions):
 
 
 def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None):
-    """
-    generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None)
+    """generate a GROMACS mdp file from a template
 
-    generate a GROMACS mdp file from a template
+    Args:
+        MDPTemplate (str): template MDP file with $dt and $nsteps
+        outputPrefix (str): prefix (no .mdp extension) of the output MDP file
+        timeStep (float): timestep for running the simulation
+        numSteps (int): number of steps for running the simulation
+        temperature (float): simulation temperature
+        pressure (float): simulation pressure
+        logger (Logging.logger, optional): logger for debugging. Defaults to None.
+    """    
 
-    Parameters
-    ----------
-    MDPTemplate : str
-        template MDP file with $dt and $nsteps
-    outputPrefix : str
-        prefix (no .mdp extension) of the output MDP file
-    timeStep : float
-        timestep for running the simulation
-    numSteps : int
-        number of steps for running the simulation
-    temperature : float
-        simulation temperature
-    pressure : float
-        simulation pressure
-    logger : Logging.logger
-        logger for debugging
-    """
     #if logger is None:
         #print(f'generateMDP: Generating {outputPrefix + ".mdp"} from template {MDPTemplate}...')
         #print(f'Timestep (dt): {timeStep}')
@@ -198,20 +165,15 @@ def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pres
         foutput.write(MDP_content)
 
 def generateColvars(colvarsTemplate, outputPrefix, logger=None, **kwargs):
-    """
-    generateColvars(colvarsTemplate, outputPrefix, logger=None, **kwargs)
+    """generate a Colvars configuration file from a template suffixed with '.dat'
 
-    generate a Colvars configuration file from a template suffixed with '.dat'
+    Args:
+        colvarsTemplate (str): path to a colvars template
+        outputPrefix (str): (no .dat extension) of the output Colvars configuration file
+        logger (Logging.logger, optional): logger for debugging. Defaults to None.
+        **kwargs: additional arguments passed to safe_substitute()
+    """    
 
-    Parameters
-    ----------
-    outputPrefix : str
-        prefix (no .dat extension) of the output Colvars configuration file
-    logger : Logging.logger
-        logger for debugging
-    **kwargs
-        additional arguments passed to safe_substitute()
-    """
     #if logger is None:
         #print(f'generateColvars: Generating {outputPrefix + ".dat"} from template {colvarsTemplate}...')
         #print('Colvars parameters:')
@@ -230,20 +192,15 @@ def generateColvars(colvarsTemplate, outputPrefix, logger=None, **kwargs):
         foutput.write(content)
 
 def generateShellScript(shellTemplate, outputPrefix, logger=None, **kwargs):
-    """
-    generateShellScript(shellTemplate, outputPrefix, logger=None, **kwargs)
+    """generate a shell script from a template
 
-    generate a shell script from a template
+    Args:
+        shellTemplate (str): path to a shell template
+        outputPrefix (str): prefix (no .sh extension) of the output Colvars configuration file
+        logger (Logging.logger, optional): logger for debugging. Defaults to None.
+        **kwargs: additional arguments passed to safe_substitute()
+    """    
 
-    Parameters
-    ----------
-    outputPrefix : str
-        prefix (no .sh extension) of the output Colvars configuration file
-    logger : Logging.logger
-        logger for debugging
-    **kwargs
-        additional arguments passed to safe_substitute()
-    """
     #if logger is None:
         #print(f'generateShellScript: Generating {outputPrefix + ".sh"} from template {shellTemplate}...')
     #else:
@@ -256,23 +213,16 @@ def generateShellScript(shellTemplate, outputPrefix, logger=None, **kwargs):
 
 
 def mearsurePolarAngles(proteinCenter, ligandCenter):
-    """
-    mearsurePolarAngles(proteinCenter, ligandCenter)
+    """measure the polar angles between the protein and the ligand
 
-    measure the polar angles between the protein and the ligand
-    
-    Parameters
-    ----------
-    proteinCenter : numpy.array
-        center-of-mass of the protein
-    ligandCenter : numpy.array
-        center-of-mass of the ligand
+    Args:
+        proteinCenter (numpy.array): center-of-mass of the protein
+        ligandCenter (numpy.array): center-of-mass of the ligand
 
-    Returns
-    -------
-    tuple
-        a (theta, phi) tuple where theta and phi are measured in degrees
-    """
+    Returns:
+        tuple: a (theta, phi) tuple where theta and phi are measured in degrees
+    """    
+
     vector = ligandCenter - proteinCenter
     vector /= np.linalg.norm(vector)
     return (np.degrees(np.arccos(vector[2])),
@@ -280,94 +230,93 @@ def mearsurePolarAngles(proteinCenter, ligandCenter):
 
 
 class BFEEGromacs:
-    """
-    The entry class for handling gromacs inputs in BFEE.
+    """The entry class for handling gromacs inputs in BFEE.
     
     Attributes
     ----------
-    logger : logging.Logger
+    logger (logging.Logger):
         logger object for debugging
-    handler : logging.StreamHandler
+    handler (logging.StreamHandler):
         output stream of the debug output
-    baseDirectory : str
+    baseDirectory (str):
         output directory of the generated files
-    structureFile : str
+    structureFile (str):
         filename of the structure file (either in PDB or GRO format) of the
         protein-ligand binding complex
-    topologyFile : str
+    topologyFile (str):
         filename of the GROMACS topology file of the protein-ligand binding
         complex
-    ligandOnlyStructureFile : str
+    ligandOnlyStructureFile (str):
         filename of the structure file (either in PDB or GRO format) of the
         ligand-only system
-    system : MDAnalysis.core.universe
+    system (MDAnalysis.core.universe):
         MDAnalysis universe of the protein-ligand binding system
-    ligandOnlySystem : MDAnalysis.core.universe
+    ligandOnlySystem (MDAnalysis.core.universe)
         MDAnalysis universe of the ligand-only system
-    basenames : str
+    basenames (str):
         subdirectory names of all eight steps
-    ligand : MDAnalysis.core.groups.AtomGroup
+    ligand (MDAnalysis.core.groups.AtomGroup):
         selected HEAVY ATOMS of the ligand in the protein-ligand binding
         complex. This attribute does not exist until the call of
         setLigandHeavyAtomsGroup.
-    ligandOnly : MDAnalysis.core.groups.AtomGroup
+    ligandOnly (MDAnalysis.core.groups.AtomGroup):
         selected HEAVY ATOMS of the ligand in the ligand-only system.
         This attribute does not exist until the call of setLigandHeavyAtomsGroup.
-    protein : MDAnalysis.core.groups.AtomGroup
+    protein (MDAnalysis.core.groups.AtomGroup):
         selected HEAVY ATOMS of the protein in the protein-ligand binding
         complex. This attribute does not exist until the call of
         setProteinHeavyAtomsGroup.
-    solvent : MDAnalysis.core.groups.AtomGroup
+    solvent (MDAnalysis.core.groups.AtomGroup):
         selected atoms of the solvents in the protein-ligand binding complex.
         This attribute does not exist until the call of setSolventAtomsGroup.
-    temperature : float
+    temperature (float):
         the temperature of simulations (default : 300.0)
-
-    Methods
-    -------
-    __init__(structureFile, topologyFile, ligandOnlyStructureFile,
+        
+    Methods:
+        __init__(structureFile, topologyFile, ligandOnlyStructureFile,
              ligandOnlyTopologyFile, baseDirectory=None)
-        constructor of the class
-    saveStructure(outputFile, atomSelection)
-        a helper method for selecting a group of atoms and save it
-    setProteinHeavyAtomsGroup(selection)
-        select the heavy atoms of the protein
-    setLigandHeavyAtomsGroup(selection)
-        select the heavy atoms of the ligand in both the protein-ligand complex
-        and the ligand-only systems
-    setSolventAtomsGroup(selection)
-        select the solvent atoms
-    setTemperature(float)
-        set the temperature
-    generateGromacsIndex(outputFile)
-        generate a GROMACS index file for atom selection in Colvars
-    generate000()
-        generate files for running an equilibrium simulation
-    generate001()
-        generate files for determining the PMF along the RMSD of the ligand  
-        with respect to its bound state
-    generate002()
-        generate files for determining the PMF along the pitch (theta) angle of
-        the ligand
-    generate003()
-        generate files for determining the PMF along the roll (phi) angle of
-        the ligand
-    generate004()
-        generate files for determining the PMF along the yaw (psi) angle of
-        the ligand
-    generate005()
-        generate files for determining the PMF along the polar theta angle of
-        the ligand relative to the protein
-    generate006()
-        generate files for determining the PMF along the polar phi angle of
-        the ligand relative to the protein
-    generate007()
-        generate files for determining the PMF along the distance between the
-        the ligand and the protein
-    generate008()
-        generate files for determining the PMF along the RMSD of the ligand  
-        with respect to its unbound state
-    """
+            constructor of the class
+        saveStructure(outputFile, atomSelection)
+            a helper method for selecting a group of atoms and save it
+        setProteinHeavyAtomsGroup(selection)
+            select the heavy atoms of the protein
+        setLigandHeavyAtomsGroup(selection)
+            select the heavy atoms of the ligand in both the protein-ligand complex
+            and the ligand-only systems
+        setSolventAtomsGroup(selection)
+            select the solvent atoms
+        setTemperature(float)
+            set the temperature
+        generateGromacsIndex(outputFile)
+            generate a GROMACS index file for atom selection in Colvars
+        generate000()
+            generate files for running an equilibrium simulation
+        generate001()
+            generate files for determining the PMF along the RMSD of the ligand  
+            with respect to its bound state
+        generate002()
+            generate files for determining the PMF along the pitch (theta) angle of
+            the ligand
+        generate003()
+            generate files for determining the PMF along the roll (phi) angle of
+            the ligand
+        generate004()
+            generate files for determining the PMF along the yaw (psi) angle of
+            the ligand
+        generate005()
+            generate files for determining the PMF along the polar theta angle of
+            the ligand relative to the protein
+        generate006()
+            generate files for determining the PMF along the polar phi angle of
+            the ligand relative to the protein
+        generate007()
+            generate files for determining the PMF along the distance between the
+            the ligand and the protein
+        generate008()
+            generate files for determining the PMF along the RMSD of the ligand  
+            with respect to its unbound state
+    """    
+
     def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None):
         # setup the logger
         self.logger = logging.getLogger()
@@ -506,13 +455,14 @@ class BFEEGromacs:
 
     def saveStructure(self, outputFile, selection='all'):
         """
-        Parameters
-        ----------
-        outputFile : str
-            filename of the output file
-        selection : str
-            MDAnalysis atom selection string
-        """
+        Args:
+            outputFile (str): filename of the output file
+            selection (str, optional): MDAnalysis atom selection string. Defaults to 'all'.
+
+        Raises:
+            SelectionError: [description]
+        """        
+
         self.logger.info(f'Saving a new structure file at {outputFile} with selection ({selection}).')
         selected_atoms = self.system.select_atoms(selection)
         if len(selected_atoms) == 0:
@@ -521,11 +471,13 @@ class BFEEGromacs:
 
     def setProteinHeavyAtomsGroup(self, selection):
         """
-        Parameters
-        ----------
-        selection : str
-            MDAnalysis atom selection string
-        """
+        Args:
+            selection (str): MDAnalysis atom selection string
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+        """        
+
         self.logger.info(f'Setup the atoms group of the protein by selection: {selection}')
         self.protein = self.system.select_atoms(selection)
         if len(self.protein) == 0:
@@ -533,11 +485,13 @@ class BFEEGromacs:
     
     def setLigandHeavyAtomsGroup(self, selection):
         """
-        Parameters
-        ----------
-        selection : str
-            MDAnalysis atom selection string
-        """
+        Args:
+            selection (str): MDAnalysis atom selection string
+
+        Raises:
+            SelectionError: if the selection corresponds to nothing
+        """        
+
         self.logger.info(f'Setup the atoms group of the ligand by selection: {selection}')
         self.ligand = self.system.select_atoms(selection)
         if len(self.ligand) == 0:
@@ -548,11 +502,13 @@ class BFEEGromacs:
 
     def setSolventAtomsGroup(self, selection):
         """
-        Parameters
-        ----------
-        selection : str
-            MDAnalysis atom selection string
-        """
+        Args:
+            selection (str): MDAnalysis atom selection string
+
+        Raises:
+            SelectionError: if the selection corresponds nothing
+        """        
+        
         self.logger.info(f'Setup the atoms group of the solvent molecule by selection: {selection}')
         self.solvent = self.system.select_atoms(selection)
         if len(self.solvent) == 0:
@@ -560,11 +516,10 @@ class BFEEGromacs:
 
     def setTemperature(self, newTemperature):
         """
-        Parameters
-        ----------
-        newTemperature : float
-            new value of the temperature
-        """
+
+        Args:
+            newTemperature (float): new value of the temperature
+        """        
         self.temperature = newTemperature
 
     def generateGromacsIndex(self, outputFile):
