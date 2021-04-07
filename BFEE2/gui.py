@@ -1644,7 +1644,7 @@ Unknown error!'
 
             path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
 
-            pmfs = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+            pmfs = [ploter.readPMF(self.mergePmfBox.item(i).text()) for i in range(self.mergePmfBox.count())]
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.writePMF(path, mergedPMF)
@@ -1663,7 +1663,7 @@ Unknown error!'
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
                 return
 
-            pmfs = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
+            pmfs = [ploter.readPMF(self.plotPmfBox.item(i).text()) for i in range(self.plotPmfBox.count())]
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
