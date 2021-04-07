@@ -1109,14 +1109,14 @@ class mainUI(QMainWindow):
         """
 
         with pkg_resources.path(doc, 'Doc.pdf') as docFile:
-            webbrowser.open(docFile)
+            webbrowser.open(str(docFile))
 
     def _openPythonAPIFile(self):
         """open Python API Documentation file
         """
 
         with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
-            webbrowser.open(pythonAPIFile)
+            webbrowser.open(str(pythonAPIFile))
 
     def _showAboutBox(self):
         """the about message box
@@ -1129,14 +1129,23 @@ class mainUI(QMainWindow):
             QMessageBox.about(
                 self,
                 'About',
-                f"\
-           {VERSION}\n\n \
-Auther: Haohao Fu (fhh2626@gmail.com)\n\n\
-This software is under the GPLv3 license.\n\n\
-Contact Wensheng Cai (wscai@nankai.edu.cn)\n\
-and Chris Chipot (chipot@ks.uiuc.edu) for\n\
-further copyright information.", 
-                            )
+                f'{VERSION}<br>'+r'''
+                Binding free energy estimator (BFEE) is a python-based software
+                that automates absolute binding free energy calculations through
+                either the alchemical or geometric route by molecular dynamics
+                simulations.<br>
+                <b>Authors:</b><br>
+                Haohao Fu (<a href="mailto:fhh2626@gmail.com">fhh2626@gmail.com</a>)<br>
+                HanatoK (<a href="mailto:summersnow9403@gmail.com">summersnow9403@gmail.com</a>)<br>
+                <b>License:</b><br>
+                BFEE2 is free software: you can redistribute it and/or modify it
+                under the terms of the GNU General Public License as published by
+                the Free Software Foundation, either version 3 of the License, or
+                (at your option) any later version.<br>
+                Contact Wensheng Cai (<a href="mailto:wscai@nankai.edu.cn">wscai@nankai.edu.cn</a>)
+                and Chris Chipot (<a href="mailto:chipot@ks.uiuc.edu">chipot@ks.uiuc.edu</a>)
+                for further copyright information.
+                ''')
         return f
 
     def _showGeometricResults(self, unit):
