@@ -1158,7 +1158,7 @@ class mainUI(QMainWindow):
                 simulations.<br>
                 <b>Authors:</b><br>
                 Haohao Fu (<a href="mailto:fhh2626@gmail.com">fhh2626@gmail.com</a>)<br>
-                HanatoK (<a href="mailto:summersnow9403@gmail.com">summersnow9403@gmail.com</a>)<br>
+                Haochuan Chen (<a href="mailto:summersnow9403@gmail.com">summersnow9403@gmail.com</a>)<br>
                 <b>License:</b><br>
                 BFEE2 is free software: you can redistribute it and/or modify it
                 under the terms of the GNU General Public License as published by
