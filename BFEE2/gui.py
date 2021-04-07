@@ -22,7 +22,7 @@ except ImportError:
 
 from BFEE2 import doc
 
-VERSION = 'BFEEstimator v2.1.3'
+VERSION = 'BFEEstimator v2.1.3.1'
 
 class mainSettings(QWidget):
     """settings in the menubar
@@ -1151,7 +1151,7 @@ class mainUI(QMainWindow):
             QMessageBox.about(
                 self,
                 'About',
-                f'{VERSION}<br>'+r'''
+                f'<center><b>{VERSION}</b></center><br>'+r'''
                 Binding free energy estimator (BFEE) is a python-based software
                 that automates absolute binding free energy calculations through
                 either the alchemical or geometric route by molecular dynamics
@@ -1164,7 +1164,7 @@ class mainUI(QMainWindow):
                 under the terms of the GNU General Public License as published by
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
-                Contact Wensheng Cai (<a href="mailto:wscai@nankai.edu.cn">wscai@nankai.edu.cn</a>)
+                <b>Contact</b> Wensheng Cai (<a href="mailto:wscai@nankai.edu.cn">wscai@nankai.edu.cn</a>)
                 and Chris Chipot (<a href="mailto:chipot@ks.uiuc.edu">chipot@ks.uiuc.edu</a>)
                 for further copyright information.
                 ''')
