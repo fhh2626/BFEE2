@@ -537,7 +537,7 @@ class inputGenerator():
                     with open( f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinFepTemplate.substitute(
-                                path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
+                                path='./complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
                                 outputPath=f'./ligandOnly', outputFepPath=f'./fep_ligandOnly'
                             )
                         )
