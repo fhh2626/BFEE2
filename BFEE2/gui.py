@@ -1336,9 +1336,7 @@ Standard Binding Free Energy:\n\
 
             if self.preTreatmentMainTabs.currentIndex() == 0:
                 # force fields
-                forceFieldFiles = []
-                for item in self.forceFieldFilesBox.findItems('*', QtCore.Qt.MatchWildcard):
-                    forceFieldFiles.append(item.text())
+                forceFieldFiles = [self.forceFieldFilesBox.item(i).text() for i in range(self.forceFieldFilesBox.count())]
 
                 # NAMD files
                 for item in [self.psfLineEdit.text(), self.coorLineEdit.text()] + forceFieldFiles:
@@ -1613,9 +1611,7 @@ Unknown error!'
 
             path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
 
-            pmfs = []
-            for item in self.mergePmfBox.findItems('*', QtCore.Qt.MatchWildcard):
-                pmfs.append(ploter.readPMF(item.text()))
+            pmfs = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.writePMF(path, mergedPMF)
@@ -1634,9 +1630,7 @@ Unknown error!'
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
                 return
 
-            pmfs = []
-            for item in self.plotPmfBox.findItems('*', QtCore.Qt.MatchWildcard):
-                pmfs.append(ploter.readPMF(item.text()))
+            pmfs = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
