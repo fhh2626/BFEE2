@@ -537,7 +537,7 @@ class inputGenerator():
                     with open( f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinFepTemplate.substitute(
-                                path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
+                                path='./complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
                                 outputPath=f'./ligandOnly', outputFepPath=f'./fep_ligandOnly'
                             )
                         )
@@ -678,7 +678,7 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                    f'output/ti_backward.coor', f'output/ti_backward.vel', f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_forward.in', 
                     '', membraneProtein=membraneProtein
                 )
@@ -732,8 +732,8 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
-                    f'../000_eq/output/eq_ligandOnly.xsc', '',
+                    f'output/ti_backward.coor', f'output/ti_backward.vel', 
+                    f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_forward.in', 
                     ''
                 )

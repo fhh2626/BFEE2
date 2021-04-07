@@ -15,14 +15,14 @@ class postTreatment:
     """the post-treatment of BFEE outputs
     """
 
-    def __init__(self, temperature, unit, jobType):
+    def __init__(self, temperature, unit, jobType='geometric'):
         """do post treatment, internally, all the unit should be converted into
            the NAMD/Colvars unit
 
         Args:
             temperature (float): temperature of the simulation
             unit (str): unit convention used by MD engine, 'namd' or 'gromacs'
-            jobType (str): 'geometric' or 'alchemical'
+            jobType (str): 'geometric' or 'alchemical'. Actually this arg is not used yet. Default to geometric.
         """
 
         if unit == 'namd':
