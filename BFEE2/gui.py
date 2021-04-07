@@ -999,7 +999,7 @@ class mainUI(QMainWindow):
         self.alchemicalForceConstants.setLayout(self.alchemicalFCLayout)
 
         # alchemical restraint centers
-        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit):')
+        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit) and temperature:')
 
         # all widgets
         self.alchemicalRCLayout = QHBoxLayout()
@@ -1009,6 +1009,8 @@ class mainUI(QMainWindow):
         self.alchemicalRCthetaLineEdit = QLineEdit('90')
         self.alchemicalRCRLabel = QLabel('r: ')
         self.alchemicalRCRLineEdit = QLineEdit('8')
+        self.alchemicalPostTemperatureLabel = QLabel('temperature:')
+        self.alchemicalPostTemperatureLineEdit = QLineEdit('300')
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLineEdit)
@@ -1016,6 +1018,8 @@ class mainUI(QMainWindow):
         self.alchemicalRCLayout.addWidget(self.alchemicalRCthetaLineEdit)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCRLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCRLineEdit)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLabel)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLineEdit)
 
         self.alchemicalRestraintCenters.setLayout(self.alchemicalRCLayout)
 
@@ -1178,7 +1182,7 @@ class mainUI(QMainWindow):
                 unit (string): 'namd' or 'gromacs' '''
         
         pTreat = postTreatment.postTreatment(
-            float(self.temperatureLineEdit.text()), unit, 'geometric')
+            float(self.postTemperatureLineEdit.text()), unit, 'geometric')
             
         pmfs = [
                     self.rmsdBoundLineEdit.text(), 
@@ -1244,7 +1248,7 @@ Standard Binding Free Energy:\n\
         """
         
         pTreat = postTreatment.postTreatment(
-            float(self.temperatureLineEdit.text()), unit, 'geometric')
+            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'geometric')
         
         # alchemical outputs
         files = [
