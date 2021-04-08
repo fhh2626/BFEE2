@@ -20,14 +20,13 @@ Python 3, PySide 2, numpy, matplotlib and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [Colvars patched Gromacs](https://github.com/Colvars/colvars).<br>
 
 ## Installation
-The pip version of pyside2 is not very stable, so we suggest to install the requirements through conda before installation of BFEE2.<br>
+We suggest to install BFEE2 through conda.<br>
 ```
-conda install setuptools appdirs MDAnalysis matplotlib numpy pyside2 cython mock
-pip install BFEE2
+conda install BFEE2
 ```
 
 ## Usage
-Simply run BFEE2Gui.py in terminal or PowerShell. BFEE will be available in Conda in future.<br>
+Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.<br>
 
 ## Citations
 BFEE: [Fu et al. J. Chem. Inf. Model. 2018, 58, 556–560](https://pubs.acs.org/doi/10.1021/acs.jcim.7b00695)<br>
