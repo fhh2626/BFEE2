@@ -26,7 +26,7 @@ conda install BFEE2
 ```
 
 ## Usage
-Simply run BFEE2Gui.py in terminal or PowerShell. BFEE will be available in Conda in future.<br>
+Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.<br>
 
 ## Citations
 BFEE: [Fu et al. J. Chem. Inf. Model. 2018, 58, 556–560](https://pubs.acs.org/doi/10.1021/acs.jcim.7b00695)<br>
