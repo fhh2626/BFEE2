@@ -26,20 +26,26 @@ def mergePMF(pmfFiles):
     Returns:
         np.array (N * 2): merged PMF if the PMFs overlap, pmfFiles[0] otherwise
     """    
-
-    assert(len(pmfFiles) > 0)
-    finalPMF = pmfFiles[0]
+    
+    numPmfs = len(pmfFiles)
+    assert(numPmfs > 0)
+    
+    # sort pmfs
+    pmfSort = [i for i in range(numPmfs)]
+    pmfSort.sort(key=lambda x: pmfFiles[x][0][0])
+    
+    finalPMF = pmfFiles[pmfSort[0]]
     
     if len(pmfFiles) > 1:
         for i in range(1, len(pmfFiles)):
             for j in range(len(finalPMF)):
-                if finalPMF[j][0] == pmfFiles[i][0][0]:
+                if finalPMF[j][0] == pmfFiles[pmfSort[i]][0][0]:
                     # overlapped region
-                    avgDifference = np.average(finalPMF[j:,1:] - pmfFiles[i][0:len(finalPMF)-j,1:])
-                    pmfFiles[i][:,1:] += avgDifference
-                    finalPMF[j:,1:] = (finalPMF[j:,1:] + pmfFiles[i][0:len(finalPMF)-j,1:]) / 2
+                    avgDifference = np.average(finalPMF[j:,1:] - pmfFiles[pmfSort[i]][0:len(finalPMF)-j,1:])
+                    pmfFiles[pmfSort[i]][:,1:] += avgDifference
+                    finalPMF[j:,1:] = (finalPMF[j:,1:] + pmfFiles[pmfSort[i]][0:len(finalPMF)-j,1:]) / 2
                     # other region
-                    finalPMF = np.append(finalPMF, pmfFiles[i][len(finalPMF)-j:], axis=0)
+                    finalPMF = np.append(finalPMF, pmfFiles[pmfSort[i]][len(finalPMF)-j:], axis=0)
                     break
 
     finalPMF[:,1] -= finalPMF[:,1].min()
