@@ -467,6 +467,7 @@ class mainUI(QMainWindow):
 
         # menu bar
         menubar = self.menuBar()
+        menubar.setNativeMenuBar(False)
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(self.settingsAction)
         self.fileMenu.addSeparator()
@@ -1136,14 +1137,14 @@ class mainUI(QMainWindow):
         """
 
         with pkg_resources.path(doc, 'Doc.pdf') as docFile:
-            webbrowser.open(str(docFile))
+            webbrowser.open('file:///' + str(docFile))
 
     def _openPythonAPIFile(self):
         """open Python API Documentation file
         """
 
         with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
-            webbrowser.open(str(pythonAPIFile))
+            webbrowser.open('file:///' + str(pythonAPIFile))
 
     def _showAboutBox(self):
         """the about message box
