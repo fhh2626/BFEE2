@@ -21,8 +21,9 @@ except ImportError:
     import importlib_resources as pkg_resources
 
 from BFEE2 import doc
+import BFEE2.version
 
-VERSION = 'BFEEstimator v2.1.3.1'
+__PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
 
 class mainSettings(QWidget):
     """settings in the menubar
@@ -425,7 +426,7 @@ class mainUI(QMainWindow):
         self.geometricAdvancedSettings = geometricAdvancedSettings()
 
         self.setGeometry(0,0,0,0)
-        self.setWindowTitle(VERSION)    
+        self.setWindowTitle(__PROGRAM_NAME__)    
         self.show()
 
     def _initActions(self):
@@ -1155,7 +1156,7 @@ class mainUI(QMainWindow):
             QMessageBox.about(
                 self,
                 'About',
-                f'<center><b>{VERSION}</b></center><br>'+r'''
+                f'<center><b>{__PROGRAM_NAME__}</b></center><br>'+r'''
                 Binding free energy estimator (BFEE) is a python-based software
                 that automates absolute binding free energy calculations through
                 either the alchemical or geometric route by molecular dynamics
