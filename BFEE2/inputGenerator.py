@@ -492,6 +492,7 @@ class inputGenerator():
                 if (fParserStep7.measurePolarAngles(selectionRef, selectionLig)[0] > 150 \
                     or fParserStep7.measurePolarAngles(selectionRef, selectionLig)[0] < 30):
                     fParserStep7.rotateSystem('x', 90)
+                fParserStep7.centerSystem()
 
                 fParserStep7.saveFile(
                     'all', f'{path}/BFEE/007_r/complex_largeBox.pdb', 'pdb',
