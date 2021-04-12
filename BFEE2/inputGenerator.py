@@ -378,8 +378,8 @@ class inputGenerator():
             
         # check polar angles
         # if theta < 30 or > 150, then rotate 90 degrees to avoid polar angle invarience
-        if (fParser.measurePolarAngles(selectionPro, selectionLig)[0] > 150 \
-            or fParser.measurePolarAngles(selectionPro, selectionLig)[0] < 30):
+        if (fParser.measurePolarAngles(selectionRef, selectionLig)[0] > 150 \
+            or fParser.measurePolarAngles(selectionRef, selectionLig)[0] < 30):
             fParser.rotateSystem('x', 90)
 
         # normalize/centerize coordinate
@@ -489,8 +489,8 @@ class inputGenerator():
 
                 # check polar angles
                 # if theta < 30 or > 150, then rotate 90 degrees to avoid polar angle invarience
-                if (fParserStep7.measurePolarAngles(selectionPro, selectionLig)[0] > 150 \
-                    or fParserStep7.measurePolarAngles(selectionPro, selectionLig)[0] < 30):
+                if (fParserStep7.measurePolarAngles(selectionRef, selectionLig)[0] > 150 \
+                    or fParserStep7.measurePolarAngles(selectionRef, selectionLig)[0] < 30):
                     fParserStep7.rotateSystem('x', 90)
 
                 fParserStep7.saveFile(
