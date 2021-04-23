@@ -20,9 +20,11 @@ Python 3, PySide 2, numpy, matplotlib and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [Colvars patched Gromacs](https://github.com/Colvars/colvars).<br>
 
 ## Installation
-We suggest to install BFEE2 through conda.<br>
+We suggest to install BFEE2 through conda. It will be safe if conda is install in a new environment<br>
 ```
-conda install BFEE2
+conda create --name bfee   (optional)
+conda activate bfee        (optional)
+conda install -c conda-forge BFEE2
 ```
 
 ## Usage
