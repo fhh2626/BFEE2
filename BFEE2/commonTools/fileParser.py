@@ -64,7 +64,7 @@ class fileParser:
         if len(atoms) == 0:
             raise SelectionError('Empty selection!')
 
-        atoms.write(targetPath, targetType)
+        atoms.write(targetPath, targetType, bonds=None)
         if saveTop:
             assert(selection == 'all')
             shutil.copyfile(self.topPath, topPath)
