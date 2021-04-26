@@ -1,6 +1,5 @@
 # simple and general slots called by gui.py
 
-import os
 from PySide2.QtWidgets import QLineEdit, QFileDialog, QMessageBox
 
 def openFileDialog(fileType, lineEdit):
