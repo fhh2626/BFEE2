@@ -1,18 +1,25 @@
 # the GUI of new BFEE
 
-import sys, os, shutil
+import os
+import shutil
+import sys
 import webbrowser
-from PySide2 import QtCore
-from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
-from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
-from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
-from PySide2.QtGui import QIcon, QFont
-import BFEE2.postTreatment as postTreatment
-import BFEE2.inputGenerator as inputGenerator
-import BFEE2.BFEEGromacs as BFEEGromacs
-from BFEE2.commonTools import commonSlots, ploter, fileParser
+
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
+from PySide2 import QtCore
+from PySide2.QtGui import QFont, QIcon
+from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
+                               QFileDialog, QGridLayout, QGroupBox,
+                               QHBoxLayout, QLabel, QLineEdit, QListWidget,
+                               QMainWindow, QMessageBox, QPushButton,
+                               QSplitter, QTabWidget, QToolBar, QVBoxLayout,
+                               QWidget)
+
+import BFEE2.inputGenerator as inputGenerator
+import BFEE2.postTreatment as postTreatment
+import BFEE2.templates_gromacs.BFEEGromacs as BFEEGromacs
+from BFEE2.commonTools import commonSlots, fileParser, ploter
 
 try:
     import importlib.resources as pkg_resources
@@ -20,8 +27,8 @@ except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
 
-from BFEE2 import doc
 import BFEE2.version
+from BFEE2 import doc
 
 __PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
 
@@ -237,14 +244,25 @@ class geometricAdvancedSettings(QWidget):
         self.pinDownPro.setLayout(self.pinDownProLayout)
 
         # membrane protein
-        self.memPro = QGroupBox('Membrane protein')
-        self.memProLayout = QHBoxLayout()
+        self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
+        self.modelingLayout = QVBoxLayout()
 
         self.memProCheckbox = QCheckBox('Membrane protein')
         self.memProCheckbox.setChecked(False)
+        
+        self.neutralizeLigOnlyLayout = QHBoxLayout()
+        self.neutralizeLigOnlyLabel = QLabel('Auto-neutralize ligand-only system by:')
+        self.neutralizeLigOnlyCombobox = QComboBox()
+        self.neutralizeLigOnlyCombobox.addItem('NaCl')
+        self.neutralizeLigOnlyCombobox.addItem('KCl')
+        self.neutralizeLigOnlyCombobox.addItem('CaCl2')
+        self.neutralizeLigOnlyCombobox.addItem('None')
+        self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyLabel)
+        self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyCombobox)
 
-        self.memProLayout.addWidget(self.memProCheckbox)
-        self.memPro.setLayout(self.memProLayout)
+        self.modelingLayout.addWidget(self.memProCheckbox)
+        self.modelingLayout.addLayout(self.neutralizeLigOnlyLayout)
+        self.modeling.setLayout(self.modelingLayout)
 
         # parallel runs for error estimation
         self.parallelRuns = QGroupBox('Parallel runs')
@@ -269,7 +287,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.pinDownPro)
-        self.mainLayout.addWidget(self.memPro)
+        self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
@@ -365,14 +383,25 @@ class alchemicalAdvancedSettings(QWidget):
         self.pinDownPro.setLayout(self.pinDownProLayout)
 
         # membrane protein
-        self.memPro = QGroupBox('Membrane protein')
-        self.memProLayout = QHBoxLayout()
+        self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
+        self.modelingLayout = QHBoxLayout()
 
         self.memProCheckbox = QCheckBox('Membrane protein')
         self.memProCheckbox.setChecked(False)
+        
+        self.neutralizeLigOnlyLayout = QHBoxLayout()
+        self.neutralizeLigOnlyLabel = QLabel('Auto-neutralize ligand-only system by:')
+        self.neutralizeLigOnlyCombobox = QComboBox()
+        self.neutralizeLigOnlyCombobox.addItem('NaCl')
+        self.neutralizeLigOnlyCombobox.addItem('KCl')
+        self.neutralizeLigOnlyCombobox.addItem('CaCl2')
+        self.neutralizeLigOnlyCombobox.addItem('None')
+        self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyLabel)
+        self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyCombobox)
 
-        self.memProLayout.addWidget(self.memProCheckbox)
-        self.memPro.setLayout(self.memProLayout)
+        self.modelingLayout.addWidget(self.memProCheckbox)
+        self.modelingLayout.addLayout(self.neutralizeLigOnlyLayout)
+        self.modeling.setLayout(self.modelingLayout)
 
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
         self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
@@ -385,7 +414,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.pinDownPro)
         self.mainLayout.addWidget(self.minBeforeSample)
-        self.mainLayout.addWidget(self.memPro)
+        self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
@@ -1452,6 +1481,7 @@ force fields!'
                             self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
                             stratification,
                             self.geometricAdvancedSettings.memProCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text()
@@ -1520,6 +1550,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
