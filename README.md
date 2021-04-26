@@ -2,7 +2,7 @@
 Binding free energy estimator (BFEE) is a python-based software that automates absolute binding free energy calculations through either the alchemical or geometric route by molecular dynamics simulations.<br>
 
 ## Theoretical backgrounds
-The degrees of freedom of the protein-ligand (or host-guest) system are described by a series of geometric variables (or collective variables). In BFEE, a generalized, best-fit-rotation-based geometric variables are used, making it in principle available to any protein-ligand complex. See [this paper](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791) for introduction of these variables.<br>
+The degrees of freedom of the protein-ligand (or host-guest) system are described by a series of geometric variables (or collective variables), as firstly described by the [Karplus group](https://pubs.acs.org/doi/abs/10.1021/jp0217839). In BFEE, a generalized, best-fit-rotation-based geometric variables are used, making it in principle available to any protein-ligand complex. See [this paper](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791) for introduction of these variables.<br>
 
 In the [geometric route](https://pubs.acs.org/doi/10.1021/ct3008099), the degrees of freedom is investigated one by one, through one-dimensional free-energy calculations. In BFEE, [WTM-eABF](https://pubs.acs.org/doi/abs/10.1021/acs.accounts.9b00473) is used, while other importance-sampling algorithms such as [plain eABF](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.6b00447) are also acceptable.
 The [alchemical route](https://pubs.acs.org/doi/10.1021/ct3008099) is a variants of the [double decoupling method (DDM)](https://www.sciencedirect.com/science/article/pii/S0006349597787563). A thermodynamic cycle, in which the ligand and the geometric restraints are decoupled independently to guarantee the convergence of the simulations.<br>
@@ -16,7 +16,7 @@ Support many file formats for the input complex structure (PSF/PDB/PRM, PRM7/RST
 ...<br>
 
 ## Requirements
-Python 3, PySide 2, numpy, matplotlib and MDAnalysis.<br>
+Python 3.6+, PySide 2, numpy, matplotlib and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [Colvars patched Gromacs](https://github.com/Colvars/colvars).<br>
 
 ## Installation
