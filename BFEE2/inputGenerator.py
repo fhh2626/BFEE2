@@ -56,6 +56,7 @@ class inputGenerator():
         doubleWide = False,
         minBeforeSample = False,
         membraneProtein = False,
+        neutralizeLigOnly = 'NaCl',
         pinDownPro = True,
         vmdPath = ''
     ):
@@ -78,6 +79,9 @@ class inputGenerator():
                                               Defaults to False.
             membraneProtein (bool, optional): whether simulating a membrane protein.
                                               Defaults to False.
+            neutralizeLigOnly (str or None, optional): 'NaCl', 'KCl', 'CaCl2' or None.
+                                                       neutralize the lig-only system using the salt.
+                                                       Defaluts to NaCl.
             pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
             vmdPath (str, optional): path to vmd. Defaults to ''.
         """
@@ -94,7 +98,7 @@ class inputGenerator():
         self._copyFiles(
             path, topFile, topType, coorFile, coorType, forceFieldType, forceFieldFiles,
             selectionPro, selectionLig, selectionPro, '', '',
-            'alchemical', membraneProtein, vmdPath)
+            'alchemical', membraneProtein, neutralizeLigOnly, vmdPath)
 
         # get relative force field path
         relativeFFPath = []
@@ -125,6 +129,7 @@ class inputGenerator():
         userProvidedPullingCoor = '',
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
+        neutralizeLigOnly = 'NaCl',
         pinDownPro = True,
         parallelRuns = 1,
         vmdPath = ''
@@ -150,6 +155,9 @@ class inputGenerator():
             stratification (list, optional): number of windows for each simulation. 
                                              Defaults to [1,1,1,1,1,1,1,1].
             membraneProtein (bool, optional): whether simulation a membrane protein. Defaults to False.
+            neutralizeLigOnly (str or None, optional): 'NaCl', 'KCl', 'CaCl2' or None.
+                                                       neutralize the lig-only system using the salt.
+                                                       Defaluts to NaCl.
             pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
             parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
             vmdPath (str, optional): path to vmd. Defaults to ''.
@@ -169,7 +177,7 @@ class inputGenerator():
         self._copyFiles(
             path, topFile, topType, coorFile, coorType, forceFieldType, forceFieldFiles,
             selectionPro, selectionLig, selectionRef, userProvidedPullingTop, userProvidedPullingCoor,
-            'geometric', membraneProtein, vmdPath)
+            'geometric', membraneProtein, neutralizeLigOnly, vmdPath)
 
         # get relative force field path
         relativeFFPath = []
@@ -350,6 +358,7 @@ class inputGenerator():
         userProvidedPullingCoor = '',
         jobType = 'geometric',
         membraneProtein = False,
+        neutralizeLigOnly = 'NaCl',
         vmdPath = ''
     ):
         """copy original and generate necessary topology/structure files
@@ -371,6 +380,9 @@ class inputGenerator():
                                                      Defaults to ''.
             jobType (str, optional): 'geometric' or 'alchemical'. Defaults to 'geometric'.
             membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
+            neutralizeLigOnly (str or None, optional): 'NaCl', 'KCl', 'CaCl2' or None.
+                                                       neutralize the lig-only system using the salt.
+                                                       Defaluts to NaCl.
             vmdPath (str, optional): path to vmd, space is forbidden. Defaults to ''.
         """
         
@@ -408,7 +420,19 @@ class inputGenerator():
         )
         # cv definition file
         #shutil.copyfile(f'{sys.path[0]}/scripts/CVs.tcl', f'{path}/BFEE/CVs.tcl')
-
+        
+        # determine cation and anion
+        if neutralizeLigOnly == 'NaCl':
+            cation = 'SOD'
+            anion = 'CLA'
+        elif neutralizeLigOnly == 'KCl':
+            cation = 'POT'
+            anion = 'CLA'
+        elif neutralizeLigOnly == 'CaCl2':
+            cation = 'CAL'
+            anion = 'CLA'
+        else:
+            neutralizeLigOnly = None
 
         if jobType == 'geometric':
 
@@ -430,7 +454,7 @@ class inputGenerator():
             # connect to VMD
             if forceFieldType == 'charmm':
                 if not membraneProtein:
-                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeProteinTemplate.substitute(
                                 path='../complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
@@ -439,22 +463,39 @@ class inputGenerator():
                         )
                 else:
                     # membrane protein
-                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/008_RMSDUnbound/008.0.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinTemplate.substitute(
                                 path='../complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
                                 outputPath=f'./ligandOnly'
                             )
                         )
+                
+                # neutralization
+                if neutralizeLigOnly is not None:
+                    with open(f'{path}/BFEE/008_RMSDUnbound/008.0.2_neutrilize.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.neutralizeSystempTemplate.substitute(
+                                path='./ligandOnly', cationName=cation, anionName=anion,
+                                extraCommand=''
+                            )
+                        )
+                        
                 # if vmd path is defined
                 # then execute vmd automatically
                 if vmdPath != '':
                     subprocess.run(
-                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.tcl'],
+                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/008_RMSDUnbound/008.0.1_removeProtein.tcl'],
                         cwd=f'{path}/BFEE/008_RMSDUnbound'
                     )
+                    if neutralizeLigOnly is not None:
+                        subprocess.run(
+                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/008_RMSDUnbound/008.0.2_neutrilize.tcl'],
+                            cwd=f'{path}/BFEE/008_RMSDUnbound'
+                        )
+                    
             elif forceFieldType == 'amber':
-                with open( f'{path}/BFEE/008_RMSDUnbound/008.0_removeProtein.cpptraj', 'w') as rScript:
+                with open( f'{path}/BFEE/008_RMSDUnbound/008.0.1_removeProtein.cpptraj', 'w') as rScript:
                     rScript.write(
                         scriptTemplate.removeProteinAmberTemplate.substitute(
                             path='../complex', 
@@ -524,11 +565,19 @@ class inputGenerator():
             )
             with pkg_resources.path(templates_namd, 'fep.tcl') as p:
                 shutil.copyfile(p, f'{path}/BFEE/fep.tcl')
-
+                
+            if not membraneProtein:
+                # otherwise the these files will be generated by vmd
+                fParser.saveFile(
+                    f'not {selectionPro}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
+                )
+                fParser.saveFile(
+                    f'not {selectionPro}', f'{path}/BFEE/fep_ligandOnly.pdb', 'pdb'
+                )
             # remove protein for the unbound state
             if forceFieldType == 'charmm':
                 if not membraneProtein:
-                    with open(f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
+                    with open(f'{path}/BFEE/002.5.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeProteinTemplate.substitute(
                                 path='./complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
@@ -542,22 +591,38 @@ class inputGenerator():
                     fParser.saveFile(
                         f'{selectionLig}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
                     )
-                    with open( f'{path}/BFEE/002.5_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/002.5.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinFepTemplate.substitute(
                                 path='./complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
                                 outputPath=f'./ligandOnly', outputFepPath=f'./fep_ligandOnly'
                             )
                         )
+                        
+                # neutralization
+                if neutralizeLigOnly is not None:
+                    with open(f'{path}/BFEE/002.5.2_neutrilize.tcl', 'w') as rScript:
+                        rScript.write(
+                            scriptTemplate.neutralizeSystempTemplate.substitute(
+                                path='./ligandOnly', cationName=cation, anionName=anion,
+                                extraCommand='$aa writepdb fep_ligandOnly.pdb'
+                            )
+                        )
+                
                 # if vmd path is defined
                 # then execute vmd automatically
                 if vmdPath != '':
                     subprocess.run(
-                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5_removeProtein.tcl'],
+                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5.1_removeProtein.tcl'],
                         cwd=f'{path}/BFEE'
                     )
+                    if neutralizeLigOnly is not None:
+                        subprocess.run(
+                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5.2_neutrilize.tcl'],
+                            cwd=f'{path}/BFEE'
+                        )
             elif forceFieldType == 'amber':
-                with open( f'{path}/BFEE/002.5_removeProtein.cpptraj', 'w') as rScript:
+                with open( f'{path}/BFEE/002.5.1_removeProtein.cpptraj', 'w') as rScript:
                     rScript.write(
                         scriptTemplate.removeProteinAmberTemplate.substitute(
                             path='./complex', 
@@ -566,14 +631,6 @@ class inputGenerator():
                         )
                     )
             
-            if not membraneProtein:
-                # otherwise the these files will be generated by vmd
-                fParser.saveFile(
-                    f'not {selectionPro}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
-                )
-                fParser.saveFile(
-                    f'not {selectionPro}', f'{path}/BFEE/fep_ligandOnly.pdb', 'pdb'
-                )
             # xyz and ndx
             fParserLigandOnly = fileParser.fileParser( f'{path}/BFEE/ligandOnly.pdb')
             if not membraneProtein:

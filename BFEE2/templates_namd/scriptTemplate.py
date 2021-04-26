@@ -27,6 +27,7 @@ exit
 ''')
 
 removeMemProteinFepTemplate = string.Template('''
+package require autoionize
 mol new ${path}.psf
 mol addfile ${path}.pdb
 set aa [atomselect top "$selectionLig"]
@@ -53,4 +54,15 @@ trajin ${path}.pdb
 strip :$residueNum parmout ${outputPath}.parm7
 trajout ${outputPath}.pdb
 go
+''')
+
+neutralizeSystempTemplate = string.Template('''
+package require autoionize
+autoionize -psf ${path}.psf -pdb ${path}.pdb -neutralize -cation ${cationName} -anion ${anionName} -seg IO2 -o ${path}
+mol new ${path}.psf
+mol addfile ${path}.pdb
+set aa [atomselect top all]
+$$aa writexyz ${path}.xyz
+${extraCommand}
+exit
 ''')
