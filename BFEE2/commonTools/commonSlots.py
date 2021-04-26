@@ -19,7 +19,7 @@ def openFileDialog(fileType, lineEdit):
         fileName, _ = QFileDialog.getOpenFileName(
             None,
             f'Choose {fileType} file',
-            os.getcwd(),
+            '',
             f'All Files (*)'
         )
         lineEdit.setText(fileName)
@@ -42,7 +42,7 @@ def openFilesDialog(fileType, listWidget):
         fileNames, _ = QFileDialog.getOpenFileNames(
             None,
             f'Choose {fileType} files',
-            os.getcwd(),
+            '',
             f'All Files (*)'
         )
         listWidget.addItems(fileNames)
