@@ -1,7 +1,8 @@
 # post-treatment of BFEE
 
-import numpy as np
 import math
+
+import numpy as np
 
 # Boltazann constant for NAMD unit convention
 BOLTZMANN = 0.0019872041

@@ -1,10 +1,15 @@
 # generate all the inputs and define corresponding slots
 
-import os, sys, shutil, subprocess
+import os
+import shutil
+import subprocess
+import sys
+
 import numpy as np
+
 from BFEE2.commonTools import fileParser
-from BFEE2 import configTemplate, scriptTemplate
-from BFEE2.BFEEGromacs import BFEEGromacs
+from BFEE2.templates_gromacs.BFEEGromacs import BFEEGromacs
+from BFEE2.templates_namd import configTemplate, scriptTemplate
 
 try:
     import importlib.resources as pkg_resources
@@ -13,6 +18,8 @@ except ImportError:
     import importlib_resources as pkg_resources
 
 from BFEE2 import templates_namd, templates_readme
+
+
 # an runtime error
 # directory already exists
 class DirectoryExistError(RuntimeError):

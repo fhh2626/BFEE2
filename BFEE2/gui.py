@@ -1,18 +1,25 @@
 # the GUI of new BFEE
 
-import sys, os, shutil
+import os
+import shutil
+import sys
 import webbrowser
-from PySide2 import QtCore
-from PySide2.QtWidgets import QMainWindow, QWidget, QAction, QApplication, QTabWidget, QMessageBox
-from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QGroupBox, QLineEdit, QSplitter
-from PySide2.QtWidgets import QComboBox, QPushButton, QListWidget, QFileDialog, QCheckBox, QToolBar
-from PySide2.QtGui import QIcon, QFont
-import BFEE2.postTreatment as postTreatment
-import BFEE2.inputGenerator as inputGenerator
-import BFEE2.BFEEGromacs as BFEEGromacs
-from BFEE2.commonTools import commonSlots, ploter, fileParser
+
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
+from PySide2 import QtCore
+from PySide2.QtGui import QFont, QIcon
+from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
+                               QFileDialog, QGridLayout, QGroupBox,
+                               QHBoxLayout, QLabel, QLineEdit, QListWidget,
+                               QMainWindow, QMessageBox, QPushButton,
+                               QSplitter, QTabWidget, QToolBar, QVBoxLayout,
+                               QWidget)
+
+import BFEE2.inputGenerator as inputGenerator
+import BFEE2.postTreatment as postTreatment
+import BFEE2.templates_gromacs.BFEEGromacs as BFEEGromacs
+from BFEE2.commonTools import commonSlots, fileParser, ploter
 
 try:
     import importlib.resources as pkg_resources
@@ -20,8 +27,8 @@ except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
 
-from BFEE2 import doc
 import BFEE2.version
+from BFEE2 import doc
 
 __PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
 
