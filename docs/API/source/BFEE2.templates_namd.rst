@@ -1,10 +1,7 @@
-BFEE2.templates\_namd package
-=============================
+BFEE2.templates\_namd
+================================
 
-Submodules
-----------
-
-BFEE2.templates\_namd.configTemplate module
+BFEE2.templates\_namd.configTemplate
 -------------------------------------------
 
 .. automodule:: BFEE2.templates_namd.configTemplate
@@ -12,18 +9,10 @@ BFEE2.templates\_namd.configTemplate module
    :undoc-members:
    :show-inheritance:
 
-BFEE2.templates\_namd.scriptTemplate module
+BFEE2.templates\_namd.scriptTemplate
 -------------------------------------------
 
 .. automodule:: BFEE2.templates_namd.scriptTemplate
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: BFEE2.templates_namd
    :members:
    :undoc-members:
    :show-inheritance:

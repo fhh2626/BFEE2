@@ -1,10 +1,7 @@
-BFEE2.commonTools package
+BFEE2.commonTools
 =========================
 
-Submodules
-----------
-
-BFEE2.commonTools.commonSlots module
+BFEE2.commonTools.commonSlots
 ------------------------------------
 
 .. automodule:: BFEE2.commonTools.commonSlots
@@ -12,7 +9,7 @@ BFEE2.commonTools.commonSlots module
    :undoc-members:
    :show-inheritance:
 
-BFEE2.commonTools.fileParser module
+BFEE2.commonTools.fileParser
 -----------------------------------
 
 .. automodule:: BFEE2.commonTools.fileParser
@@ -20,18 +17,10 @@ BFEE2.commonTools.fileParser module
    :undoc-members:
    :show-inheritance:
 
-BFEE2.commonTools.ploter module
+BFEE2.commonTools.ploter
 -------------------------------
 
 .. automodule:: BFEE2.commonTools.ploter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: BFEE2.commonTools
    :members:
    :undoc-members:
    :show-inheritance:

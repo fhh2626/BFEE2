@@ -1,21 +1,9 @@
-BFEE2.templates\_gromacs package
-================================
+BFEE2.templates\_gromacs
+==============================================
 
-Submodules
-----------
-
-BFEE2.templates\_gromacs.BFEEGromacs module
--------------------------------------------
+This is the interface for generating Gromacs input files.
 
 .. automodule:: BFEE2.templates_gromacs.BFEEGromacs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: BFEE2.templates_gromacs
    :members:
    :undoc-members:
    :show-inheritance:
