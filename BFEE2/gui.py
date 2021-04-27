@@ -1172,8 +1172,7 @@ class mainUI(QMainWindow):
         """open Python API Documentation file
         """
 
-        with pkg_resources.path(doc, 'PythonAPI.pdf') as pythonAPIFile:
-            webbrowser.open('file:///' + str(pythonAPIFile))
+        webbrowser.open('https://fhh2626.github.io/BFEE2APIDocs/')
 
     def _showAboutBox(self):
         """the about message box
