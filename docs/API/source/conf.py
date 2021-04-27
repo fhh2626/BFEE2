@@ -12,7 +12,12 @@
 #
 import os
 import sys
+import re
 sys.path.insert(0, os.path.abspath('../../..'))
+
+VSRE = r"^__VERSION__ = ['\']([^'\']*)['\']"
+with open(os.path.join('../../../BFEE2', 'version.py')) as version_file:
+    version = re.search(VSRE, version_file.read(), re.M).group(1)
 
 
 # -- Project information -----------------------------------------------------
