@@ -209,6 +209,7 @@ class inputGenerator():
         """generate all the input files for Gromacs Geometric simulation
            This function is based on BFEEGromacs.py
            contributed by Haochuan Chen (yjcoshc_at_mail.nankai.edu.cn)
+           
         Args:
             path (str): the directory for generation of all the files
             topFile (str): the path of the topology (top) file
