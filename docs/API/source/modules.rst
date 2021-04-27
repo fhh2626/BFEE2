@@ -5,4 +5,3 @@ BFEE2
    :maxdepth: 4
 
    BFEE2
-   setup
