@@ -462,12 +462,15 @@ indexFile                 {indexFile}      \n'
 
     def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall):
         ''' template of harmonic wall bias
-            Inputs:
-                cv (string): name of the colvars
-                lowerWall (float): lower wall of the bias
-                upperWall (float): upper wall of the bias
-            Return:
-                string: string of the harmonic wall bias definition '''
+        
+        Args:
+            cv (str): name of the colvars
+            lowerWall (float): lower wall of the bias
+            upperWall (float): upper wall of the bias
+                
+        Returns:
+            str: string of the harmonic wall bias definition '''
+            
         string = f'\
 harmonicWalls {{                           \n\
     colvars           {cv}                 \n\
@@ -479,7 +482,7 @@ harmonicWalls {{                           \n\
         return string
 
     def cvHarmonicTemplate(self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant = 0):
-        """[summary]
+        """template for a harmonic restraint
 
         Args:
             cv (str): name of the colvars
@@ -520,10 +523,13 @@ harmonic {{                          \n\
 
     def cvABFTemplate(self, cv):
         ''' template for WTM-eABF bias
-            Inputs:
-                cv (string): name of the colvars
-            Return:
-                string: string of the WTM-eABF definition '''
+        
+        Args:
+            cv (str): name of the colvars
+            
+        Returns:
+            str: string of the WTM-eABF definition '''
+            
         string = f'\
 abf {{                            \n\
     colvars        {cv}           \n\
@@ -547,7 +553,7 @@ metadynamics {{                   \n\
             centerCoor (np.array, 3): (x,y,z), center of the protein 
             refFile (str): path of the reference file
         
-        Return:
+        Returns:
             str: string of the restraining the protein
         """
         
