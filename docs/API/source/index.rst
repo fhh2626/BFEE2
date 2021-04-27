@@ -30,10 +30,6 @@ In the `geometric route`_, the degrees of freedom is investigated one by one, th
 .. _`alchemical route`: https://pubs.acs.org/doi/10.1021/ct3008099
 .. _`decoupling method (DDM)`: https://www.sciencedirect.com/science/article/pii/S0006349597787563
 
-.. Hide the contents from the front page because they are already in
-.. the side bar in the Alabaster sphinx style; requires Alabaster
-.. config sidebar_includehidden=True (default)
-
 Features
 --------
 
@@ -65,10 +61,6 @@ Usage
 
 Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.
 
-
-.. Contents
-.. ========
-
 Citations
 ---------
 
@@ -93,6 +85,13 @@ Technique issues: Haohao Fu (fhh2626@mail.nankai.edu.cn) and Haochuan Chen (yjco
 This software is under the `GPLv3`_ license. For more information about the copyright of BFEE, contact the corresponding authors of the aforementioned papers (wscai@nankai.edu.cn, Christophe.Chipot@univ-lorraine.fr).
 
 .. _`GPLv3`: https://www.gnu.org/licenses/gpl-3.0.en.html
+
+.. Hide the contents from the front page because they are already in
+.. the side bar in the Alabaster sphinx style; requires Alabaster
+.. config sidebar_includehidden=True (default)
+
+.. Contents
+.. ========
 
 .. toctree::
    :maxdepth: 4
