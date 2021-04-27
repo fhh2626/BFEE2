@@ -231,90 +231,32 @@ def mearsurePolarAngles(proteinCenter, ligandCenter):
 
 class BFEEGromacs:
     """The entry class for handling gromacs inputs in BFEE.
-    
-    Attributes
-    ----------
-    logger (logging.Logger):
-        logger object for debugging
-    handler (logging.StreamHandler):
-        output stream of the debug output
-    baseDirectory (str):
-        output directory of the generated files
-    structureFile (str):
-        filename of the structure file (either in PDB or GRO format) of the
-        protein-ligand binding complex
-    topologyFile (str):
-        filename of the GROMACS topology file of the protein-ligand binding
-        complex
-    ligandOnlyStructureFile (str):
-        filename of the structure file (either in PDB or GRO format) of the
-        ligand-only system
-    system (MDAnalysis.core.universe):
-        MDAnalysis universe of the protein-ligand binding system
-    ligandOnlySystem (MDAnalysis.core.universe)
-        MDAnalysis universe of the ligand-only system
-    basenames (str):
-        subdirectory names of all eight steps
-    ligand (MDAnalysis.core.groups.AtomGroup):
-        selected HEAVY ATOMS of the ligand in the protein-ligand binding
-        complex. This attribute does not exist until the call of
-        setLigandHeavyAtomsGroup.
-    ligandOnly (MDAnalysis.core.groups.AtomGroup):
-        selected HEAVY ATOMS of the ligand in the ligand-only system.
-        This attribute does not exist until the call of setLigandHeavyAtomsGroup.
-    protein (MDAnalysis.core.groups.AtomGroup):
-        selected HEAVY ATOMS of the protein in the protein-ligand binding
-        complex. This attribute does not exist until the call of
-        setProteinHeavyAtomsGroup.
-    solvent (MDAnalysis.core.groups.AtomGroup):
-        selected atoms of the solvents in the protein-ligand binding complex.
-        This attribute does not exist until the call of setSolventAtomsGroup.
-    temperature (float):
-        the temperature of simulations (default : 300.0)
-        
-    Methods:
-        __init__(structureFile, topologyFile, ligandOnlyStructureFile,
-             ligandOnlyTopologyFile, baseDirectory=None)
-            constructor of the class
-        saveStructure(outputFile, atomSelection)
-            a helper method for selecting a group of atoms and save it
-        setProteinHeavyAtomsGroup(selection)
-            select the heavy atoms of the protein
-        setLigandHeavyAtomsGroup(selection)
-            select the heavy atoms of the ligand in both the protein-ligand complex
-            and the ligand-only systems
-        setSolventAtomsGroup(selection)
-            select the solvent atoms
-        setTemperature(float)
-            set the temperature
-        generateGromacsIndex(outputFile)
-            generate a GROMACS index file for atom selection in Colvars
-        generate000()
-            generate files for running an equilibrium simulation
-        generate001()
-            generate files for determining the PMF along the RMSD of the ligand  
-            with respect to its bound state
-        generate002()
-            generate files for determining the PMF along the pitch (theta) angle of
-            the ligand
-        generate003()
-            generate files for determining the PMF along the roll (phi) angle of
-            the ligand
-        generate004()
-            generate files for determining the PMF along the yaw (psi) angle of
-            the ligand
-        generate005()
-            generate files for determining the PMF along the polar theta angle of
-            the ligand relative to the protein
-        generate006()
-            generate files for determining the PMF along the polar phi angle of
-            the ligand relative to the protein
-        generate007()
-            generate files for determining the PMF along the distance between the
-            the ligand and the protein
-        generate008()
-            generate files for determining the PMF along the RMSD of the ligand  
-            with respect to its unbound state
+
+    Attributes:
+        logger (logging.Logger): logger object for debugging
+        handler (logging.StreamHandler): output stream of the debug output
+        baseDirectory (str): output directory of the generated files
+        structureFile (str): filename of the structure file (either in PDB or GRO format) of the
+                             protein-ligand binding complex
+        topologyFile (str): filename of the GROMACS topology file of the protein-ligand binding
+                            complex
+        ligandOnlyStructureFile (str): filename of the structure file (either in PDB or GRO format) of the
+                                       ligand-only system
+        system (MDAnalysis.core.universe): MDAnalysis universe of the protein-ligand binding system
+        ligandOnlySystem (MDAnalysis.core.universe): MDAnalysis universe of the ligand-only system
+        basenames (str): subdirectory names of all eight steps
+        ligand (MDAnalysis.core.groups.AtomGroup): selected HEAVY ATOMS of the ligand in the protein-ligand binding
+                                                   complex. This attribute does not exist until the call of
+                                                   setLigandHeavyAtomsGroup.
+        ligandOnly (MDAnalysis.core.groups.AtomGroup): selected HEAVY ATOMS of the ligand in the ligand-only system.
+                                                       This attribute does not exist until the call of 
+                                                       setLigandHeavyAtomsGroup.
+        protein (MDAnalysis.core.groups.AtomGroup): selected HEAVY ATOMS of the protein in the protein-ligand binding
+                                                    complex. This attribute does not exist until the call of
+                                                    setProteinHeavyAtomsGroup.
+        solvent (MDAnalysis.core.groups.AtomGroup): selected atoms of the solvents in the protein-ligand binding complex.
+                                                    This attribute does not exist until the call of setSolventAtomsGroup.
+        temperature (float): the temperature of simulations (default : 300.0)
     """    
 
     def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None):
@@ -454,13 +396,14 @@ class BFEEGromacs:
         self.logger.info('Initialization done.')
 
     def saveStructure(self, outputFile, selection='all'):
-        """
+        """a helper method for selecting a group of atoms and save it
+
         Args:
             outputFile (str): filename of the output file
             selection (str, optional): MDAnalysis atom selection string. Defaults to 'all'.
 
         Raises:
-            SelectionError: [description]
+            SelectionError: if the selection corresponds to nothing
         """        
 
         self.logger.info(f'Saving a new structure file at {outputFile} with selection ({selection}).')
@@ -470,7 +413,8 @@ class BFEEGromacs:
         selected_atoms.write(outputFile)
 
     def setProteinHeavyAtomsGroup(self, selection):
-        """
+        """select the heavy atoms of the protein
+
         Args:
             selection (str): MDAnalysis atom selection string
 
@@ -484,7 +428,9 @@ class BFEEGromacs:
             raise SelectionError('Empty selection!')
     
     def setLigandHeavyAtomsGroup(self, selection):
-        """
+        """select the heavy atoms of the ligand in both the protein-ligand complex
+           and the ligand-only systems
+
         Args:
             selection (str): MDAnalysis atom selection string
 
@@ -501,7 +447,8 @@ class BFEEGromacs:
             raise SelectionError('Empty selection!')
 
     def setSolventAtomsGroup(self, selection):
-        """
+        """select the solvent atoms
+
         Args:
             selection (str): MDAnalysis atom selection string
 
@@ -515,7 +462,7 @@ class BFEEGromacs:
             raise SelectionError('Empty selection!')
 
     def setTemperature(self, newTemperature):
-        """
+        """set the temperature
 
         Args:
             newTemperature (float): new value of the temperature
@@ -523,6 +470,9 @@ class BFEEGromacs:
         self.temperature = newTemperature
 
     def generateGromacsIndex(self, outputFile):
+        """generate a GROMACS index file for atom selection in Colvars
+        """
+
         self.system.select_atoms('all').write(outputFile, name='BFEE_all')
         if hasattr(self, 'ligand'):
             self.ligand.write(outputFile, name='BFEE_Ligand', mode='a')
@@ -532,6 +482,9 @@ class BFEEGromacs:
             self.solvent.write(outputFile, name='BFEE_Solvent', mode='a')
 
     def generate000(self):
+        """generate files for running an equilibrium simulation
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][000][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[0]
         self.logger.info('=' * 80)
@@ -589,6 +542,10 @@ class BFEEGromacs:
 
 
     def generate001(self):
+        """generate files for determining the PMF along the RMSD of the ligand  
+           with respect to its bound state
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][001][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[1]
         self.logger.info('=' * 80)
@@ -650,6 +607,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
     
     def generate002(self):
+        """generate files for determining the PMF along the pitch (theta) angle of
+           the ligand
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][002][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[2]
         self.logger.info('=' * 80)
@@ -714,6 +675,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate003(self):
+        """generate files for determining the PMF along the roll (phi) angle of
+           the ligand
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][003][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[3]
         self.logger.info('=' * 80)
@@ -779,6 +744,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate004(self):
+        """generate files for determining the PMF along the yaw (psi) angle of
+           the ligand
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][004][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[4]
         self.logger.info('=' * 80)
@@ -845,6 +814,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate005(self):
+        """generate files for determining the PMF along the polar theta angle of
+           the ligand relative to the protein
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][005][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[5]
         self.logger.info('=' * 80)
@@ -922,6 +895,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate006(self):
+        """generate files for determining the PMF along the polar phi angle of
+           the ligand relative to the protein
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][006][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[6]
         self.logger.info('=' * 80)
@@ -1000,6 +977,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate007(self):
+        """generate files for determining the PMF along the distance between the
+           the ligand and the protein
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][007][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[7]
         self.logger.info('=' * 80)
@@ -1157,6 +1138,10 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate008(self):
+        """generate files for determining the PMF along the RMSD of the ligand  
+           with respect to its unbound state
+        """
+
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][008][%(levelname)s]:%(message)s'))
         generate_basename = self.basenames[8]
         self.logger.info('=' * 80)
