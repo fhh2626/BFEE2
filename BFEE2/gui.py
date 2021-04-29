@@ -384,7 +384,7 @@ class alchemicalAdvancedSettings(QWidget):
 
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
-        self.modelingLayout = QHBoxLayout()
+        self.modelingLayout = QVBoxLayout()
 
         self.memProCheckbox = QCheckBox('Membrane protein')
         self.memProCheckbox.setChecked(False)
