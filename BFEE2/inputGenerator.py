@@ -1208,9 +1208,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1222,8 +1222,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
                         membraneProtein=membraneProtein
                     )
@@ -1232,10 +1232,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', 
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1253,9 +1253,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1266,8 +1266,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1276,10 +1276,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1297,9 +1297,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1310,8 +1310,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1320,10 +1320,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1341,9 +1341,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1354,8 +1354,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1364,10 +1364,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1385,9 +1385,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1399,8 +1399,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1409,10 +1409,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1430,9 +1430,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'output/abf_1.coor', f'output/abf_1.vel', f'output/abf_1.xsc',
+                    f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1443,8 +1443,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1453,10 +1453,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1492,9 +1492,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
-                    'output/abf_1.coor', 'output/abf_1.vel', 'output/abf_1.xsc', '',
+                    'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
-                    CVRestartFile=f'output/abf_1', membraneProtein=membraneProtein
+                    CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein
                 )
             )
 
@@ -1505,8 +1505,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein
                     )
@@ -1515,10 +1515,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
                     )
                 )
 
@@ -1546,9 +1546,9 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
-                    'output/abf_1.coor', 'output/abf_1.vel', 'output/abf_1.xsc', '',
+                    'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
-                    CVRestartFile=f'output/abf_1'
+                    CVRestartFile=f'output/abf_1.restart'
                 )
             )
 
@@ -1559,8 +1559,8 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
-                        f'output/abf_{i}.coor', f'output/abf_{i}.vel', 
-                        f'output/abf_{i}.xsc',
+                        f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
+                        f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in'
                     )
                 )
@@ -1568,10 +1568,10 @@ class inputGenerator():
                     namdConfig.write(
                         self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
-                        f'output/abf_{i+1}.coor', f'output/abf_{i+1}.vel', 
-                        f'output/abf_{i+1}.xsc',
+                        f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
+                        f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in',
-                        CVRestartFile=f'output/abf_{i+1}'
+                        CVRestartFile=f'output/abf_{i+1}.restart'
                     )
                 )
 
