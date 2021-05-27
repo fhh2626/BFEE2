@@ -17,8 +17,9 @@ colvar {
     eulerTheta {
         atoms {
             indexGroup          $ligand_selection
-            centerReference     on
-            rotateReference     on
+            centerToReference   on
+            rotateToReference   on
+            centerToOrigin      on
             enableFitGradients  on
             fittingGroup {
                 indexGroup $protein_selection
@@ -34,8 +35,9 @@ colvar {
     eulerPhi {
         atoms {
             indexGroup          $ligand_selection
-            centerReference     on
-            rotateReference     on
+            centerToReference   on
+            rotateToReference   on
+            centerToOrigin      on
             enableFitGradients  on
             fittingGroup {
                 indexGroup $protein_selection
@@ -51,8 +53,9 @@ colvar {
     eulerPsi {
         atoms {
             indexGroup          $ligand_selection
-            centerReference     on
-            rotateReference     on
+            centerToReference   on
+            rotateToReference   on
+            centerToOrigin      on
             enableFitGradients  on
             fittingGroup {
                 indexGroup $protein_selection
@@ -73,9 +76,10 @@ colvar {
     extendedFluctuation     $polarTheta_width
     polarTheta {
         atoms {
-            indexGroup      $ligand_selection
-            centerReference on
-            rotateReference on
+            indexGroup        $ligand_selection
+            centerToReference on
+            rotateToReference on
+            centerToOrigin    on
             fittingGroup {
                 indexGroup $protein_selection
             }

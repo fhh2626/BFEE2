@@ -17,8 +17,9 @@ colvar {
     eulerTheta {
         atoms {
             indexGroup          $ligand_selection
-            centerReference     on
-            rotateReference     on
+            centerToReference   on
+            rotateToReference   on
+            centerToOrigin      on
             enableFitGradients  on
             fittingGroup {
                 indexGroup $protein_selection
@@ -40,8 +41,9 @@ colvar {
     eulerPhi {
         atoms {
             indexGroup          $ligand_selection
-            centerReference     on
-            rotateReference     on
+            centerToReference   on
+            rotateToReference   on
+            centerToOrigin      on
             enableFitGradients  on
             fittingGroup {
                 indexGroup $protein_selection

@@ -456,8 +456,8 @@ colvar {{                            \n\
         """
         
         return f'\
-colvarsTrajFrequency      500              \n\
-colvarsRestartFrequency   50000            \n\
+colvarsTrajFrequency      5000             \n\
+colvarsRestartFrequency   5000            \n\
 indexFile                 {indexFile}      \n'
 
     def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall):
