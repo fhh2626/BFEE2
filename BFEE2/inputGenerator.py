@@ -199,8 +199,10 @@ class inputGenerator():
         path, 
         topFile, 
         pdbFile, 
+        pdbFileFormat,
         ligandOnlyTopFile, 
         ligandOnlyPdbFile,
+        ligandOnlyPdbFileFormat,
         selectionPro,
         selectionLig,
         selectionSol='resname TIP3* or resname SPC*',
@@ -236,11 +238,13 @@ class inputGenerator():
             shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
 
         bfee = BFEEGromacs(
-            pdbFile, 
-            topFile, 
-            ligandOnlyPdbFile, 
-            ligandOnlyTopFile, 
-            f'{path}/BFEE'
+            structureFile=pdbFile,
+            topologyFile=topFile,
+            ligandOnlyStructureFile=ligandOnlyPdbFile,
+            ligandOnlyTopologyFile=ligandOnlyTopFile,
+            baseDirectory=f'{path}/BFEE',
+            structureFormat=pdbFileFormat,
+            ligandOnlyStructureFileFormat=ligandOnlyPdbFileFormat
         )
         bfee.setProteinHeavyAtomsGroup(f'{selectionPro} and not (name H*)')
         bfee.setLigandHeavyAtomsGroup(f'{selectionLig} and not (name H*)')

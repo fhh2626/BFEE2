@@ -682,7 +682,7 @@ class mainUI(QMainWindow):
         self.GromacsInputsForComplexLayout = QGridLayout()
 
         # top
-        self.topLabel = QLabel('top file: ')
+        self.topLabel = QLabel('Topology file: ')
         self.topLineEdit = QLineEdit()
         self.topButton = QPushButton('Browse')
         self.GromacsInputsForComplexLayout.addWidget(self.topLabel, 0, 0)
@@ -690,14 +690,25 @@ class mainUI(QMainWindow):
         self.GromacsInputsForComplexLayout.addWidget(self.topButton, 0, 2)
 
         # gro
-        self.gromacsPdbLabel = QLabel('pdb file: ')
+        self.gromacsPdbLabel = QLabel('Structure file: ')
         self.gromacsPdbLineEdit = QLineEdit()
         self.gromacsPdbButton = QPushButton('Browse')
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLabel, 1, 0)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLineEdit, 1, 1)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbButton, 1, 2)
 
-        self.GromacsInputsForComplexLayout.addWidget(QSplitter(), 2, 1)
+        # structure file format
+        self.gromacsStructureFileFormatLayout = QHBoxLayout()
+        self.gromacsStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsStructureFileFormatCombobox = QComboBox()
+        self.gromacsStructureFileFormatCombobox.addItem('pdb')
+        self.gromacsStructureFileFormatCombobox.addItem('xpdb')
+        self.gromacsStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
+        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatLabel)
+        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatCombobox)
+        self.GromacsInputsForComplexLayout.addLayout(self.gromacsStructureFileFormatLayout, 2, 0, 1, 3)
+
+        self.GromacsInputsForComplexLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsForComplex.setLayout(self.GromacsInputsForComplexLayout)
 
         # inputs for the ligand-only system
@@ -705,7 +716,7 @@ class mainUI(QMainWindow):
         self.GromacsInputsLigandOnlyLayout = QGridLayout()
 
         # top
-        self.gromacsLigandOnlyTopLabel = QLabel('top file: ')
+        self.gromacsLigandOnlyTopLabel = QLabel('Topology file: ')
         self.gromacsLigandOnlyTopLineEdit = QLineEdit()
         self.gromacsLigandOnlyTopButton = QPushButton('Browse')
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopLabel, 0, 0)
@@ -713,14 +724,25 @@ class mainUI(QMainWindow):
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopButton, 0, 2)
 
         # gro
-        self.gromacsLigandOnlyPdbLabel = QLabel('pdb file: ')
+        self.gromacsLigandOnlyPdbLabel = QLabel('Structure file: ')
         self.gromacsLigandOnlyPdbLineEdit = QLineEdit()
         self.gromacsLigandOnlyPdbButton = QPushButton('Browse')
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLabel, 1, 0)
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLineEdit, 1, 1)
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbButton, 1, 2)
 
-        self.GromacsInputsLigandOnlyLayout.addWidget(QSplitter(), 2, 1)
+        # structure file format
+        self.gromacsLigandOnlyStructureFileFormatLayout = QHBoxLayout()
+        self.gromacsLigandOnlyStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsLigandOnlyStructureFileFormatCombobox = QComboBox()
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('pdb')
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('xpdb')
+        self.gromacsLigandOnlyStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatLabel)
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatCombobox)
+        self.GromacsInputsLigandOnlyLayout.addLayout(self.gromacsLigandOnlyStructureFileFormatLayout, 2, 0, 1, 3)
+
+        self.GromacsInputsLigandOnlyLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsLigandOnly.setLayout(self.GromacsInputsLigandOnlyLayout)
 
         self.GromacsTabMainLayout.addWidget(self.GromacsInputsForComplex)
@@ -1622,8 +1644,10 @@ Unknown error! The error message is: \n\
                             path=path,
                             topFile=self.topLineEdit.text(),
                             pdbFile=self.gromacsPdbLineEdit.text(),
+                            pdbFileFormat=self.gromacsStructureFileFormatCombobox.currentText(),
                             ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
                             ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
+                            ligandOnlyPdbFileFormat=self.gromacsLigandOnlyStructureFileFormatCombobox.currentText(),
                             selectionPro=self.selectProteineLineEdit.text(),
                             selectionLig=self.selectLigandLineEdit.text(),
                             temperature=float(self.temperatureLineEdit.text())
