@@ -259,9 +259,10 @@ class BFEEGromacs:
         temperature (float): the temperature of simulations (default : 300.0)
     """    
 
-    def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None):
+    def __init__(self, structureFile, topologyFile, ligandOnlyStructureFile, ligandOnlyTopologyFile, baseDirectory=None, structureFormat='pdb', ligandOnlyStructureFileFormat='pdb'):
         # setup the logger
         self.logger = logging.getLogger()
+        self.logger.handlers.clear()
         self.handler = logging.StreamHandler(sys.stdout)
         self.handler.setFormatter(logging.Formatter('%(asctime)s [BFEEGromacs][%(levelname)s]:%(message)s'))
         self.logger.addHandler(self.handler)
@@ -278,9 +279,9 @@ class BFEEGromacs:
         self.ligandOnlyTopologyFile = ligandOnlyTopologyFile
 
         # start to load data into MDAnalysis
-        self.logger.info(f'Calling MDAnalysis to load structure {self.structureFile}.')
-        self.system = Universe(self.structureFile)
-        self.ligandOnlySystem = Universe(self.ligandOnlyStructureFile)
+        self.logger.info(f'Calling MDAnalysis to load structure {self.structureFile} (format {structureFormat}).')
+        self.system = Universe(self.structureFile, format=structureFormat)
+        self.ligandOnlySystem = Universe(self.ligandOnlyStructureFile, format=structureFormat)
 
         # some PDB files do not have cell info
         # so we reset the cell by an estimation
@@ -988,6 +989,18 @@ class BFEEGromacs:
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
+        # check if the topologies have other itp files included
+        topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.topologyFile)
+        for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
+            # handle something like "#include "toppar/xxx.itp""
+            # in this case we need to create the directory named "toppar" in the base directory
+            dest_dirname = posixpath.dirname(includeString)
+            if dest_dirname:
+                # if dest_dirname is not empty
+                if not posixpath.exists(posixpath.join(self.baseDirectory, generate_basename, dest_dirname)):
+                # if the destination directory does not exist
+                    os.makedirs(posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
+            shutil.copy(includeFile, posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '007_min.mdp.template'),
                     posixpath.join(generate_basename, '007_Minimize'),
