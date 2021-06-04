@@ -503,6 +503,15 @@ colvar {{                              \n\
         string = f'\
 colvar {{                                   \n\
     name {angle}                            \n'
+    
+        if angle == 'polarTheta':
+            string += f'\
+    customFunction acos(-sin(t / 180 * 3.1415926) * sin(p / 180 * 3.1415926)) * 180 / 3.1415926\n'
+        elif angle == 'polarPhi':
+            string += f'\
+    customFunction atan2(cos(t / 180 * 3.1415926), cos(p / 180 * 3.1415926) * sin(t / 180 * 3.1415926)) * 180 / 3.1415926\n\
+    period  360                             \n\
+    wrapAround 0.0                          \n'
 
         if setBoundary:
             string += f'\
@@ -515,7 +524,21 @@ colvar {{                                   \n\
     extendedFluctuation 1                   \n'
 
         string += f'\
-    {angle} {{                             \n\
+    polarTheta {{                             \n\
+        name        t                          \n\
+        atoms {{                               \n\
+            indexGroup  ligand                 \n\
+            centerReference    on              \n\
+            rotateReference    on              \n\
+            centerToOrigin     on              \n\
+            fittingGroup {{                    \n\
+                indexGroup  protein            \n\
+            }}                                 \n\
+            refpositionsfile  {refFile}        \n\
+         }}                                    \n\
+    }}                                         \n\
+    polarPhi {{                             \n\
+        name        p                      \n\
         atoms {{                               \n\
             indexGroup  ligand                 \n\
             centerReference    on              \n\
