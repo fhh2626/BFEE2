@@ -280,6 +280,35 @@ colvar {{                                    \n\
     }}                                       \n\
 }}                                           \n'
         return string
+    
+    def cvAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, oldDefinition = True):
+        """Eulaer and polar angle template
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperBoundary (float): upper boundary of free-energy calculation
+            angle (str): 'eulerTheta', 'eulerPhi', 'eulerPsi', 'polarTheta' or 'polarPhi'
+            refFile (str): path to the reference file
+            oldDefinition (bool, optional): Whether use old definition of angles
+                                            for compatibility. Defaults to True.
+        """
+        
+        assert(
+            angle == 'eulerTheta' or angle == 'eulerPhi' or angle == 'eulerPsi' or \
+            angle == 'polarTheta' or angle == 'polarPhi'
+        )
+        
+        if angle == 'eulerTheta' or angle == 'eulerPhi' or angle == 'eulerPsi':
+            if oldDefinition:
+                return self.cvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+            else:
+                return self.newCvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+        elif angle == 'polarTheta' or angle == 'polarPhi':
+            if oldDefinition:
+                return self.cvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+            else:
+                return self.newCvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
 
     def cvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
         """Euler angle template
@@ -288,7 +317,7 @@ colvar {{                                    \n\
             setBoundary (bool): whether set boundary (for free-energy calculation)
             lowerBoundary (float): lower boundary of free-energy calculaton
             upperboundary (float): upper boundary of free-energy calculation
-            angle (str): 'eulerTheta', 'eulerPhi' of 'eulerPsi'
+            angle (str): 'eulerTheta', 'eulerPhi' or 'eulerPsi'
             refFile (str): path to the reference file
             
         Returns:
@@ -404,6 +433,101 @@ colvar {{                                   \n\
         }}                                  \n\
     }}                                      \n\
 }}                                          \n'
+        return string
+    
+    def newCvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+        """new definition Euler angle template, probably the pinning down the protein is not required
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy calculation
+            angle (str): 'eulerTheta', 'eulerPhi' of 'eulerPsi'
+            refFile (str): path to the reference file
+            
+        Returns:
+            string: string of Euler angle definition
+        """
+
+        assert(angle == 'eulerTheta' or angle == 'eulerPhi' or angle == 'eulerPsi')
+        
+        string = f'\
+colvar {{                              \n\
+    name {angle}                   \n'
+
+        if setBoundary:
+            string += f'\
+    width 1                            \n\
+    lowerboundary {lowerBoundary:.1f}      \n\
+    upperboundary {upperBoundary:.1f}      \n\
+    subtractAppliedForce on            \n\
+    expandboundaries  on               \n\
+    extendedLagrangian on              \n\
+    extendedFluctuation 1              \n'
+
+        string += f'\
+    {angle} {{                             \n\
+        atoms {{                               \n\
+            indexGroup  ligand                 \n\
+            centerReference    on              \n\
+            rotateReference    on              \n\
+            centerToOrigin     on              \n\
+	        enableFitGradients on              \n\
+            fittingGroup {{                    \n\
+                indexGroup  protein            \n\
+            }}                                 \n\
+            refpositionsfile  {refFile}        \n\
+         }}                                    \n\
+         refpositionsfile  {refFile}           \n\
+    }}                                         \n\
+}}                                             \n'
+
+        return string
+    
+    def newCvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+        """new definition of Polar angle template, probably the pinning down the protein is not required
+
+        Args:
+            setBoundary (bool): whether set boundary (for free-energy calculation)
+            lowerBoundary (float): lower boundary of free-energy calculaton
+            upperboundary (float): upper boundary of free-energy calculation
+            angle (str): 'polarTheta' or 'polarPhi'
+            refFile (str): path to the reference file
+            
+        Return:
+            str: string of polar angle definition
+        """
+
+        assert(angle == 'polarTheta' or angle == 'polarPhi')
+        
+        string = f'\
+colvar {{                                   \n\
+    name {angle}                            \n'
+
+        if setBoundary:
+            string += f'\
+    width 1                                 \n\
+    lowerboundary {lowerBoundary:.1f}           \n\
+    upperboundary {upperBoundary:.1f}           \n\
+    subtractAppliedForce on                 \n\
+    expandboundaries  on                    \n\
+    extendedLagrangian on                   \n\
+    extendedFluctuation 1                   \n'
+
+        string += f'\
+    {angle} {{                             \n\
+        atoms {{                               \n\
+            indexGroup  ligand                 \n\
+            centerReference    on              \n\
+            rotateReference    on              \n\
+            centerToOrigin     on              \n\
+            fittingGroup {{                    \n\
+                indexGroup  protein            \n\
+            }}                                 \n\
+            refpositionsfile  {refFile}        \n\
+         }}                                    \n\
+    }}                                         \n\
+}}                                             \n'
         return string
 
     def cvRTemplate(self, setBoundary, lowerBoundary, upperBoundary):

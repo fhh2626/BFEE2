@@ -58,6 +58,7 @@ class inputGenerator():
         membraneProtein = False,
         neutralizeLigOnly = 'NaCl',
         pinDownPro = True,
+        useOldCv = True,
         vmdPath = ''
     ):
         """generate all the input files for NAMD alchemical simulation
@@ -83,6 +84,7 @@ class inputGenerator():
                                                        neutralize the lig-only system using the salt.
                                                        Defaluts to NaCl.
             pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
+            useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             vmdPath (str, optional): path to vmd. Defaults to ''.
         """
 
@@ -111,7 +113,7 @@ class inputGenerator():
             membraneProtein
         )
         self._generateAlchemicalColvarsConfig(
-            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro
+            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv
         )
 
     def generateNAMDGeometricFiles(
@@ -131,6 +133,7 @@ class inputGenerator():
         membraneProtein = False,
         neutralizeLigOnly = 'NaCl',
         pinDownPro = True,
+        useOldCv = True,
         parallelRuns = 1,
         vmdPath = ''
     ):
@@ -159,6 +162,7 @@ class inputGenerator():
                                                        neutralize the lig-only system using the salt.
                                                        Defaluts to NaCl.
             pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
+            useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
             vmdPath (str, optional): path to vmd. Defaults to ''.
         """ 
@@ -189,7 +193,7 @@ class inputGenerator():
             path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
         )
         self._generateGeometricColvarsConfig(
-            path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification, pinDownPro
+            path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification, pinDownPro, useOldCv
         )
 
         self._duplicateFileFolder(path, parallelRuns)
@@ -820,7 +824,8 @@ class inputGenerator():
             )
 
     def _generateAlchemicalColvarsConfig(
-        self, path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification=[1,1,1,1], pinDownPro=True
+        self, path, topType, coorType, selectionPro, selectionLig, selectionRef, 
+        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True,
     ):
         """generate Colvars config fils for geometric route
 
@@ -834,6 +839,7 @@ class inputGenerator():
             stratification (list of int, 4, optional): number of windows for each simulation. 
                                                        Defaults to [1,1,1,1].
             pinDownPro (bool, optinal): Whether pinning down the protein. Defaults to True.
+            useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
         """
 
         assert(len(stratification) == 4)
@@ -853,28 +859,28 @@ class inputGenerator():
                 self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
@@ -927,28 +933,28 @@ class inputGenerator():
                 self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
@@ -991,28 +997,28 @@ class inputGenerator():
                 self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
@@ -1053,28 +1059,28 @@ class inputGenerator():
                 self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
@@ -1588,7 +1594,8 @@ class inputGenerator():
         selectionLig, 
         selectionRef, 
         stratification=[1,1,1,1,1,1,1,1], 
-        pinDownPro=True
+        pinDownPro=True,
+        useOldCv=True
     ):
         """generate Colvars config fils for geometric route
 
@@ -1602,6 +1609,7 @@ class inputGenerator():
             stratification (list of int, 8, optional): number of windows for each simulation. 
                                                        Defaults to [1,1,1,1,1,1,1,1].
             pinDownPro (bool, optional): Whether pinning down the protein. Defaults to True.
+            useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
         """    
 
         assert(len(stratification) == 8)
@@ -1655,8 +1663,9 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        True, float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10, 'eulerTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        True, float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10, 
+                        'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
@@ -1685,13 +1694,14 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        True, float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10, 'eulerPhi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        True, float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10, 
+                        'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
@@ -1723,18 +1733,19 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        True, float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10, 'eulerPsi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        True, float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10, 
+                        'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
@@ -1769,24 +1780,25 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPsi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvPolarAngleTemplate(
+                    self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[4] * 20 - 10 + polarAngles[0], 
-                        float(i+1)/stratification[4] * 20 - 10 + polarAngles[0], 'polarTheta', '../complex.xyz'
+                        float(i+1)/stratification[4] * 20 - 10 + polarAngles[0], 'polarTheta', 
+                        '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
@@ -1825,29 +1837,30 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPsi', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvPolarAngleTemplate(
-                        False, 0, 0, 'polarTheta', '../complex.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvPolarAngleTemplate(
+                    self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[5] * 20 - 10 + polarAngles[1], 
-                        float(i+1)/stratification[5] * 20 - 10 + polarAngles[1], 'polarPhi', '../complex.xyz'
+                        float(i+1)/stratification[5] * 20 - 10 + polarAngles[1], 'polarPhi', 
+                        '../complex.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
@@ -1889,28 +1902,28 @@ class inputGenerator():
                 self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerTheta', './complex_largeBox.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPhi', './complex_largeBox.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvEulerAngleTemplate(
-                    False, 0, 0, 'eulerPsi', './complex_largeBox.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarTheta', './complex_largeBox.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvPolarAngleTemplate(
-                    False, 0, 0, 'polarPhi', './complex_largeBox.xyz'
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
                 )
             )
             colvarsConfig.write(
@@ -1945,28 +1958,28 @@ class inputGenerator():
                     self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerTheta', './complex_largeBox.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPhi', './complex_largeBox.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvEulerAngleTemplate(
-                        False, 0, 0, 'eulerPsi', './complex_largeBox.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvPolarAngleTemplate(
-                        False, 0, 0, 'polarTheta', './complex_largeBox.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvPolarAngleTemplate(
-                        False, 0, 0, 'polarPhi', './complex_largeBox.xyz'
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
                     )
                 )
                 colvarsConfig.write(
