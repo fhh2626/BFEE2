@@ -233,15 +233,19 @@ class geometricAdvancedSettings(QWidget):
 
         self.stratification.setLayout(self.stratificationLayout)
         
-        # pinning down the protein
-        self.pinDownPro = QGroupBox('Pinning down the protein')
-        self.pinDownProLayout = QHBoxLayout()
+        # compatibility
+        self.compatibility = QGroupBox('Compatibility')
+        self.compatibilityLayout = QHBoxLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
+        
+        self.useOldCvCheckbox = QCheckBox('Use custom-function-based CVs')
+        self.useOldCvCheckbox.setChecked(True)
 
-        self.pinDownProLayout.addWidget(self.pinDownProCheckbox)
-        self.pinDownPro.setLayout(self.pinDownProLayout)
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        self.compatibility.setLayout(self.compatibilityLayout)
 
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -286,7 +290,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
-        self.mainLayout.addWidget(self.pinDownPro)
+        self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -372,15 +376,19 @@ class alchemicalAdvancedSettings(QWidget):
         self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
         self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
         
-        # pinning down the protein
-        self.pinDownPro = QGroupBox('Pinning down the protein')
-        self.pinDownProLayout = QHBoxLayout()
+        # compatibility
+        self.compatibility = QGroupBox('Compatibility')
+        self.compatibilityLayout = QHBoxLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
+        
+        self.useOldCvCheckbox = QCheckBox('Use custom-function-based CVs')
+        self.useOldCvCheckbox.setChecked(True)
 
-        self.pinDownProLayout.addWidget(self.pinDownProCheckbox)
-        self.pinDownPro.setLayout(self.pinDownProLayout)
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        self.compatibility.setLayout(self.compatibilityLayout)
 
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -412,7 +420,7 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
-        self.mainLayout.addWidget(self.pinDownPro)
+        self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -682,7 +690,7 @@ class mainUI(QMainWindow):
         self.GromacsInputsForComplexLayout = QGridLayout()
 
         # top
-        self.topLabel = QLabel('top file: ')
+        self.topLabel = QLabel('Topology file: ')
         self.topLineEdit = QLineEdit()
         self.topButton = QPushButton('Browse')
         self.GromacsInputsForComplexLayout.addWidget(self.topLabel, 0, 0)
@@ -690,14 +698,25 @@ class mainUI(QMainWindow):
         self.GromacsInputsForComplexLayout.addWidget(self.topButton, 0, 2)
 
         # gro
-        self.gromacsPdbLabel = QLabel('pdb file: ')
+        self.gromacsPdbLabel = QLabel('Structure file: ')
         self.gromacsPdbLineEdit = QLineEdit()
         self.gromacsPdbButton = QPushButton('Browse')
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLabel, 1, 0)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLineEdit, 1, 1)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbButton, 1, 2)
 
-        self.GromacsInputsForComplexLayout.addWidget(QSplitter(), 2, 1)
+        # structure file format
+        self.gromacsStructureFileFormatLayout = QHBoxLayout()
+        self.gromacsStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsStructureFileFormatCombobox = QComboBox()
+        self.gromacsStructureFileFormatCombobox.addItem('pdb')
+        self.gromacsStructureFileFormatCombobox.addItem('xpdb')
+        self.gromacsStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
+        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatLabel)
+        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatCombobox)
+        self.GromacsInputsForComplexLayout.addLayout(self.gromacsStructureFileFormatLayout, 2, 0, 1, 3)
+
+        self.GromacsInputsForComplexLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsForComplex.setLayout(self.GromacsInputsForComplexLayout)
 
         # inputs for the ligand-only system
@@ -705,7 +724,7 @@ class mainUI(QMainWindow):
         self.GromacsInputsLigandOnlyLayout = QGridLayout()
 
         # top
-        self.gromacsLigandOnlyTopLabel = QLabel('top file: ')
+        self.gromacsLigandOnlyTopLabel = QLabel('Topology file: ')
         self.gromacsLigandOnlyTopLineEdit = QLineEdit()
         self.gromacsLigandOnlyTopButton = QPushButton('Browse')
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopLabel, 0, 0)
@@ -713,14 +732,25 @@ class mainUI(QMainWindow):
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopButton, 0, 2)
 
         # gro
-        self.gromacsLigandOnlyPdbLabel = QLabel('pdb file: ')
+        self.gromacsLigandOnlyPdbLabel = QLabel('Structure file: ')
         self.gromacsLigandOnlyPdbLineEdit = QLineEdit()
         self.gromacsLigandOnlyPdbButton = QPushButton('Browse')
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLabel, 1, 0)
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLineEdit, 1, 1)
         self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbButton, 1, 2)
 
-        self.GromacsInputsLigandOnlyLayout.addWidget(QSplitter(), 2, 1)
+        # structure file format
+        self.gromacsLigandOnlyStructureFileFormatLayout = QHBoxLayout()
+        self.gromacsLigandOnlyStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsLigandOnlyStructureFileFormatCombobox = QComboBox()
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('pdb')
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('xpdb')
+        self.gromacsLigandOnlyStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatLabel)
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatCombobox)
+        self.GromacsInputsLigandOnlyLayout.addLayout(self.gromacsLigandOnlyStructureFileFormatLayout, 2, 0, 1, 3)
+
+        self.GromacsInputsLigandOnlyLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsLigandOnly.setLayout(self.GromacsInputsLigandOnlyLayout)
 
         self.GromacsTabMainLayout.addWidget(self.GromacsInputsForComplex)
@@ -1198,6 +1228,11 @@ class mainUI(QMainWindow):
                 under the terms of the GNU General Public License as published by
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
+                <b>Reference:</b><br>
+                <b>BFEE2:</b> Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123<br>
+                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802<br>
+                <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745<br>
+                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178<br>
                 <b>Contact</b> Wensheng Cai (<a href="mailto:wscai@nankai.edu.cn">wscai@nankai.edu.cn</a>)
                 and Chris Chipot (<a href="mailto:chipot@ks.uiuc.edu">chipot@ks.uiuc.edu</a>)
                 for further copyright information.
@@ -1464,7 +1499,7 @@ provided in "Advanced Settings"when using the Amber \
 force fields!'
                             )
                             return
-
+                    
                     try:
                         iGenerator.generateNAMDGeometricFiles(
                             path,
@@ -1482,6 +1517,7 @@ force fields!'
                             self.geometricAdvancedSettings.memProCheckbox.isChecked(),
                             self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.useOldCvCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text()
                         )
@@ -1551,6 +1587,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
                             self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text()
                         )
                     except PermissionError:
@@ -1622,8 +1659,10 @@ Unknown error! The error message is: \n\
                             path=path,
                             topFile=self.topLineEdit.text(),
                             pdbFile=self.gromacsPdbLineEdit.text(),
+                            pdbFileFormat=self.gromacsStructureFileFormatCombobox.currentText(),
                             ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
                             ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
+                            ligandOnlyPdbFileFormat=self.gromacsLigandOnlyStructureFileFormatCombobox.currentText(),
                             selectionPro=self.selectProteineLineEdit.text(),
                             selectionLig=self.selectLigandLineEdit.text(),
                             temperature=float(self.temperatureLineEdit.text())
