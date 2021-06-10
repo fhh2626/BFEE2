@@ -194,7 +194,7 @@ class geometricAdvancedSettings(QWidget):
         self.nonStandardSolvent.setLayout(self.nonStandardSolventLayout)
 
         # stratification
-        self.stratification = QGroupBox('Stratification windows')
+        self.stratification = QGroupBox('Stratification (number of strata)')
         self.stratificationLayout = QGridLayout()
 
         self.stratificationRMSDBoundLabel = QLabel('RMSD(Bound):')
@@ -240,7 +240,7 @@ class geometricAdvancedSettings(QWidget):
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
-        self.useOldCvCheckbox = QCheckBox('Use custom-function-based CVs')
+        self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
 
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
@@ -335,7 +335,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout = QVBoxLayout()
 
         # stratification windows
-        self.stratification = QGroupBox('Stratification windows')
+        self.stratification = QGroupBox('Stratification (number of strata)')
         self.stratificationLayout = QGridLayout()
 
         self.boundLigandLabel = QLabel('Ligand/Bound state:')
@@ -359,10 +359,10 @@ class alchemicalAdvancedSettings(QWidget):
         self.stratification.setLayout(self.stratificationLayout)
 
         # double-wide simulation
-        self.doubleWide = QGroupBox('Double-wide simulation')
+        self.doubleWide = QGroupBox('Double-wide sampling simulation')
         self.doubleWideLayout = QGridLayout()
 
-        self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide simulations')
+        self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide sampling')
         self.doubleWideCheckbox.setChecked(False)
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
@@ -383,7 +383,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
-        self.useOldCvCheckbox = QCheckBox('Use custom-function-based CVs')
+        self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
 
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
