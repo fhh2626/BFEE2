@@ -62,6 +62,9 @@ autoionize -psf ${path}.psf -pdb ${path}.pdb -neutralize -cation ${cationName} -
 mol new ${path}.psf
 mol addfile ${path}.pdb
 set aa [atomselect top all]
+$$aa set beta 0
+set solute [atomselect top "not water and not ion"]
+$$solute set beta 1
 $$aa writexyz ${path}.xyz
 ${extraCommand}
 exit
