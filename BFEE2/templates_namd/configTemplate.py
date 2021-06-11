@@ -140,7 +140,7 @@ wrapAll              off                        \n\
 wrapWater            on                         \n\
 langevin             on                         \n\
 langevinDamping      1                          \n\
-langevinTemp         300                        \n\
+langevinTemp         {temperature}              \n\
 langevinHydrogen     no                         \n\
 langevinpiston       on                         \n\
 langevinpistontarget 1.01325                    \n\
