@@ -1049,8 +1049,6 @@ class BFEEGromacs:
         ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
         self.logger.info('COM of the ligand: ' + ligand_center_str + '.')
         r_center = np.sqrt(np.dot(ligand_center - protein_center, ligand_center - protein_center))
-        # convert r_center to nm
-        r_center = np.around(convert(r_center, 'angstrom', 'nm'), 2)
         self.logger.info('Distance of protein and ligand: ' + str(r_center) + ' nm.')
         r_width = 0.01
         # r_lower_boundary = r_center - r_lower_shift
