@@ -164,7 +164,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout = QVBoxLayout()
 
         # user-defined pulling direction
-        self.userDefinedDirection = QGroupBox('User-defined pulling direction')
+        self.userDefinedDirection = QGroupBox('User-defined separation direction')
         self.userDefinedDirectionLayout = QHBoxLayout()
 
         self.userDefinedDirectionLabel = QLabel('Reference:')
