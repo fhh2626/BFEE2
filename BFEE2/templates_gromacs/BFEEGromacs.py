@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import sys
-import posixpath
 import string
 import logging
 import shutil
@@ -59,7 +58,7 @@ def scanGromacsTopologyInclude(gmxTopFile, logger=None):
                 include_str = line[first_quote+1:second_quote]
                 # find the absolute path and save it to the list
                 include_filename = os.path.join(topology_dirpath, include_str).replace('\\', '/')
-                if (posixpath.exists(include_filename)):
+                if (os.path.exists(include_filename)):
                     include_files.append(include_filename)
                     include_strings.append(include_str)
                 else:
@@ -298,42 +297,42 @@ class BFEEGromacs:
         # set default temperature to 300.0 K
         self.temperature = 300.0
         self.logger.info(f'You have specified a new base directory at {self.baseDirectory}')
-        if not posixpath.exists(self.baseDirectory):
+        if not os.path.exists(self.baseDirectory):
             os.makedirs(self.baseDirectory)
-        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein')):
-            os.makedirs(posixpath.join(self.baseDirectory, 'Protein'))
-        if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand')):
-            os.makedirs(posixpath.join(self.baseDirectory, 'Ligand'))
+        if not os.path.exists(os.path.join(self.baseDirectory, 'Protein')):
+            os.makedirs(os.path.join(self.baseDirectory, 'Protein'))
+        if not os.path.exists(os.path.join(self.baseDirectory, 'Ligand')):
+            os.makedirs(os.path.join(self.baseDirectory, 'Ligand'))
 
         # check if the topologies have other itp files included
         topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.topologyFile)
         for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
             # handle something like "#include "toppar/xxx.itp""
             # in this case we need to create the directory named "toppar" in the base directory
-            dest_dirname = posixpath.dirname(includeString)
+            dest_dirname = os.path.dirname(includeString)
             if dest_dirname:
                 # if dest_dirname is not empty
-                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Protein', dest_dirname)):
+                if not os.path.exists(os.path.join(self.baseDirectory, 'Protein', dest_dirname)):
                 # if the destination directory does not exist
-                    os.makedirs(posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
-            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Protein', dest_dirname))
+                    os.makedirs(os.path.join(self.baseDirectory, 'Protein', dest_dirname))
+            shutil.copy(includeFile, os.path.join(self.baseDirectory, 'Protein', dest_dirname))
         # do the same thing to the ligand topology
         topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.ligandOnlyTopologyFile)
         for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
             # handle something like "#include "toppar/xxx.itp""
             # in this case we need to create the directory named "toppar" in the base directory
-            dest_dirname = posixpath.dirname(includeString)
+            dest_dirname = os.path.dirname(includeString)
             if dest_dirname:
                 # if dest_dirname is not empty
-                if not posixpath.exists(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname)):
+                if not os.path.exists(os.path.join(self.baseDirectory, 'Ligand', dest_dirname)):
                 # if the destination directory does not exist
-                    os.makedirs(posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
-            shutil.copy(includeFile, posixpath.join(self.baseDirectory, 'Ligand', dest_dirname))
+                    os.makedirs(os.path.join(self.baseDirectory, 'Ligand', dest_dirname))
+            shutil.copy(includeFile, os.path.join(self.baseDirectory, 'Ligand', dest_dirname))
 
         #self.structureFile = shutil.copy(self.structureFile, self.baseDirectory)
-        self.topologyFile = shutil.copy(self.topologyFile, posixpath.join(self.baseDirectory, 'Protein'))
-        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, posixpath.join(self.baseDirectory, 'Ligand'))
-        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, posixpath.join(self.baseDirectory, 'Ligand'))
+        self.topologyFile = shutil.copy(self.topologyFile, os.path.join(self.baseDirectory, 'Protein'))
+        self.ligandOnlyStructureFile = shutil.copy(self.ligandOnlyStructureFile, os.path.join(self.baseDirectory, 'Ligand'))
+        self.ligandOnlyTopologyFile = shutil.copy(self.ligandOnlyTopologyFile, os.path.join(self.baseDirectory, 'Ligand'))
 
         # move the system, so that the complex is at the center of the simulation box
         all_center = measure_center(all_atoms.positions)
@@ -362,7 +361,7 @@ class BFEEGromacs:
             #self.logger.warning(f'The volume is too small. Maybe the structure file is a PDB file without the unit cell.')
             #all_atoms = self.system.select_atoms("all")
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
-        newBasename = posixpath.splitext(fileName)[0]
+        newBasename = os.path.splitext(fileName)[0]
         self.structureFile = self.baseDirectory + '/Protein/' + fileName + '.new.gro'
             #self.saveStructure(self.structureFile)
         all_atoms.write(self.structureFile)
@@ -376,7 +375,7 @@ class BFEEGromacs:
             #self.ligandOnlySystem.trajectory[0].triclinic_dimensions = get_cell(all_atoms.positions)
             #dim = self.ligandOnlySystem.dimensions
             #self.logger.warning(f'The unit cell has been reset to {dim[0]:12.5f} {dim[1]:12.5f} {dim[2]:12.5f} .')
-        newBasename = posixpath.splitext(ligandOnly_fileName)[0]
+        newBasename = os.path.splitext(ligandOnly_fileName)[0]
         self.ligandOnlyStructureFile = self.baseDirectory + '/' + ligandOnly_fileName + '.new.gro'
             #self.saveStructure(self.ligandOnlyStructureFile)
         all_atoms_ligandOnly.write(self.ligandOnlyStructureFile)
@@ -393,7 +392,7 @@ class BFEEGromacs:
                           '008_RMSD_unbound'
                         ]
         self.stepnames = self.basenames.copy()
-        self.basenames = [posixpath.join(self.baseDirectory, basename) for basename in self.basenames]
+        self.basenames = [os.path.join(self.baseDirectory, basename) for basename in self.basenames]
         self.logger.info('Initialization done.')
 
     def saveStructure(self, outputFile, selection='all'):
@@ -490,12 +489,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[0]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '000.mdp.template'),
-                    posixpath.join(generate_basename, '000_eq'),
+                    os.path.join(generate_basename, '000_eq'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
@@ -513,31 +512,31 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '000_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '000_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '000.colvars.template'),
                         colvars_inputfile_basename,
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str,
                         logger=self.logger)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '000.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '000_generate_tpr'),
+                            os.path.join(generate_basename, '000_generate_tpr'),
                             logger=self.logger,
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                 '000_eq.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                    posixpath.abspath(generate_basename)).replace('\\', '/'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.structureFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                    os.path.abspath(generate_basename)).replace('\\', '/'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -551,12 +550,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[1]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '001.mdp.template'),
-                    posixpath.join(generate_basename, '001_PMF'),
+                    os.path.join(generate_basename, '001_PMF'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
@@ -574,9 +573,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '001_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '001_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '001.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
@@ -588,22 +587,22 @@ class BFEEGromacs:
                         protein_center=protein_center_str,
                         logger=self.logger)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '001.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '001_generate_tpr'),
+                            os.path.join(generate_basename, '001_generate_tpr'),
                             logger=self.logger,
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '001_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
     
@@ -616,12 +615,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[2]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '002.mdp.template'),
-                    posixpath.join(generate_basename, '002_PMF'),
+                    os.path.join(generate_basename, '002_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
@@ -639,9 +638,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '002_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '002.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -653,25 +652,25 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '002.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '002_generate_tpr'),
+                            os.path.join(generate_basename, '002_generate_tpr'),
                             logger=self.logger,
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '002_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -684,12 +683,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[3]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '003.mdp.template'),
-                    posixpath.join(generate_basename, '003_PMF'),
+                    os.path.join(generate_basename, '003_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
@@ -707,9 +706,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '003_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '003_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '003.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -721,26 +720,26 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '003.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '003_generate_tpr'),
+                            os.path.join(generate_basename, '003_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '003_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -753,12 +752,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[4]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '004.mdp.template'),
-                    posixpath.join(generate_basename, '004_PMF'),
+                    os.path.join(generate_basename, '004_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
@@ -776,9 +775,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '004_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '004_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '004.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -790,27 +789,27 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '004.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '004_generate_tpr'),
+                            os.path.join(generate_basename, '004_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
                             BASENAME_003=self.stepnames[3],
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '004_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -823,12 +822,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[5]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '005.mdp.template'),
-                    posixpath.join(generate_basename, '005_PMF'),
+                    os.path.join(generate_basename, '005_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
@@ -846,9 +845,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '005_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '005_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
@@ -870,28 +869,28 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '005.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '005_generate_tpr'),
+                            os.path.join(generate_basename, '005_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
                             BASENAME_003=self.stepnames[3],
                             BASENAME_004=self.stepnames[4],
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '005_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -904,12 +903,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[6]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '006.mdp.template'),
-                    posixpath.join(generate_basename, '006_PMF'),
+                    os.path.join(generate_basename, '006_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
@@ -927,9 +926,9 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '006_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '006_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
@@ -951,29 +950,29 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # generate the shell script for making the tpr file
         generateShellScript(pkg_resources.read_text(templates_gromacs, '006.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '006_generate_tpr'),
+                            os.path.join(generate_basename, '006_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
                             BASENAME_003=self.stepnames[3],
                             BASENAME_004=self.stepnames[4],
                             BASENAME_005=self.stepnames[5],
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '006_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/000_eq/output/000_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -986,24 +985,24 @@ class BFEEGromacs:
         generate_basename = self.basenames[7]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # check if the topologies have other itp files included
         topologyIncludeFiles, topologyIncludeStrings = scanGromacsTopologyInclude(self.topologyFile)
         for includeFile, includeString in zip(topologyIncludeFiles, topologyIncludeStrings):
             # handle something like "#include "toppar/xxx.itp""
             # in this case we need to create the directory named "toppar" in the base directory
-            dest_dirname = posixpath.dirname(includeString)
+            dest_dirname = os.path.dirname(includeString)
             if dest_dirname:
                 # if dest_dirname is not empty
-                if not posixpath.exists(posixpath.join(self.baseDirectory, generate_basename, dest_dirname)):
+                if not os.path.exists(os.path.join(self.baseDirectory, generate_basename, dest_dirname)):
                 # if the destination directory does not exist
-                    os.makedirs(posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
-            shutil.copy(includeFile, posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
+                    os.makedirs(os.path.join(self.baseDirectory, generate_basename, dest_dirname))
+            shutil.copy(includeFile, os.path.join(self.baseDirectory, generate_basename, dest_dirname))
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '007_min.mdp.template'),
-                    posixpath.join(generate_basename, '007_Minimize'),
+                    os.path.join(generate_basename, '007_Minimize'),
                     timeStep=0.002,
                     numSteps=5000,
                     temperature=self.temperature,
@@ -1011,7 +1010,7 @@ class BFEEGromacs:
                     logger=self.logger)
         # equilibration
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
-                    posixpath.join(generate_basename, '007_Equilibration'),
+                    os.path.join(generate_basename, '007_Equilibration'),
                     timeStep=0.002,
                     numSteps=5000000,
                     temperature=self.temperature,
@@ -1019,7 +1018,7 @@ class BFEEGromacs:
                     logger=self.logger)
         # free-energy calculation
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
-                    posixpath.join(generate_basename, '007_PMF'),
+                    os.path.join(generate_basename, '007_PMF'),
                     timeStep=0.002,
                     numSteps=80000000,
                     temperature=self.temperature,
@@ -1039,10 +1038,10 @@ class BFEEGromacs:
         protein_center_str = f'({protein_center[0]}, {protein_center[1]}, {protein_center[2]})'
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
-        self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
+        self.generateGromacsIndex(os.path.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename_eq = posixpath.join(generate_basename, '007_eq_colvars')
-        colvars_inputfile_basename = posixpath.join(generate_basename, '007_colvars')
+        colvars_inputfile_basename_eq = os.path.join(generate_basename, '007_eq_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '007_colvars')
         # measure the current COM distance from the ligand to protein
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
@@ -1083,9 +1082,9 @@ class BFEEGromacs:
                         protein_selection='BFEE_Protein',
                         protein_center=protein_center_str)
         # generate the reference file
-        self.system.select_atoms('all').write(posixpath.join(generate_basename, 'reference.xyz'))
+        self.system.select_atoms('all').write(os.path.join(generate_basename, 'reference.xyz'))
         # write the solvent molecules
-        self.solvent.write(posixpath.join(generate_basename, 'solvent.gro'))
+        self.solvent.write(os.path.join(generate_basename, 'solvent.gro'))
         # generate the shell script for making the tpr file
         # further enlarge the water box by 10% since the size of box may be compressed under NPT
         new_box_x = np.around(convert(self.system.dimensions[0], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
@@ -1093,60 +1092,60 @@ class BFEEGromacs:
         new_box_z = np.around(convert(self.system.dimensions[2], 'angstrom', 'nm'), 2) + r_upper_shift * 1.1
         # generate shell script for equlibration
         generateShellScript(pkg_resources.read_text(templates_gromacs, '007_eq.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '007.1_generate_eq_tpr'),
+                            os.path.join(generate_basename, '007.1_generate_eq_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
                             BASENAME_003=self.stepnames[3],
                             BASENAME_004=self.stepnames[4],
                             BASENAME_005=self.stepnames[5],
                             BASENAME_006=self.stepnames[6],
-                            BOX_MODIFIED_GRO_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            BOX_MODIFIED_GRO_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                          'box_modified.gro')),
-                                                                        posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            MODIFIED_TOP_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                        os.path.abspath(generate_basename)).replace('\\', '/'),
+                            MODIFIED_TOP_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                      'solvated.top')),
-                                                                    posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            MODIFIED_GRO_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                    os.path.abspath(generate_basename)).replace('\\', '/'),
+                            MODIFIED_GRO_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                      'solvated.gro')),
-                                                                    posixpath.abspath(generate_basename)).replace('\\', '/'),
+                                                                    os.path.abspath(generate_basename)).replace('\\', '/'),
                             NEW_BOX_X_TEMPLATE=f'{new_box_x:.5f}',
                             NEW_BOX_Y_TEMPLATE=f'{new_box_y:.5f}',
                             NEW_BOX_Z_TEMPLATE=f'{new_box_z:.5f}',
-                            MIN_MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MIN_MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                      '007_Minimize.mdp')),
-                                                                    posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                                                                    os.path.abspath(generate_basename)).replace('\\', '/'),
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '007_Equilibration.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.structureFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.topologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename_eq + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.structureFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.topologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename_eq + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # generate shell script for free-energy calculation
         generateShellScript(pkg_resources.read_text(templates_gromacs, '007.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '007.2_generate_tpr'),
+                            os.path.join(generate_basename, '007.2_generate_tpr'),
                             logger=self.logger,
                             BASENAME_002=self.stepnames[2],
                             BASENAME_003=self.stepnames[3],
                             BASENAME_004=self.stepnames[4],
                             BASENAME_005=self.stepnames[5],
                             BASENAME_006=self.stepnames[6],
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '007_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/007_r/output/007_r_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/007_r/solvated.top'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/007_r/output/007_r_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/007_r/solvated.top'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
         # also copy the awk script to modify the colvars configuration according to the PMF minima in previous stages
         with pkg_resources.path(templates_gromacs, 'find_min_max.awk') as p:
-            shutil.copyfile(p, posixpath.join(generate_basename, 'find_min_max.awk'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+            shutil.copyfile(p, os.path.join(generate_basename, 'find_min_max.awk'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
@@ -1159,12 +1158,12 @@ class BFEEGromacs:
         generate_basename = self.basenames[8]
         self.logger.info('=' * 80)
         self.logger.info(f'Generating simulation files for {generate_basename}...')
-        if not posixpath.exists(generate_basename):
-            self.logger.info(f'Making directory {posixpath.abspath(generate_basename)}...')
+        if not os.path.exists(generate_basename):
+            self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # # generate the MDP file for equlibration
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
-                    posixpath.join(generate_basename, '008_Equilibration'),
+                    os.path.join(generate_basename, '008_Equilibration'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=1000000,
@@ -1172,7 +1171,7 @@ class BFEEGromacs:
                     pressure=1.01325)
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
-                    posixpath.join(generate_basename, '008_PMF'),
+                    os.path.join(generate_basename, '008_PMF'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
@@ -1180,9 +1179,9 @@ class BFEEGromacs:
                     pressure=1.01325)
         # generate the index file
         if hasattr(self, 'ligandOnly'):
-            self.ligandOnly.write(posixpath.join(generate_basename, 'colvars_ligand_only.ndx'), name='BFEE_Ligand_Only')
+            self.ligandOnly.write(os.path.join(generate_basename, 'colvars_ligand_only.ndx'), name='BFEE_Ligand_Only')
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '008_colvars')
+        colvars_inputfile_basename = os.path.join(generate_basename, '008_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '008.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
@@ -1197,33 +1196,33 @@ class BFEEGromacs:
         # modify positions in the ligand-only system
         self.ligandOnly.positions = ligand_position_in_system
         # write out the whole ligand-only system as reference
-        self.ligandOnlySystem.select_atoms('all').write(posixpath.join(generate_basename, 'reference_ligand_only.xyz'))
+        self.ligandOnlySystem.select_atoms('all').write(os.path.join(generate_basename, 'reference_ligand_only.xyz'))
         # generate the shell script for making the tpr file for equilibration
         generateShellScript(pkg_resources.read_text(templates_gromacs, '008_eq.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '008.1_generate_eq_tpr'),
+                            os.path.join(generate_basename, '008.1_generate_eq_tpr'),
                             logger=self.logger,
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '008_Equilibration.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyStructureFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyTopologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),)
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.ligandOnlyStructureFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.ligandOnlyTopologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),)
         # generate the shell script for making the tpr file for free-energy calculation
         generateShellScript(pkg_resources.read_text(templates_gromacs, '008.generate_tpr_sh.template'),
-                            posixpath.join(generate_basename, '008.2_generate_tpr'),
+                            os.path.join(generate_basename, '008.2_generate_tpr'),
                             logger=self.logger,
-                            MDP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(posixpath.join(generate_basename,
+                            MDP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(os.path.join(generate_basename,
                                                                                                  '008_PMF.mdp')),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            GRO_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(f'{self.baseDirectory}/008_RMSD_unbound/output/008_RMSD_unbound_eq.out.gro'),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            TOP_FILE_TEMPLATE=posixpath.relpath(posixpath.abspath(self.ligandOnlyTopologyFile),
-                                                                posixpath.abspath(generate_basename)).replace('\\', '/'),
-                            COLVARS_INPUT_TEMPLATE=posixpath.relpath(posixpath.abspath(colvars_inputfile_basename + '.dat'),
-                                                                     posixpath.abspath(generate_basename)).replace('\\', '/'))
-        if not posixpath.exists(posixpath.join(generate_basename, 'output')):
-            os.makedirs(posixpath.join(generate_basename, 'output'))
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            GRO_FILE_TEMPLATE=os.path.relpath(os.path.abspath(f'{self.baseDirectory}/008_RMSD_unbound/output/008_RMSD_unbound_eq.out.gro'),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            TOP_FILE_TEMPLATE=os.path.relpath(os.path.abspath(self.ligandOnlyTopologyFile),
+                                                                os.path.abspath(generate_basename)).replace('\\', '/'),
+                            COLVARS_INPUT_TEMPLATE=os.path.relpath(os.path.abspath(colvars_inputfile_basename + '.dat'),
+                                                                     os.path.abspath(generate_basename)).replace('\\', '/'))
+        if not os.path.exists(os.path.join(generate_basename, 'output')):
+            os.makedirs(os.path.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
 
