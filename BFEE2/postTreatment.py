@@ -281,6 +281,79 @@ class postTreatment:
         )
         return contribution
 
+    def _fepoutFile(self, filePath):
+        """parse a fepout file and return the lambda-free energy relationship
+
+        Args:
+            filePath (str): path of the fepout file
+        
+        Returns:
+            tuple (2D np.array): lambda-free energy relationship
+        """
+        
+        Lambda = []
+        dA_dLambda = []
+
+        with open(filePath, 'r', encoding='utf-8') as fepoutFile:
+            for line in fepoutFile.readlines():
+                if not line.startswith('#Free energy'):
+                    continue
+                splitedLine = line.strip().split()
+                Lambda.append((float(splitedLine[7]) + float(splitedLine[8])) / 2)
+                dA_dLambda.append(float(splitedLine[11]))
+                
+        if Lambda[0] > Lambda[1]:
+            Lambda.reverse()
+            dA_dLambda.reverse()
+                
+        return np.array((Lambda, np.cumsum(dA_dLambda)))
+
+        
+    def _tiLogFile(self, filePath):
+        """parse a ti log file and return the lambda-free energy relationship
+
+        Args:
+            filePath (str): path of the fepout file
+        
+        Returns:
+            tuple (2D np.array): lambda-free energy relationship
+        """
+        
+        Lambda = []
+        dA_dLambda = []
+
+        with open(filePath, 'r', encoding='utf-8') as fepoutFile:
+            for line in fepoutFile.readlines():
+                if not ('dA/dLambda' in line):
+                    continue
+                splitedLine = line.strip().split()
+                Lambda.append(float(splitedLine[4]))
+                dA_dLambda.append(float(splitedLine[6]))
+                
+        # seven CVs in total with the same Lambda in the step 2
+        if Lambda[0] == Lambda[1]:
+            correctedLambda = []
+            correctedDA_dLambda = []
+            
+            for i in range(0, len(Lambda), 7):
+                correctedLambda.append(Lambda[i])
+                totalDA_dLambda = 0
+                for j in range(7):
+                    totalDA_dLambda += dA_dLambda[i+j]
+                correctedDA_dLambda.append(totalDA_dLambda)
+            
+            Lambda = correctedLambda
+            dA_dLambda = correctedDA_dLambda
+        
+        if Lambda[0] > Lambda[1]:
+            Lambda.reverse()
+            dA_dLambda.reverse()
+
+        for i in range(1, len(Lambda)):
+            dA_dLambda[i] = (Lambda[i] - Lambda[i-1]) * dA_dLambda[i]
+        
+        return np.array((Lambda, np.cumsum(dA_dLambda)))
+
     def _alchemicalFepoutFile(self, filePath, fileType = 'fepout'):
         """parse a fepout/log file and return the total free energy change
 
@@ -292,44 +365,13 @@ class postTreatment:
             float: free-energy change
         """
         
-        freeEnergy = 0
+        if fileType == 'fepout':
+            _, freeEnergyProfile = self._fepoutFile(filePath)
 
-        # for TI simulation results of the .log file
-        Lambda = []
-        dA_dLambda = []
-
-        with open(filePath, 'r', encoding='utf-8') as fepoutFile:
-            for line in fepoutFile.readlines():
-                if fileType == 'fepout':
-                    if not line.startswith('#Free energy'):
-                        continue
-                if fileType == 'log':
-                    if not ('dA/dLambda' in line):
-                        continue
-                splitedLine = line.strip().split()
-                if fileType == 'fepout':
-                    freeEnergy += float(splitedLine[11])
-                if fileType == 'log':
-                    Lambda.append(float(splitedLine[4]))
-                    dA_dLambda.append(float(splitedLine[6]))
-
-        # integraion of TI results
         if fileType == 'log':
-            # backward simulation
-            if Lambda[0] > Lambda[7]:
-                Lambda.reverse()
-                dA_dLambda.reverse()
+            _, freeEnergyProfile = self._tiLogFile(filePath)
 
-            # step 2
-            if Lambda[0] == Lambda[1]:
-                for i in range(7, len(Lambda)):
-                    freeEnergy += dA_dLambda[i] * (Lambda[i] - Lambda[i-7])
-            else:
-                # step 4
-                for i in range(1, len(Lambda)):
-                    freeEnergy += dA_dLambda[i] * (Lambda[i] - Lambda[i-1])
-
-        return freeEnergy
+        return freeEnergyProfile[-1]
 
     def alchemicalBindingFreeEnergy(self, filePathes, parameters):
         """calculate binding free energy for geometric route

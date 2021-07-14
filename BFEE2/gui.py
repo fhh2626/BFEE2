@@ -5,6 +5,7 @@ import shutil
 import sys
 import webbrowser
 
+import numpy as np
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide2 import QtCore
@@ -1151,9 +1152,38 @@ class mainUI(QMainWindow):
         self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
         self.mergePmf.setLayout(self.mergePmfLayout)
 
+        # plot hysteresis between forward and backward simulations
+        self.plotHysteresis = QGroupBox('Plot hysteresis between bidirectional simulations:')
+        self.plotHysteresisLayout = QVBoxLayout()
+
+        self.plotHysteresisForwardLayout = QHBoxLayout()
+        self.plotHysteresisForwardLabel = QLabel('Forward (fepout/log): ')
+        self.plotHysteresisForwardLineEdit = QLineEdit()
+        self.plotHysteresisForwardButton = QPushButton('Browse')
+        self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardLabel)
+        self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardLineEdit)
+        self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardButton)
+
+        self.plotHysteresisBackwardLayout = QHBoxLayout()
+        self.plotHysteresisBackwardLabel = QLabel('Backward (fepout/log):')
+        self.plotHysteresisBackwardLineEdit = QLineEdit()
+        self.plotHysteresisBackwardButton = QPushButton('Browse')
+        self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLabel)
+        self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLineEdit)
+        self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardButton)
+
+        self.plotHysteresisPlotButton = QPushButton('Plot')
+
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
+        self.plotHysteresisLayout.addWidget(self.plotHysteresisPlotButton)
+
+        self.plotHysteresis.setLayout(self.plotHysteresisLayout)
+
         self.quickPlotLayout.addWidget(self.plotPmf)
         self.quickPlotLayout.addWidget(self.mergePmf)
         self.quickPlotLayout.addWidget(self.plotPmfConvergence)
+        self.quickPlotLayout.addWidget(self.plotHysteresis)
         self.quickPlot.setLayout(self.quickPlotLayout)
 
     # slots are defined below
@@ -1760,6 +1790,46 @@ Unknown error!'
             rmsds = ploter.parseHistFile(path)
             ploter.plotConvergence(rmsds)
         return f
+    
+    def _plotHysteresis(self):
+        """plot hysteresis between forward and backward alchemical transformations
+        
+        Returns:
+            function obj: a slot function that plot hysteresis between forward and backward alchemical transformations
+        """
+        
+        def f():
+            forwardFilePath = self.plotHysteresisForwardLineEdit.text()
+            backwardFilePath = self.plotHysteresisBackwardLineEdit.text() 
+            if not os.path.exists(forwardFilePath):
+                QMessageBox.warning(self, 'Error', f'file {forwardFilePath} does not exist!')
+                return
+            if not os.path.exists(backwardFilePath):
+                QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
+                return
+
+            forwardPostfix = os.path.splitext(forwardFilePath)[-1]
+            backwardPostfix = os.path.splitext(backwardFilePath)[-1]
+
+            if forwardPostfix != '.fepout' and forwardPostfix != '.log' \
+                and backwardPostfix != '.fepout' and forwardPostfix != '.log':
+                QMessageBox.warning(self, 'Error', f'File type not correct!')
+                return
+
+            if forwardPostfix != backwardPostfix:
+                QMessageBox.warning(self, 'Error', f'File types of forward and backward simulations are not the same!')
+                return
+            
+            pTreat = postTreatment.postTreatment(float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical')
+            if forwardPostfix == '.fepout':
+                forwardProfile = np.transpose(pTreat._fepoutFile(forwardFilePath))
+                backwardProfile = np.transpose(pTreat._fepoutFile(backwardFilePath))
+                backwardProfile[:,1] *= -1
+            elif forwardPostfix == '.log':
+                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath))
+                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath))
+            ploter.plotHysteresis(forwardProfile, backwardProfile)
+        return f
 
 
     def _initSingalsSlots(self):
@@ -1819,3 +1889,6 @@ Unknown error!'
         self.mergePmfmergeButton.clicked.connect(self._mergePMFs())
         self.plotPmfConvergenceBrowseButton.clicked.connect(commonSlots.openFileDialog('pmf', self.plotPmfConvergenceBox))
         self.plotPmfConvergencePlotButton.clicked.connect(self._plotRMSDConvergence())
+        self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))
+        self.plotHysteresisBackwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisBackwardLineEdit))
+        self.plotHysteresisPlotButton.clicked.connect(self._plotHysteresis())

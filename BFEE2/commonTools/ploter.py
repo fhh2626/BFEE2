@@ -12,7 +12,7 @@ def readPMF(pmfFile):
         pmfFile (str): path to the pmf File
 
     Returns:
-        np.array (N * 2): 1D PMF
+        np.array (N*2): 1D PMF
     """
 
     return np.loadtxt(pmfFile)
@@ -24,7 +24,7 @@ def mergePMF(pmfFiles):
         pmfFiles (list of np.arrays): list of 1D pmfs
 
     Returns:
-        np.array (N * 2): merged PMF if the PMFs overlap, pmfFiles[0] otherwise
+        np.array (N*2): merged PMF if the PMFs overlap, pmfFiles[0] otherwise
     """    
     
     numPmfs = len(pmfFiles)
@@ -57,7 +57,7 @@ def writePMF(pmfFile, pmf):
 
     Args:
         pmfFile (str): path to the pmf File
-        pmf np.array (N * 2): pmf to be written
+        pmf (np.array, N*2): pmf to be written
     """
 
     np.savetxt(pmfFile, pmf, fmt='%g')
@@ -66,12 +66,28 @@ def plotPMF(pmf):
     """plot a pmf
 
     Args:
-        pmf np.array (N * 2): pmf to be plotted
+        pmf (np.array, N*2): pmf to be plotted
     """
     
     plt.plot(pmf[:,0], pmf[:,1])
     plt.xlabel('Transition coordinate')
     plt.ylabel('ΔG (kcal/mol)')
+    plt.show()
+
+def plotHysteresis(forwardProfile, backwardProfile):
+    """plot the profile describing the hysteresis between forward and backward
+       simulations
+
+    Args:
+        forwardProfile (np.array, N*2): forward free-energy profile to be plotted
+        backwardProfile (np.array, N*2): backward free-energy profile to be plotted
+    """
+    
+    plt.plot(forwardProfile[:,0], forwardProfile[:,1], label='Forward')
+    plt.plot(backwardProfile[:,0], backwardProfile[:,1], label='Backward')
+    plt.xlabel('Lambda')
+    plt.ylabel('ΔG (kcal/mol)')
+    plt.legend()
     plt.show()
 
 def calcRMSD(inputArray):
