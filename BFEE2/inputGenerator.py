@@ -775,7 +775,7 @@ class inputGenerator():
                     f'output/fep_backward.coor', f'output/fep_backward.vel', 
                     f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], True, False, minBeforeSample
+                    stratification[2], True, False, minBeforeSample
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.1_fep_backward.conf', 'w') as namdConfig:
@@ -785,7 +785,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[0], False, False, minBeforeSample
+                    stratification[2], False, False, minBeforeSample
                 )
             )
 
@@ -797,7 +797,7 @@ class inputGenerator():
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                        stratification[0], False, True
+                        stratification[2], False, True
                     )
                 )
 
