@@ -1180,6 +1180,21 @@ class inputGenerator():
 
         # pbc
         pbc = fParser.measurePBC()
+        
+        # the extended water box
+        # read the ligandOnly topology and coordinate file
+        if os.path.exists(f'{path}/BFEE/007_r/complex_largeBox.{topType}'):
+            fParserLargeBox = fileParser.fileParser(
+                f'{path}/BFEE/007_r/complex_largeBox.{topType}', 
+                f'{path}/BFEE/007_r/complex_largeBox.{coorType}'
+            )
+            # pbc
+            pbcStep7 = fParserLargeBox.measurePBC()
+        else:
+            if not membraneProtein:
+                pbcStep7 = pbc + np.array([[24,24,24],[0,0,0]])
+            else:
+                pbcStep7 = pbc + np.array([[0,0,32],[0,0,0]])
 
         # read the ligandOnly topology and coordinate file
         if os.path.exists(f'{path}/BFEE/008_RMSDUnbound/ligandOnly.{topType}'):
@@ -1472,11 +1487,6 @@ class inputGenerator():
 
         # r
         # eq
-        # the extended water box
-        if not membraneProtein:
-            pbcStep7 = pbc + np.array([[24,24,24],[0,0,0]])
-        else:
-            pbcStep7 = pbc + np.array([[0,0,32],[0,0,0]])
 
         with open(f'{path}/BFEE/007_r/007.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
