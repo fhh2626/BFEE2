@@ -1635,6 +1635,40 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
+            # monitor CVs during equilibration
+            colvarsConfig.write(
+                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvRTemplate(
+                    False, 0, 0
+                )
+            )
             colvarsConfig.write(
                 self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
             )
@@ -1934,6 +1968,11 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
                     False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvRTemplate(
+                    False, 0, 0
                 )
             )
             colvarsConfig.write(
