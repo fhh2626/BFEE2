@@ -1629,6 +1629,9 @@ class inputGenerator():
         center = fParser.measureCenter(selectionPro)
         polarAngles = fParser.measurePolarAngles(selectionRef, selectionLig)
         distance = fParser.measureDistance(selectionRef, selectionLig)
+        
+        fParserLargeBox = fileParser.fileParser(f'{path}/BFEE/007_r/complex_largeBox.pdb')
+        centerLargeBox = fParserLargeBox.measureCenter(selectionPro)
 
         # 000_eq
         with open(f'{path}/BFEE/000_eq/colvars.in', 'w') as colvarsConfig:
@@ -1994,7 +1997,7 @@ class inputGenerator():
                 self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
+                self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz')
             )
 
         # abf
@@ -2066,7 +2069,7 @@ class inputGenerator():
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, './complex_largeBox.xyz')
+                        self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz')
                     )
 
         # 008_RMSDUnbound
