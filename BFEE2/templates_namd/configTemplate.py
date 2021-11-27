@@ -244,7 +244,7 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
         return configString
 
 
-    def cvRMSDTemplate(self, setBoundary, lowerBoundary, upperBoundary, refFile):
+    def cvRMSDTemplate(self, setBoundary, lowerBoundary, upperBoundary, refFile, extendedLagrangian=True):
         """RMSD CV template
 
         Args:
@@ -252,6 +252,7 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
             lowerBoundary (float): lower boundary of free-energy calculaton
             upperboundary (float): upper boundary of free-energy calculation
             refFile (str): path to the reference file
+            extendedLagrangian (bool): Whether extended Lagrangian is added
         
         Returns:
             str: string of RMSD definition
@@ -265,7 +266,10 @@ colvar {{                                    \n\
             string += f'\
     width 0.05                               \n\
     lowerboundary {lowerBoundary:.1f}            \n\
-    upperboundary {upperBoundary:.1f}            \n\
+    upperboundary {upperBoundary:.1f}            \n'
+    
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on                  \n\
     expandboundaries  on                     \n\
     extendedLagrangian on                    \n\
@@ -281,7 +285,7 @@ colvar {{                                    \n\
 }}                                           \n'
         return string
     
-    def cvAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, oldDefinition = True):
+    def cvAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, oldDefinition = True, extendedLagrangian=True):
         """Eulaer and polar angle template
 
         Args:
@@ -291,7 +295,8 @@ colvar {{                                    \n\
             angle (str): 'eulerTheta', 'eulerPhi', 'eulerPsi', 'polarTheta' or 'polarPhi'
             refFile (str): path to the reference file
             oldDefinition (bool, optional): Whether use old definition of angles
-                                            for compatibility. Defaults to True.
+                                            for compatibility. Defaults to True
+            extendedLagrangian (bool): Whether extended Lagrangian is added
         """
         
         assert(
@@ -301,16 +306,16 @@ colvar {{                                    \n\
         
         if angle == 'eulerTheta' or angle == 'eulerPhi' or angle == 'eulerPsi':
             if oldDefinition:
-                return self.cvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+                return self.cvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian)
             else:
-                return self.newCvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+                return self.newCvEulerAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian)
         elif angle == 'polarTheta' or angle == 'polarPhi':
             if oldDefinition:
-                return self.cvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+                return self.cvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian)
             else:
-                return self.newCvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile)
+                return self.newCvPolarAngleTemplate(setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian)
 
-    def cvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+    def cvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian=True):
         """Euler angle template
 
         Args:
@@ -319,6 +324,7 @@ colvar {{                                    \n\
             upperboundary (float): upper boundary of free-energy calculation
             angle (str): 'eulerTheta', 'eulerPhi' or 'eulerPsi'
             refFile (str): path to the reference file
+            extendedLagrangian (bool): Whether extended Lagrangian is added
             
         Returns:
             string: string of Euler angle definition
@@ -344,7 +350,10 @@ colvar {{                              \n\
             string += f'\
     width 1                            \n\
     lowerboundary {lowerBoundary:.1f}      \n\
-    upperboundary {upperBoundary:.1f}      \n\
+    upperboundary {upperBoundary:.1f}      \n'
+        
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on            \n\
     expandboundaries  on               \n\
     extendedLagrangian on              \n\
@@ -369,7 +378,7 @@ colvar {{                              \n\
 
         return string
 
-    def cvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+    def cvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian=True):
         """Polar angle template
 
         Args:
@@ -378,6 +387,7 @@ colvar {{                              \n\
             upperboundary (float): upper boundary of free-energy calculation
             angle (str): 'polarTheta' or 'polarPhi'
             refFile (str): path to the reference file
+            extendedLagrangian (bool): Whether extended Lagrangian is added
             
         Return:
             str: string of polar angle definition
@@ -402,7 +412,10 @@ colvar {{                                   \n\
             string += f'\
     width 1                                 \n\
     lowerboundary {lowerBoundary:.1f}           \n\
-    upperboundary {upperBoundary:.1f}           \n\
+    upperboundary {upperBoundary:.1f}           \n'
+    
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on                 \n\
     expandboundaries  on                    \n\
     extendedLagrangian on                   \n\
@@ -435,7 +448,7 @@ colvar {{                                   \n\
 }}                                          \n'
         return string
     
-    def newCvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+    def newCvEulerAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian=True):
         """new definition Euler angle template, probably the pinning down the protein is not required
 
         Args:
@@ -444,6 +457,7 @@ colvar {{                                   \n\
             upperboundary (float): upper boundary of free-energy calculation
             angle (str): 'eulerTheta', 'eulerPhi' of 'eulerPsi'
             refFile (str): path to the reference file
+            extendedLagrangian (bool): Whether extended Lagrangian is added
             
         Returns:
             string: string of Euler angle definition
@@ -459,7 +473,10 @@ colvar {{                              \n\
             string += f'\
     width 1                            \n\
     lowerboundary {lowerBoundary:.1f}      \n\
-    upperboundary {upperBoundary:.1f}      \n\
+    upperboundary {upperBoundary:.1f}      \n'
+        
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on            \n\
     expandboundaries  on               \n\
     extendedLagrangian on              \n\
@@ -484,7 +501,7 @@ colvar {{                              \n\
 
         return string
     
-    def newCvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile):
+    def newCvPolarAngleTemplate(self, setBoundary, lowerBoundary, upperBoundary, angle, refFile, extendedLagrangian=True):
         """new definition of Polar angle template, probably the pinning down the protein is not required
 
         Args:
@@ -493,6 +510,7 @@ colvar {{                              \n\
             upperboundary (float): upper boundary of free-energy calculation
             angle (str): 'polarTheta' or 'polarPhi'
             refFile (str): path to the reference file
+            extendedLagrangian (bool): Whether extended Lagrangian is added
             
         Return:
             str: string of polar angle definition
@@ -517,7 +535,10 @@ colvar {{                                   \n\
             string += f'\
     width 1                                 \n\
     lowerboundary {lowerBoundary:.1f}           \n\
-    upperboundary {upperBoundary:.1f}           \n\
+    upperboundary {upperBoundary:.1f}           \n'
+        
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on                 \n\
     expandboundaries  on                    \n\
     extendedLagrangian on                   \n\
@@ -553,13 +574,14 @@ colvar {{                                   \n\
 }}                                             \n'
         return string
 
-    def cvRTemplate(self, setBoundary, lowerBoundary, upperBoundary):
+    def cvRTemplate(self, setBoundary, lowerBoundary, upperBoundary, extendedLagrangian=True):
         """r distance template
 
         Args:
             setBoundary (bool): whether set boundary (for free-energy calculation)
             lowerBoundary (float): lower boundary of free-energy calculaton
-            upperboundary (float): upper boundary of free-energy 
+            upperboundary (float): upper boundary of free-energy
+            extendedLagrangian (bool): Whether extended Lagrangian is added
         
         Returns:
             str: string of distance r definition
@@ -572,7 +594,10 @@ colvar {{                            \n\
             string += f'\
     width 0.1                        \n\
     lowerboundary {lowerBoundary:.1f}    \n\
-    upperboundary {upperBoundary:.1f}    \n\
+    upperboundary {upperBoundary:.1f}    \n'
+        
+        if extendedLagrangian:
+            string += f'\
     subtractAppliedForce on          \n\
     expandboundaries  on             \n\
     extendedLagrangian on            \n\
@@ -691,6 +716,24 @@ metadynamics {{                   \n\
     wellTempered      on          \n\
     biasTemperature   4000        \n\
 }}                                \n'
+        return string
+    
+    def cvHistogramTemplate(self, cv):
+        """ template for outputting the histogram of the CV
+
+        Args:
+            cv (str): name of the colvars
+            
+        Returns:
+            str: string of the histogram definition
+        """
+        
+        string = f'\
+histogram {{                     \n\
+  colvars    {cv}                \n\
+  outputFileDX  none             \n\
+  outputFreq 10000               \n\
+}}                               \n'
         return string
 
     def cvProteinTemplate(self, centerCoor, refFile):

@@ -856,58 +856,67 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    True, 0, 10, '../complex.xyz',
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                    True, -90, 90, 'eulerTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                    True, -180, 180, 'eulerPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                    True, -180, 180, 'eulerPsi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                    True, 0, 180, 'polarTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    True, -180, 180, 'polarPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    True, (distance - 5 if distance - 5 > 0 else 0), 
+                    distance + 22, extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.cTemplate.cvHistogramTemplate('RMSD')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                self.cTemplate.cvHistogramTemplate('eulerTheta')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                self.cTemplate.cvHistogramTemplate('eulerPhi')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                self.cTemplate.cvHistogramTemplate('eulerPsi')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                self.cTemplate.cvHistogramTemplate('polarTheta')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                self.cTemplate.cvHistogramTemplate('polarPhi')
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('r', 10, distance)
+                self.cTemplate.cvHistogramTemplate('r')
             )
             colvarsConfig.write(
                 self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
@@ -918,7 +927,10 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../ligandOnly.xyz',
+                    extendedLagrangian = False
+                )
             )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
@@ -930,36 +942,44 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../complex.xyz',
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    False, 0, 0, extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
@@ -994,36 +1014,44 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../complex.xyz',
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    False, 0, 0, extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
@@ -1056,36 +1084,43 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../complex.xyz', extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    False, 0, 0, extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
@@ -1120,7 +1155,10 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../ligandOnly.xyz',
+                    extendedLagrangian = False
+                )
             )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
@@ -1132,7 +1170,10 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../ligandOnly.xyz',
+                    extendedLagrangian = False
+                )
             )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], True, 10)
@@ -1142,7 +1183,10 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../ligandOnly.xyz')
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', '../ligandOnly.xyz',
+                    extendedLagrangian = False
+                )
             )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
@@ -1640,37 +1684,67 @@ class inputGenerator():
             )
             # monitor CVs during equilibration
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    True, 0, 10, '../complex.xyz',
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                    True, -90, 90, 'eulerTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                    True, -180, 180, 'eulerPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                    True, -180, 180, 'eulerPsi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv
+                    True, 0, 180, 'polarTheta', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    True, -180, 180, 'polarPhi', '../complex.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    True, (distance - 5 if distance - 5 > 0 else 0), 
+                    distance + 22, extendedLagrangian = False
                 )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('RMSD')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('eulerTheta')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('eulerPhi')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('eulerPsi')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('polarTheta')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('polarPhi')
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvHistogramTemplate('r')
             )
             colvarsConfig.write(
                 self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
@@ -1684,7 +1758,8 @@ class inputGenerator():
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
-                        True, float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0, '../complex.xyz'
+                        True, float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0, '../complex.xyz',
+                        extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1707,12 +1782,15 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
+                    )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10, 
-                        'eulerTheta', '../complex.xyz', useOldCv
+                        'eulerTheta', '../complex.xyz', useOldCv, extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1738,17 +1816,21 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
+                    )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10, 
-                        'eulerPhi', '../complex.xyz', useOldCv
+                        'eulerPhi', '../complex.xyz', useOldCv, extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1777,22 +1859,27 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-                )
-                colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10, 
-                        'eulerPsi', '../complex.xyz', useOldCv
+                        'eulerPsi', '../complex.xyz', useOldCv, extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1824,28 +1911,34 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-                )
-                colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[4] * 20 - 10 + polarAngles[0], 
                         float(i+1)/stratification[4] * 20 - 10 + polarAngles[0], 'polarTheta', 
-                        '../complex.xyz', useOldCv
+                        '../complex.xyz', useOldCv, extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1881,33 +1974,40 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', '../complex.xyz')
-                )
-                colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv
+                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[5] * 20 - 10 + polarAngles[1], 
                         float(i+1)/stratification[5] * 20 - 10 + polarAngles[1], 'polarPhi', 
-                        '../complex.xyz', useOldCv
+                        '../complex.xyz', useOldCv, extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -1946,36 +2046,44 @@ class inputGenerator():
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
             colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
+                self.cTemplate.cvRMSDTemplate(
+                    False, '', '', './complex_largeBox.xyz',
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
+                    False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
+                    False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
+                    False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
+                    False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv,
+                    extendedLagrangian = False
+                )
+            )
+            colvarsConfig.write(
+                self.cTemplate.cvAngleTemplate(
+                    False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv,
+                    extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0
+                    False, 0, 0, extendedLagrangian = False
                 )
             )
             colvarsConfig.write(
@@ -2007,37 +2115,46 @@ class inputGenerator():
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvRMSDTemplate(False, '', '', './complex_largeBox.xyz')
-                )
-                colvarsConfig.write(
-                    self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', './complex_largeBox.xyz',
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv
+                        False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv
+                        False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv
+                        False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
-                        False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv
+                        False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRTemplate(
                         True, float(i)/stratification[6] * 24 - 2 + distance, 
-                        float(i+1)/stratification[6] * 24 - 2 + distance
+                        float(i+1)/stratification[6] * 24 - 2 + distance,
+                        extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
@@ -2080,7 +2197,8 @@ class inputGenerator():
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
-                        True, float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0, './ligandOnly.xyz'
+                        True, float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0, './ligandOnly.xyz',
+                        extendedLagrangian = True
                     )
                 )
                 colvarsConfig.write(
