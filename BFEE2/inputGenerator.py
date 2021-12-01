@@ -1676,8 +1676,11 @@ class inputGenerator():
         polarAngles = fParser.measurePolarAngles(selectionRef, selectionLig)
         distance = fParser.measureDistance(selectionRef, selectionLig)
         
-        fParserLargeBox = fileParser.fileParser(f'{path}/BFEE/007_r/complex_largeBox.pdb')
-        centerLargeBox = fParserLargeBox.measureCenter(selectionPro)
+        if os.path.exists(f'{path}/BFEE/007_r/complex_largeBox.{topType}'):
+            fParserLargeBox = fileParser.fileParser(f'{path}/BFEE/007_r/complex_largeBox.pdb')
+            centerLargeBox = fParserLargeBox.measureCenter(selectionPro)
+        else:
+            centerLargeBox = center
 
         # 000_eq
         with open(f'{path}/BFEE/000_eq/colvars.in', 'w') as colvarsConfig:
