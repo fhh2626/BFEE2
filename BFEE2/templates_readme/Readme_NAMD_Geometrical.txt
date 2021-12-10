@@ -1,6 +1,7 @@
 To calculate the binding free energy:
 
-1.    run 000_eq/000_eq.conf
+1.1   run 000_eq/000_eq.conf
+1.2.  (optionally) run 000_eq/000.5_updateCenters.py
 2.    run 001_RMSDBound/001_abf_1.conf
 3.1.  run 002_EulerTheta/002_abf_1.conf
 3.2.  change restraining center of "eulerTheta" in

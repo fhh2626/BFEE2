@@ -1,6 +1,7 @@
 To calculate the binding free energy:
 
 1.1.  run 000_eq/000.1_eq.conf
+1.2.  (optionally) run 000_eq/000.5_updateCenters.py
 2.1.  run 001_MoleculeBound/001.1_fep_backward.conf
 2.2.  run 001_MoleculeBound/001.2_fep_forward.conf
 3.1.  run 002_RestraintBound/002.1_ti_backward.conf
