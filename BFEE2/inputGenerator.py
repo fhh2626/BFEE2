@@ -448,6 +448,10 @@ class inputGenerator():
             # readme file 
             with pkg_resources.path(templates_readme, 'Readme_NAMD_Geometrical.txt') as p:
                 shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
+                
+            # script to update the center after equilibration
+            with pkg_resources.path(templates_namd, 'updateCenters.py') as p:
+                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.5_updateCenters.py')
 
             # remove protein for step 8
             # this cannot be done in pure python
@@ -566,6 +570,10 @@ class inputGenerator():
             # readme file 
             with pkg_resources.path(templates_readme, 'Readme_NAMD_Alchemical.txt') as p:
                 shutil.copyfile(p, f'{path}/BFEE/Readme.txt')
+                
+            # script to update the center after equilibration
+            with pkg_resources.path(templates_namd, 'updateCenters.py') as p:
+                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.5_updateCenters.py')
 
             # fep file
             fParser.setBeta('all', 0)
