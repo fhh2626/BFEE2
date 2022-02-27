@@ -451,7 +451,7 @@ class inputGenerator():
                 
             # script to update the center after equilibration
             with pkg_resources.path(templates_namd, 'updateCenters.py') as p:
-                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.5_updateCenters.py')
+                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.2_updateCenters.py')
 
             # remove protein for step 8
             # this cannot be done in pure python
@@ -573,7 +573,7 @@ class inputGenerator():
                 
             # script to update the center after equilibration
             with pkg_resources.path(templates_namd, 'updateCenters.py') as p:
-                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.5_updateCenters.py')
+                shutil.copyfile(p, f'{path}/BFEE/000_eq/000.3_updateCenters.py')
 
             # fep file
             fParser.setBeta('all', 0)
@@ -595,7 +595,7 @@ class inputGenerator():
             # remove protein for the unbound state
             if forceFieldType == 'charmm':
                 if not membraneProtein:
-                    with open(f'{path}/BFEE/002.5.1_removeProtein.tcl', 'w') as rScript:
+                    with open(f'{path}/BFEE/002.3.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeProteinTemplate.substitute(
                                 path='./complex', selectionPro=f'{selectionPro}'.replace('segid', 'segname'),
@@ -609,7 +609,7 @@ class inputGenerator():
                     fParser.saveFile(
                         f'{selectionLig}', f'{path}/BFEE/ligandOnly.pdb', 'pdb'
                     )
-                    with open( f'{path}/BFEE/002.5.1_removeProtein.tcl', 'w') as rScript:
+                    with open( f'{path}/BFEE/002.3.1_removeProtein.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.removeMemProteinFepTemplate.substitute(
                                 path='./complex', selectionLig=f'{selectionLig}'.replace('segid', 'segname'),
@@ -619,7 +619,7 @@ class inputGenerator():
                         
                 # neutralization
                 if neutralizeLigOnly is not None:
-                    with open(f'{path}/BFEE/002.5.2_neutrilize.tcl', 'w') as rScript:
+                    with open(f'{path}/BFEE/002.3.2_neutrilize.tcl', 'w') as rScript:
                         rScript.write(
                             scriptTemplate.neutralizeSystempTemplate.substitute(
                                 path='./ligandOnly', cationName=cation, anionName=anion,
@@ -631,16 +631,16 @@ class inputGenerator():
                 # then execute vmd automatically
                 if vmdPath != '':
                     subprocess.run(
-                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5.1_removeProtein.tcl'],
+                        [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.3.1_removeProtein.tcl'],
                         cwd=f'{path}/BFEE'
                     )
                     if neutralizeLigOnly is not None:
                         subprocess.run(
-                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.5.2_neutrilize.tcl'],
+                            [vmdPath, '-dispdev', 'text', '-e', f'{path}/BFEE/002.3.2_neutrilize.tcl'],
                             cwd=f'{path}/BFEE'
                         )
             elif forceFieldType == 'amber':
-                with open( f'{path}/BFEE/002.5.1_removeProtein.cpptraj', 'w') as rScript:
+                with open( f'{path}/BFEE/002.3.1_removeProtein.cpptraj', 'w') as rScript:
                     rScript.write(
                         scriptTemplate.removeProteinAmberTemplate.substitute(
                             path='./complex', 
@@ -1263,7 +1263,7 @@ class inputGenerator():
         
 
         # 000_eq
-        with open(f'{path}/BFEE/000_eq/000_eq.conf', 'w') as namdConfig:
+        with open(f'{path}/BFEE/000_eq/000.1_eq.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
