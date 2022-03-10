@@ -236,16 +236,20 @@ class geometricAdvancedSettings(QWidget):
         
         # compatibility
         self.compatibility = QGroupBox('Compatibility')
-        self.compatibilityLayout = QHBoxLayout()
+        self.compatibilityLayout = QGridLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
-
-        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
-        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        
+        self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
+        self.reflectingBoundaryCheckbox.setChecked(False)
+        
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
+        self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
 
         # membrane protein
@@ -386,7 +390,7 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
-
+        
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
         self.compatibility.setLayout(self.compatibilityLayout)
@@ -1549,7 +1553,8 @@ force fields!'
                             self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useOldCvCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
-                            self.mainSettings.vmdLineEdit.text()
+                            self.mainSettings.vmdLineEdit.text(),
+                            self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(

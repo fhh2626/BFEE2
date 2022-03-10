@@ -135,7 +135,8 @@ class inputGenerator():
         pinDownPro = True,
         useOldCv = True,
         parallelRuns = 1,
-        vmdPath = ''
+        vmdPath = '',
+        reflectionBoundary = False
     ):
         """generate all the input files for NAMD geometric simulation
 
@@ -165,6 +166,7 @@ class inputGenerator():
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
             vmdPath (str, optional): path to vmd. Defaults to ''.
+            reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
         """ 
 
         assert(len(stratification) == 8)
@@ -193,7 +195,8 @@ class inputGenerator():
             path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
         )
         self._generateGeometricColvarsConfig(
-            path, topType, coorType, selectionPro, selectionLig, selectionRef, stratification, pinDownPro, useOldCv
+            path, topType, coorType, selectionPro, selectionLig, selectionRef, 
+            stratification, pinDownPro, useOldCv, reflectionBoundary
         )
 
         self._duplicateFileFolder(path, parallelRuns)
@@ -835,7 +838,7 @@ class inputGenerator():
 
     def _generateAlchemicalColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, 
-        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True,
+        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True
     ):
         """generate Colvars config fils for geometric route
 
@@ -1659,7 +1662,8 @@ class inputGenerator():
         selectionRef, 
         stratification=[1,1,1,1,1,1,1,1], 
         pinDownPro=True,
-        useOldCv=True
+        useOldCv=True,
+        reflectingBoundary=False
     ):
         """generate Colvars config fils for geometric route
 
@@ -1674,6 +1678,7 @@ class inputGenerator():
                                                        Defaults to [1,1,1,1,1,1,1,1].
             pinDownPro (bool, optional): Whether pinning down the protein. Defaults to True.
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
+            reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
         """    
 
         assert(len(stratification) == 8)
@@ -1772,17 +1777,18 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0, '../complex.xyz',
-                        extendedLagrangian = True
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('RMSD')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0
+                        )
                     )
-                )
                 if pinDownPro:
                     colvarsConfig.write(
                         self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
@@ -1803,17 +1809,19 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10, 
-                        'eulerTheta', '../complex.xyz', useOldCv, extendedLagrangian = True
+                        'eulerTheta', '../complex.xyz', useOldCv, extendedLagrangian = True,
+                        reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerTheta')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'eulerTheta', float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'eulerTheta', float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -1843,17 +1851,19 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10, 
-                        'eulerPhi', '../complex.xyz', useOldCv, extendedLagrangian = True
+                        'eulerPhi', '../complex.xyz', useOldCv, extendedLagrangian = True,
+                         reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerPhi')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'eulerPhi', float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'eulerPhi', float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -1892,17 +1902,19 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10, 
-                        'eulerPsi', '../complex.xyz', useOldCv, extendedLagrangian = True
+                        'eulerPsi', '../complex.xyz', useOldCv, extendedLagrangian = True,
+                        reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerPsi')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'eulerPsi', float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'eulerPsi', float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -1951,18 +1963,20 @@ class inputGenerator():
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[4] * 20 - 10 + polarAngles[0], 
                         float(i+1)/stratification[4] * 20 - 10 + polarAngles[0], 'polarTheta', 
-                        '../complex.xyz', useOldCv, extendedLagrangian = True
+                        '../complex.xyz', useOldCv, extendedLagrangian = True,
+                        reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('polarTheta')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'polarTheta', float(i)/stratification[4] * 20 - 10 + polarAngles[0],
-                        float(i+1)/stratification[4] * 20 - 10 + polarAngles[0]
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'polarTheta', float(i)/stratification[4] * 20 - 10 + polarAngles[0],
+                            float(i+1)/stratification[4] * 20 - 10 + polarAngles[0]
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -2020,18 +2034,20 @@ class inputGenerator():
                     self.cTemplate.cvAngleTemplate(
                         True, float(i)/stratification[5] * 20 - 10 + polarAngles[1], 
                         float(i+1)/stratification[5] * 20 - 10 + polarAngles[1], 'polarPhi', 
-                        '../complex.xyz', useOldCv, extendedLagrangian = True
+                        '../complex.xyz', useOldCv, extendedLagrangian = True,
+                        reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('polarPhi')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'polarPhi', float(i)/stratification[5] * 20 - 10 + polarAngles[1],
-                        float(i+1)/stratification[5] * 20 - 10 + polarAngles[1]
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'polarPhi', float(i)/stratification[5] * 20 - 10 + polarAngles[1],
+                            float(i+1)/stratification[5] * 20 - 10 + polarAngles[1]
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -2167,18 +2183,19 @@ class inputGenerator():
                     self.cTemplate.cvRTemplate(
                         True, float(i)/stratification[6] * 24 - 2 + distance, 
                         float(i+1)/stratification[6] * 24 - 2 + distance,
-                        extendedLagrangian = True
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('r')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'r', float(i)/stratification[6] * 24 - 2 + distance, 
-                        float(i+1)/stratification[6] * 24 - 2 + distance
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'r', float(i)/stratification[6] * 24 - 2 + distance, 
+                            float(i+1)/stratification[6] * 24 - 2 + distance
+                        )
                     )
-                )
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
@@ -2211,17 +2228,18 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0, './ligandOnly.xyz',
-                        extendedLagrangian = True
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
                     )
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('RMSD')
                 )
-                colvarsConfig.write(
-                    self.cTemplate.cvHarmonicWallsTemplate(
-                        'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0
+                if not reflectingBoundary:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicWallsTemplate(
+                            'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0
+                        )
                     )
-                )
 
     def _duplicateFileFolder(self, path, number):
         """duplicate the ./BFEE folder
