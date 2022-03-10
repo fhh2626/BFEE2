@@ -1,2 +1,4 @@
 
 *.pyc
+# for ease of testing
+/BFEE2Gui.py
