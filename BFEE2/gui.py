@@ -561,8 +561,8 @@ class mainUI(QMainWindow):
         # NAMD and gromacs
         self.preTreatmentMainTabs = QTabWidget()
 
-        self.preTreatmentMainTabs.addTab(self.NAMDTab, 'NAMD')
-        self.preTreatmentMainTabs.addTab(self.GromacsTab, 'Gromacs')
+        self.preTreatmentMainTabs.addTab(self.NAMDTab, 'NAMD/Gromacs(CHARMM/Amber files)')
+        self.preTreatmentMainTabs.addTab(self.GromacsTab, 'Gromacs(Gromacs files)')
 
         self.preTreatmentMainLayout = QVBoxLayout()
         self.preTreatmentMainLayout.addWidget(self.preTreatmentMainTabs)
@@ -594,13 +594,19 @@ class mainUI(QMainWindow):
 
         # select strategy
         self.selectStrategyLayout = QHBoxLayout()
-        self.selectStrategyLabel = QLabel('Select strategy:  ')
+        
+        self.selectStrategyLabel = QLabel('Select MD engine and strategy: ')
         self.selectStrategyCombobox = QComboBox()
         self.selectStrategyCombobox.addItem('Geometric')
         self.selectStrategyCombobox.addItem('Alchemical')
         self.selectStrategyAdvancedButton = QPushButton('Advanced settings')
-
+        
+        self.selectMDEngineCombobox = QComboBox()
+        self.selectMDEngineCombobox.addItem('NAMD')
+        self.selectMDEngineCombobox.addItem('Gromacs')
+        
         self.selectStrategyChildLayout = QHBoxLayout()
+        self.selectStrategyChildLayout.addWidget(self.selectMDEngineCombobox)
         self.selectStrategyChildLayout.addWidget(self.selectStrategyCombobox)
         self.selectStrategyChildLayout.addWidget(self.selectStrategyAdvancedButton)
 
@@ -1224,6 +1230,44 @@ class mainUI(QMainWindow):
             self.forceFieldAddButton.setEnabled(False)
             self.forceFieldClearButton.setEnabled(False)
             self.forceFieldFilesBox.setEnabled(False)
+            
+    def _changeStrategySettingState(self):
+        """enable/disable the alchemical route and some advanced settings based on the MD engine
+        """
+        
+        if self.selectMDEngineCombobox.currentText() == 'NAMD':
+            self.selectStrategyCombobox.setEnabled(True)
+            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
+            
+        elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
+            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectStrategyCombobox.setCurrentIndex(index)
+            self.selectStrategyCombobox.setEnabled(False)
+            
+            self.geometricAdvancedSettings.useOldCvCheckbox.setChecked(False)
+            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(False)
+            
+    def _changeStrategySettingStateForOldGromacs(self):
+        """enable/disable a lot of options for the old Gromacs tab
+        """
+        
+        if self.preTreatmentMainTabs.currentWidget() == self.NAMDTab:
+            self.selectStrategyAdvancedButton.setEnabled(True)
+            self.selectMDEngineCombobox.setEnabled(True)
+            
+        elif self.preTreatmentMainTabs.currentWidget() == self.GromacsTab:
+            index = self.selectMDEngineCombobox.findText('Gromacs', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectMDEngineCombobox.setCurrentIndex(index)
+            
+            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectStrategyCombobox.setCurrentIndex(index)
+            
+            self.selectMDEngineCombobox.setEnabled(False)
+            self.selectStrategyCombobox.setEnabled(False)
+            self.selectStrategyAdvancedButton.setEnabled(False)
 
     def _openDocFile(self):
         """open Documentation file
@@ -1554,7 +1598,8 @@ force fields!'
                             self.geometricAdvancedSettings.useOldCvCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text(),
-                            self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked()
+                            self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
+                            self.selectMDEngineCombobox.currentText().lower()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1676,7 +1721,10 @@ Unknown error! The error message is: \n\
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:
 
-                QMessageBox.warning(self, 'Warning', f'Any setting in "Advanced settings" is not supported by Gromacs!')
+                QMessageBox.warning(
+                    self, 'Warning', f'Any setting in "Advanced settings" is not supported \n\
+when using Gromacs-formatted files as inputs!'
+                )
 
                 for item in [
                         self.topLineEdit.text(), 
@@ -1843,6 +1891,7 @@ Unknown error!'
 
         # pre-treatment tab
         self.selectStrategyAdvancedButton.clicked.connect(self._advancedSettings(self.selectStrategyCombobox))
+        self.preTreatmentMainTabs.currentChanged.connect(self._changeStrategySettingStateForOldGromacs)
 
         # NAMD tab
         self.psfButton.clicked.connect(commonSlots.openFileDialog('psf/parm', self.psfLineEdit))
@@ -1852,6 +1901,9 @@ Unknown error!'
         self.forceFieldCombobox.currentTextChanged.connect(self._changeFFButtonState)
         self.forceFieldAddButton.clicked.connect(commonSlots.openFilesDialog('prm', self.forceFieldFilesBox))
         self.forceFieldClearButton.clicked.connect(self.forceFieldFilesBox.clear)
+        
+        # MD engine
+        self.selectMDEngineCombobox.currentTextChanged.connect(self._changeStrategySettingState)
 
         # gromacs tab
         self.gromacsPdbButton.clicked.connect(commonSlots.openFileDialog('pdb', self.gromacsPdbLineEdit))

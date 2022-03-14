@@ -242,10 +242,114 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000\n'
 runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
 
         return configString
+    
+    def gromacsMinimizeConfigTemplate(self):
+        """the gromacs config file template for minimization
+        
+        Returns:
+            str: a Gromacs config string if succeed, and empty string otherwise
+        """
+        configString = f'\
+integrator      = steep     \n\
+emtol           = 418.4     \n\
+emstep          = 0.01      \n\
+nsteps          = 20000     \n\
+nstlist         = 1         \n\
+cutoff-scheme   = Verlet    \n\
+ns_type         =           \n\
+coulombtype     = PME       \n\
+rcoulomb        = 1.2       \n\
+rvdw            = 1.2       \n\
+pbc             = xyz       \n'
+        return configString
+    
+    def gromacsConfigTemplate(
+                            self,
+                            forceFieldType,
+                            temperature,
+                            numSteps,
+                            membraneProtein = False,
+                            generateVelocities = True
+                            ):
+        """the gromacs config file template
+
+        Args:
+            forceFieldType (str): 'charmm' or 'amber'
+            temperature (float): temperature of the simulation
+            numSteps (int): number of steps of the simulation
+            membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
+            generateVelocities (bool, optional): whether generate velocities. Defaults to True.
+            
+        Returns:
+            str: a Gromacs config string if succeed, and empty string otherwise
+        """
+        
+        configString = f'\
+integrator              = md                \n\
+nsteps                  = {numSteps}        \n\
+dt                      = 0.002             \n\
+nstxout                 = 5000              \n\
+nstvout                 = 5000              \n\
+nstenergy               = 5000              \n\
+nstlog                  = 5000              \n\
+continuation            = no                \n\
+constraint_algorithm    = lincs             \n\
+constraints             = h-bonds           \n\
+cutoff-scheme           = Verlet            \n\
+nstlist                 = 10                \n\
+coulombtype             = PME               \n'
+
+        if forceFieldType == 'charmm':
+            configString += f'\
+rcoulomb                = 1.2               \n\
+rvdw                    = 1.2               \n\
+rvdw-switch             = 1.0               \n'
+
+        elif forceFieldType == 'amber':
+            configString += f'\
+rcoulomb                = 0.9               \n\
+rvdw                    = 0.9               \n\
+rvdw-switch             = 0.8               \n'
+
+        configString += f'\
+vdwtype                 = Cut-off                \n\
+vdw-modifier            = force-switch           \n\
+DispCorr                = EnerPres               \n\
+tcoupl                  = V-rescale              \n\
+tc-grps                 = Protein Non-Protein    \n\
+tau_t                   = 1       1              \n\
+ref_t                   = {temperature}     {temperature}            \n\
+pbc                     = xyz                    \n\
+pcoupl                  = C-rescale              \n\
+tau-p                   = 1                      \n'
+
+        if not membraneProtein:
+            configString += f'\
+ref-p                   = 1.01325                \n\
+compressibility         = 4.5e-5                 \n\
+refcoord-scaling        = com                    \n\
+pcoupltype              = isotropic              \n'
+
+        elif membraneProtein:
+            configString += f'\
+ref-p                   = 1.01325 1.01325        \n\
+compressibility         = 4.5e-5 4.5e-5          \n\
+refcoord-scaling        = com                    \n\
+pcoupltype              = semiisotropic          \n'
+    
+        if generateVelocities:
+            configString += f'\
+gen_vel                 = yes                    \n\
+gen_temp                = {temperature}          \n\
+gen_seed                = -1                     \n'
+
+        return configString
 
 
     def cvRMSDTemplate(
-            self, setBoundary, lowerBoundary, upperBoundary, refFile, extendedLagrangian = True, reflectingBoundary = False
+            self, setBoundary, lowerBoundary, upperBoundary, refFile, 
+            extendedLagrangian = True, reflectingBoundary = False,
+            unit = 'namd'
         ):
         """RMSD CV template
 
@@ -256,10 +360,16 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
             refFile (str): path to the reference file
             extendedLagrangian (bool, optional): Whether extended Lagrangian is added. Default to True
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
         
         Returns:
             str: string of RMSD definition
         """
+        
+        if unit == 'namd':
+            scaleFactor = 1
+        elif unit == 'gromacs':
+            scaleFactor = 0.1
 
         string = f'\
 colvar {{                                    \n\
@@ -267,9 +377,9 @@ colvar {{                                    \n\
 
         if setBoundary:
             string += f'\
-    width 0.05                               \n\
-    lowerboundary {lowerBoundary:.1f}            \n\
-    upperboundary {upperBoundary:.1f}            \n'
+    width {0.05 * scaleFactor:.2f}                               \n\
+    lowerboundary {lowerBoundary * scaleFactor:.2f}            \n\
+    upperboundary {upperBoundary * scaleFactor:.2f}            \n'
     
         if setBoundary and reflectingBoundary:
             string += f'\
@@ -281,7 +391,7 @@ colvar {{                                    \n\
     subtractAppliedForce on                  \n\
     expandboundaries  on                     \n\
     extendedLagrangian on                    \n\
-    extendedFluctuation 0.05                 \n'
+    extendedFluctuation {0.05 * scaleFactor:.2f}                 \n'
 
         string += f'\
     rmsd {{                                  \n\
@@ -632,7 +742,8 @@ colvar {{                                   \n\
 
     def cvRTemplate(
             self, setBoundary, lowerBoundary, upperBoundary, 
-            extendedLagrangian = True, reflectingBoundary = False
+            extendedLagrangian = True, reflectingBoundary = False,
+            unit = 'namd'
         ):
         """r distance template
 
@@ -642,19 +753,25 @@ colvar {{                                   \n\
             upperboundary (float): upper boundary of free-energy
             extendedLagrangian (bool, optional): Whether extended Lagrangian is added. Default to True
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
         
         Returns:
             str: string of distance r definition
         """
+        
+        if unit == 'namd':
+            scaleFactor = 1
+        elif unit == 'gromacs':
+            scaleFactor = 0.1
         
         string = f'\
 colvar {{                            \n\
     name    r                        \n'
         if setBoundary:
             string += f'\
-    width 0.1                        \n\
-    lowerboundary {lowerBoundary:.1f}    \n\
-    upperboundary {upperBoundary:.1f}    \n'
+    width {0.1 * scaleFactor:.2f}                        \n\
+    lowerboundary {lowerBoundary * scaleFactor:.2f}    \n\
+    upperboundary {upperBoundary * scaleFactor:.2f}    \n'
     
         if setBoundary and reflectingBoundary:
             string += f'\
@@ -666,7 +783,7 @@ colvar {{                            \n\
     subtractAppliedForce on          \n\
     expandboundaries  on             \n\
     extendedLagrangian on            \n\
-    extendedFluctuation 0.1          \n'
+    extendedFluctuation {0.1 * scaleFactor:.2f}          \n'
 
         string += f'\
     distance {{                            \n\
@@ -697,28 +814,42 @@ colvarsTrajFrequency      5000             \n\
 colvarsRestartFrequency   5000            \n\
 indexFile                 {indexFile}      \n'
 
-    def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall):
+    def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall, unit = 'namd'):
         ''' template of harmonic wall bias
         
         Args:
             cv (str): name of the colvars
             lowerWall (float): lower wall of the bias
             upperWall (float): upper wall of the bias
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
                 
         Returns:
             str: string of the harmonic wall bias definition '''
+        
+        if cv == 'RMSD' or cv == 'r':
+            distanceCV = True
+        else:
+            distanceCV = False
+            
+        if unit == 'gromacs' and distanceCV:
+            scaleFactor = 0.1
+        else:
+            scaleFactor = 1
             
         string = f'\
 harmonicWalls {{                           \n\
     colvars           {cv}                 \n\
-    lowerWalls        {lowerWall:.1f}      \n\
-    upperWalls        {upperWall:.1f}      \n\
+    lowerWalls        {lowerWall * scaleFactor:.1f}      \n\
+    upperWalls        {upperWall * scaleFactor:.1f}      \n\
     lowerWallConstant 0.2                  \n\
     upperWallConstant 0.2                  \n\
 }}                                         \n'
         return string
 
-    def cvHarmonicTemplate(self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant = 0):
+    def cvHarmonicTemplate(
+            self, cv, constant, center, tiWindows=0, tiForward=True, targetForceConstant = 0,
+            unit = 'namd'
+        ):
         """template for a harmonic restraint
 
         Args:
@@ -729,22 +860,39 @@ harmonicWalls {{                           \n\
             tiForward (bool, optional): whether the TI simulation is forward (if runs a TI simulation). Defaults to True.
             targetForceConstant (int, optional): targeted force constant of the restraint in TI simulation (if runs a TI simulation).
                                                  Defaults to 0.
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
         
         Returns:
             str: string of the harmonic restraint definition
-        """        
+        """
+        
+        if cv == 'RMSD' or cv == 'r':
+            distanceCV = True
+        else:
+            distanceCV = False
+        
+        if unit == 'gromacs' and distanceCV:
+            forceConstantScaleFactor = 418.4
+            centerScaleFactor = 0.1
+        elif unit == 'gromacs' and not distanceCV:
+            forceConstantScaleFactor = 4.164
+            centerScaleFactor = 1
+        else:
+            forceConstantScaleFactor = 1
+            centerScaleFactor = 1
+            
 
         string = f'\
 harmonic {{                          \n\
     colvars         {cv}             \n\
-    forceConstant   {constant:.1f}   \n\
-    centers         {center:.1f}     \n'
+    forceConstant   {constant * forceConstantScaleFactor:.1f}   \n\
+    centers         {center * centerScaleFactor:.1f}     \n'
         
         if tiWindows != 0:
             string += f'\
     targetNumSteps      500000                       \n\
     targetEquilSteps    100000                       \n\
-    targetForceConstant {targetForceConstant}        \n\
+    targetForceConstant {targetForceConstant * forceConstantScaleFactor:.1f}        \n\
     targetForceExponent 4                            \n'
 
             schedule = ''
@@ -758,14 +906,20 @@ harmonic {{                          \n\
         string += '}\n'
         return string
 
-    def cvABFTemplate(self, cv):
+    def cvABFTemplate(self, cv, unit = 'namd'):
         ''' template for WTM-eABF bias
         
         Args:
             cv (str): name of the colvars
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
             
         Returns:
             str: string of the WTM-eABF definition '''
+            
+        if unit == 'namd':
+            scaleFactor = 1
+        elif unit == 'gromacs':
+            scaleFactor = 4.184
             
         string = f'\
 abf {{                            \n\
@@ -777,7 +931,7 @@ abf {{                            \n\
 metadynamics {{                   \n\
     colvars           {cv}        \n\
     hillWidth         3.0         \n\
-    hillWeight        0.05        \n\
+    hillWeight        {0.05 * scaleFactor:.2f}        \n\
     wellTempered      on          \n\
     biasTemperature   4000        \n\
 }}                                \n'
@@ -801,16 +955,24 @@ histogram {{                     \n\
 }}                               \n'
         return string
 
-    def cvProteinTemplate(self, centerCoor, refFile):
+    def cvProteinTemplate(self, centerCoor, refFile, unit = 'namd'):
         """the template of restraining the protein
 
         Args:
             centerCoor (np.array, 3): (x,y,z), center of the protein 
             refFile (str): path of the reference file
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
         
         Returns:
             str: string of the restraining the protein
         """
+        
+        if unit == 'namd':
+            translationForceScaleFactor = 1
+            orientationForceScaleFactor = 1
+        elif unit == 'gromacs':
+            translationForceScaleFactor = 418.4
+            orientationForceScaleFactor = 4.184
         
         string = f'\
 colvar {{                         \n\
@@ -827,7 +989,7 @@ colvar {{                         \n\
 harmonic {{                       \n\
   colvars       translation       \n\
   centers       0.0               \n\
-  forceConstant 100.0             \n\
+  forceConstant {100.0 * translationForceScaleFactor:.1f}             \n\
 }}                                \n\
                                   \n\
 colvar {{                         \n\
@@ -842,6 +1004,6 @@ colvar {{                         \n\
 harmonic {{                       \n\
   colvars       orientation       \n\
   centers       (1.0, 0.0, 0.0, 0.0)    \n\
-  forceConstant 2000.0            \n\
+  forceConstant {2000.0 * orientationForceScaleFactor:.1f}            \n\
 }}                                \n'
         return string

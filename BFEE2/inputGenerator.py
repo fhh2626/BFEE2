@@ -136,7 +136,8 @@ class inputGenerator():
         useOldCv = True,
         parallelRuns = 1,
         vmdPath = '',
-        reflectionBoundary = False
+        reflectionBoundary = False,
+        MDEngine = 'namd'
     ):
         """generate all the input files for NAMD geometric simulation
 
@@ -166,7 +167,8 @@ class inputGenerator():
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             parallelRuns (int, optional): generate files for duplicate runs. Defaults to 1.
             vmdPath (str, optional): path to vmd. Defaults to ''.
-            reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
+            reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False.
+            MDEngine (str, optional): namd or gromacs. Default to namd.
         """ 
 
         assert(len(stratification) == 8)
@@ -184,6 +186,9 @@ class inputGenerator():
             path, topFile, topType, coorFile, coorType, forceFieldType, forceFieldFiles,
             selectionPro, selectionLig, selectionRef, userProvidedPullingTop, userProvidedPullingCoor,
             'geometric', membraneProtein, neutralizeLigOnly, vmdPath)
+        
+        if MDEngine == 'gromacs':
+            self._makeGromacsTopGro(path, forceFieldType, forceFieldFiles, 'geometric', vmdPath)
 
         # get relative force field path
         relativeFFPath = []
@@ -191,12 +196,18 @@ class inputGenerator():
             _, name = os.path.split(item)
             relativeFFPath.append(f'../{name}')
         
-        self._generateGeometricNAMDConfig(
-            path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
-        )
+        if MDEngine == 'namd':
+            self._generateGeometricNAMDConfig(
+                path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
+            )
+        elif MDEngine == 'gromacs':
+            self._generateGeometricGromacsConfig(
+                path, forceFieldType, temperature, membraneProtein
+            )
+            
         self._generateGeometricColvarsConfig(
             path, topType, coorType, selectionPro, selectionLig, selectionRef, 
-            stratification, pinDownPro, useOldCv, reflectionBoundary
+            stratification, pinDownPro, useOldCv, reflectionBoundary, MDEngine
         )
 
         self._duplicateFileFolder(path, parallelRuns)
@@ -661,6 +672,127 @@ class inputGenerator():
             fParserLigandOnly.saveNDX(
                 [selectionLig], ['ligand'], f'{path}/BFEE/ligandOnly.ndx', True
             )
+            
+    def _makeGromacsTopGro(
+        self,
+        path,
+        forceFieldType,
+        forceFieldFiles,
+        jobType = 'geometric',
+        vmdPath = ''
+    ):
+        """generate topology and coordinate files from CHARMM/Amber files for gromacs simulation
+
+        Args:
+            path (str): the root directory of simulation files
+            forceFieldType (str): 'charmm' or 'amber'
+            forceFieldFiles (list of str): list of CHARMM force field files
+            jobType (str, optional): 'geometric' or 'alchemical'. Defaults to 'geometric'.
+            vmdPath (str, optional): path to vmd, space is forbidden. Defaults to ''.
+        """
+        
+        if forceFieldType == 'charmm':
+            topType = 'psf'
+        elif forceFieldType == 'amber':
+            topType = 'parm7'
+        coorType = 'pdb'
+
+        # read the original topology and coordinate file
+        fParser = fileParser.fileParser(f'{path}/BFEE/complex.{topType}', f'{path}/BFEE/complex.{coorType}')
+        # pbc
+        pbc = fParser.measurePBC()
+        
+        # gromacs assume the center of system is at (x/2, y/2, z/2)
+        fParser.moveSystem(-pbc[1] + pbc[0] / 2)
+        fParser.saveFile('all', f'{path}/BFEE/complex.{coorType}', coorType)
+        
+        if forceFieldType == 'charmm':
+            fileParser.charmmToGromacs(
+                f'{path}/BFEE/complex.psf', 
+                f'{path}/BFEE/complex.pdb',
+                forceFieldFiles,
+                pbc[0],
+                f'{path}/BFEE/complex_gmx'
+            )
+        elif forceFieldType == 'amber':
+            fileParser.amberToGromacs(
+                f'{path}/BFEE/complex.parm7', f'{path}/BFEE/complex.pdb', pbc[0], f'{path}/BFEE/complex_gmx'
+            )
+            
+        
+        if forceFieldType == 'charmm':
+            if vmdPath != '':
+                fParser_7 = fileParser.fileParser(
+                    f'{path}/BFEE/007_r/complex_largeBox.psf', 
+                    f'{path}/BFEE/007_r/complex_largeBox.pdb'
+                )
+                pbc_7 = fParser_7.measurePBC()
+                fParser_7.moveSystem(-pbc_7[1] + pbc_7[0] / 2)
+                fParser_7.saveFile('all', f'{path}/BFEE/007_r/complex_largeBox.pdb', 'pdb')
+            
+                fParser_8 = fileParser.fileParser(
+                    f'{path}/BFEE/008_RMSDUnbound/ligandOnly.psf', 
+                    f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb'
+                )
+                pbc_8 = fParser_8.measurePBC()
+                fParser_8.moveSystem(-pbc_8[1] + pbc_8[0] / 2)
+                fParser_8.saveFile('all', f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb', 'pdb')
+            
+                fileParser.charmmToGromacs(
+                    f'{path}/BFEE/007_r/complex_largeBox.psf', 
+                    f'{path}/BFEE/007_r/complex_largeBox.pdb',
+                    forceFieldFiles,
+                    pbc_7[0],
+                    f'{path}/BFEE/007_r/complex_largeBox_gmx'
+                )
+                
+                fileParser.charmmToGromacs(
+                    f'{path}/BFEE/008_RMSDUnbound/ligandOnly.psf', 
+                    f'{path}/BFEE/008_RMSDUnbound/ligandOnly.pdb',
+                    forceFieldFiles,
+                    pbc_8[0],
+                    f'{path}/BFEE/008_RMSDUnbound/ligandOnly_gmx'
+                )
+            else:
+                with open( f'{path}/BFEE/007_r/007.0.2_genGromacsTop.py', 'w') as rScript:
+                    rScript.write(
+                        scriptTemplate.charmmToGromacsTemplate(
+                            inputPrefix='./complex_largeBox',
+                            forceFieldList=forceFieldFiles,
+                        )
+                    )
+                with open( f'{path}/BFEE/008_RMSDUnbound/008.0.3_genGromacsTop.py', 'w') as rScript:
+                    rScript.write(
+                        scriptTemplate.charmmToGromacsTemplate(
+                            inputPrefix='./ligandOnly',
+                            forceFieldList=forceFieldFiles,
+                        )
+                    )
+                
+        if forceFieldType == 'amber':
+            
+            fParser_7 = fileParser.fileParser(
+                f'{path}/BFEE/007_r/complex_largeBox.parm7', 
+                f'{path}/BFEE/007_r/complex_largeBox.pdb'
+            )
+            pbc_7 = fParser_7.measurePBC()
+            fParser_7.moveSystem(-pbc_7[1] + pbc_7[0] / 2)
+            fParser_7.saveFile('all', f'{path}/BFEE/007_r/complex_largeBox.pdb', 'pdb')
+            
+            fileParser.amberToGromacs(
+                f'{path}/BFEE/007_r/complex_largeBox.parm7', 
+                f'{path}/BFEE/007_r/complex_largeBox.pdb',
+                pbc_7[0],
+                f'{path}/BFEE/007_r/complex_largeBox_gmx'
+            )
+            
+            with open( f'{path}/BFEE/008_RMSDUnbound/008.0.2_genGromacsTop.py', 'w') as rScript:
+                rScript.write(
+                    scriptTemplate.amberToGromacsTemplate.substitute(
+                        inputPrefix='./ligandOnly'
+                    )
+                )
+            
 
     def _generateAlchemicalNAMDConfig(
         self,
@@ -1651,6 +1783,144 @@ class inputGenerator():
                         CVRestartFile=f'output/abf_{i+1}.restart'
                     )
                 )
+                    
+    def _generateGeometricGromacsConfig(
+        self,
+        path,
+        forceFieldType,
+        temperature,
+        membraneProtein = False,
+    ):
+        """generate NAMD config fils for the geometric route
+
+        Args:
+            path (str): the directory for generation of all the files
+            forceFieldType (str): 'charmm' or 'amber'
+            temperature (float): temperature of the simulation
+            membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
+        """
+        
+        # 000_eq
+        with open(f'{path}/BFEE/000_eq/000.1_min.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsMinimizeConfigTemplate()
+            )
+        with open(f'{path}/BFEE/000_eq/000.2_eq.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=True
+                )
+            )
+
+        # RMSD bound
+        with open(f'{path}/BFEE/001_RMSDBound/001_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # Theta
+        with open(f'{path}/BFEE/002_EulerTheta/002_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # Phi
+        with open(f'{path}/BFEE/003_EulerPhi/003_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # Psi
+        with open(f'{path}/BFEE/004_EulerPsi/004_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # theta
+        with open(f'{path}/BFEE/005_PolarTheta/005_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # phi
+        with open(f'{path}/BFEE/006_PolarPhi/006_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # r
+        # eq
+        with open(f'{path}/BFEE/007_r/007.1_min.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsMinimizeConfigTemplate()
+            )
+        with open(f'{path}/BFEE/007_r/007.2_eq.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=True
+                )
+            )
+        # abf
+        with open(f'{path}/BFEE/007_r/007.3_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 20000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
+
+        # RMSD unbound
+        # eq
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.1_min.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsMinimizeConfigTemplate()
+            )
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.2_eq.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 1000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=True
+                )
+            )
+        # abf
+        with open(f'{path}/BFEE/008_RMSDUnbound/008.3_abf.mdp', 'w') as gromacsConfig:
+            gromacsConfig.write(
+                self.cTemplate.gromacsConfigTemplate(
+                    forceFieldType, temperature, 5000000,
+                    membraneProtein=membraneProtein,
+                    generateVelocities=False
+                )
+            )
 
     def _generateGeometricColvarsConfig(
         self, 
@@ -1663,7 +1933,8 @@ class inputGenerator():
         stratification=[1,1,1,1,1,1,1,1], 
         pinDownPro=True,
         useOldCv=True,
-        reflectingBoundary=False
+        reflectingBoundary=False,
+        unit='namd'
     ):
         """generate Colvars config fils for geometric route
 
@@ -1679,6 +1950,7 @@ class inputGenerator():
             pinDownPro (bool, optional): Whether pinning down the protein. Defaults to True.
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
+            unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
         """    
 
         assert(len(stratification) == 8)
@@ -1704,7 +1976,8 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvRMSDTemplate(
                     True, 0, 10, '../complex.xyz',
-                    extendedLagrangian = False
+                    extendedLagrangian = False,
+                    unit = unit
                 )
             )
             colvarsConfig.write(
@@ -1740,7 +2013,8 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
                     True, (distance - 5 if distance - 5 > 0 else 0), 
-                    distance + 22, extendedLagrangian = False
+                    distance + 22, extendedLagrangian = False,
+                    unit = unit
                 )
             )
             colvarsConfig.write(
@@ -1765,7 +2039,9 @@ class inputGenerator():
                 self.cTemplate.cvHistogramTemplate('r')
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                self.cTemplate.cvProteinTemplate(
+                    center, '../complex.xyz', unit = unit
+                )
             )
 
         # 001_RMSDBound
@@ -1777,21 +2053,23 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0, '../complex.xyz',
-                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('RMSD')
+                    self.cTemplate.cvABFTemplate('RMSD', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
-                            'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0
+                            'RMSD', float(i)/stratification[0] * 3.0, float(i+1)/stratification[0] * 3.0,
+                            unit = unit
                         )
                     )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 002_Theta
@@ -1803,7 +2081,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', '../complex.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -1814,20 +2093,23 @@ class inputGenerator():
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerTheta')
+                    self.cTemplate.cvABFTemplate('eulerTheta', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
-                            'eulerTheta', float(i)/stratification[1] * 20 - 10, float(i+1)/stratification[1] * 20 - 10
+                            'eulerTheta', 
+                            float(i)/stratification[1] * 20 - 10, 
+                            float(i+1)/stratification[1] * 20 - 10,
+                            unit = unit,
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 003_Phi
@@ -1839,7 +2121,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', '../complex.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -1856,23 +2139,26 @@ class inputGenerator():
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerPhi')
+                    self.cTemplate.cvABFTemplate('eulerPhi', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
-                            'eulerPhi', float(i)/stratification[2] * 20 - 10, float(i+1)/stratification[2] * 20 - 10
+                            'eulerPhi', 
+                            float(i)/stratification[2] * 20 - 10, 
+                            float(i+1)/stratification[2] * 20 - 10,
+                            unit = unit,
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 004_Psi
@@ -1884,7 +2170,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', '../complex.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -1907,26 +2194,29 @@ class inputGenerator():
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('eulerPsi')
+                    self.cTemplate.cvABFTemplate('eulerPsi', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
-                            'eulerPsi', float(i)/stratification[3] * 20 - 10, float(i+1)/stratification[3] * 20 - 10
+                            'eulerPsi', 
+                            float(i)/stratification[3] * 20 - 10, 
+                            float(i+1)/stratification[3] * 20 - 10,
+                            unit = unit
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 005_polarTheta
@@ -1938,7 +2228,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', '../complex.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -1968,30 +2259,31 @@ class inputGenerator():
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('polarTheta')
+                    self.cTemplate.cvABFTemplate('polarTheta', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
                             'polarTheta', float(i)/stratification[4] * 20 - 10 + polarAngles[0],
-                            float(i+1)/stratification[4] * 20 - 10 + polarAngles[0]
+                            float(i+1)/stratification[4] * 20 - 10 + polarAngles[0],
+                            unit = unit
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 006_polarPhi
@@ -2003,7 +2295,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', '../complex.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -2039,33 +2332,34 @@ class inputGenerator():
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('polarPhi')
+                    self.cTemplate.cvABFTemplate('polarPhi', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
                             'polarPhi', float(i)/stratification[5] * 20 - 10 + polarAngles[1],
-                            float(i+1)/stratification[5] * 20 - 10 + polarAngles[1]
+                            float(i+1)/stratification[5] * 20 - 10 + polarAngles[1],
+                            unit = unit
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0], unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz', unit = unit)
                     )
 
         # 007_r
@@ -2077,7 +2371,8 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvRMSDTemplate(
                     False, '', '', './complex_largeBox.xyz',
-                    extendedLagrangian = False
+                    extendedLagrangian = False,
+                    unit = unit
                 )
             )
             colvarsConfig.write(
@@ -2112,29 +2407,29 @@ class inputGenerator():
             )
             colvarsConfig.write(
                 self.cTemplate.cvRTemplate(
-                    False, 0, 0, extendedLagrangian = False
+                    False, 0, 0, extendedLagrangian = False, unit = unit
                 )
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0], unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1], unit = unit)
             )
             colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz')
+                self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz', unit = unit)
             )
 
         # abf
@@ -2146,7 +2441,8 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         False, '', '', './complex_largeBox.xyz',
-                        extendedLagrangian = False
+                        extendedLagrangian = False,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
@@ -2183,40 +2479,42 @@ class inputGenerator():
                     self.cTemplate.cvRTemplate(
                         True, float(i)/stratification[6] * 24 - 2 + distance, 
                         float(i+1)/stratification[6] * 24 - 2 + distance,
-                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('r')
+                    self.cTemplate.cvABFTemplate('r', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
                             'r', float(i)/stratification[6] * 24 - 2 + distance, 
-                            float(i+1)/stratification[6] * 24 - 2 + distance
+                            float(i+1)/stratification[6] * 24 - 2 + distance,
+                            unit = unit
                         )
                     )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0], unit = unit)
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                    self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1], unit = unit)
                 )
                 if pinDownPro:
                     colvarsConfig.write(
-                        self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz')
+                        self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz', unit = unit)
                     )
 
         # 008_RMSDUnbound
@@ -2228,16 +2526,18 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
                         True, float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0, './ligandOnly.xyz',
-                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary
+                        extendedLagrangian = True, reflectingBoundary = reflectingBoundary,
+                        unit = unit
                     )
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('RMSD')
+                    self.cTemplate.cvABFTemplate('RMSD', unit = unit)
                 )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
-                            'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0
+                            'RMSD', float(i)/stratification[7] * 3.0, float(i+1)/stratification[7] * 3.0,
+                            unit = unit
                         )
                     )
 
