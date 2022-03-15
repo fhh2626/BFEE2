@@ -1245,9 +1245,6 @@ class mainUI(QMainWindow):
                 self.selectStrategyCombobox.setCurrentIndex(index)
             self.selectStrategyCombobox.setEnabled(False)
             
-            self.geometricAdvancedSettings.useOldCvCheckbox.setChecked(False)
-            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(False)
-            
     def _changeStrategySettingStateForOldGromacs(self):
         """enable/disable a lot of options for the old Gromacs tab
         """

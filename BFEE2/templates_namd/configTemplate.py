@@ -968,9 +968,11 @@ histogram {{                     \n\
         """
         
         if unit == 'namd':
+            translationCoorScaleFactor = 1
             translationForceScaleFactor = 1
             orientationForceScaleFactor = 1
         elif unit == 'gromacs':
+            translationCoorScaleFactor = 0.1
             translationForceScaleFactor = 418.4
             orientationForceScaleFactor = 4.184
         
@@ -982,7 +984,7 @@ colvar {{                         \n\
       indexGroup  protein         \n\
     }}                            \n\
     group2 {{                     \n\
-      dummyAtom ({centerCoor[0]}, {centerCoor[1]}, {centerCoor[2]})    \n\
+      dummyAtom ({centerCoor[0] * translationCoorScaleFactor}, {centerCoor[1] * translationCoorScaleFactor}, {centerCoor[2] * translationCoorScaleFactor})    \n\
     }}                            \n\
   }}                              \n\
 }}                                \n\

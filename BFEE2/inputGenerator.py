@@ -1954,6 +1954,11 @@ class inputGenerator():
         """    
 
         assert(len(stratification) == 8)
+        
+        if unit == 'namd':
+            colvarPostfix = 'in'
+        elif unit == 'gromacs':
+            colvarPostfix = 'dat'
 
         # read the original topology and coordinate file
         fParser = fileParser.fileParser(f'{path}/BFEE/complex.{topType}', f'{path}/BFEE/complex.pdb')
@@ -1968,7 +1973,7 @@ class inputGenerator():
             centerLargeBox = center
 
         # 000_eq
-        with open(f'{path}/BFEE/000_eq/colvars.in', 'w') as colvarsConfig:
+        with open(f'{path}/BFEE/000_eq/colvars.{colvarPostfix}', 'w') as colvarsConfig:
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
@@ -2046,7 +2051,7 @@ class inputGenerator():
 
         # 001_RMSDBound
         for i in range(stratification[0]):
-            with open(f'{path}/BFEE/001_RMSDBound/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/001_RMSDBound/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2074,7 +2079,7 @@ class inputGenerator():
 
         # 002_Theta
         for i in range(stratification[1]):
-            with open(f'{path}/BFEE/002_EulerTheta/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/002_EulerTheta/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2114,7 +2119,7 @@ class inputGenerator():
 
         # 003_Phi
         for i in range(stratification[2]):
-            with open(f'{path}/BFEE/003_EulerPhi/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/003_EulerPhi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2163,7 +2168,7 @@ class inputGenerator():
 
         # 004_Psi
         for i in range(stratification[3]):
-            with open(f'{path}/BFEE/004_EulerPsi/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/004_EulerPsi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2221,7 +2226,7 @@ class inputGenerator():
 
         # 005_polarTheta
         for i in range(stratification[4]):
-            with open(f'{path}/BFEE/005_PolarTheta/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/005_PolarTheta/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2288,7 +2293,7 @@ class inputGenerator():
 
         # 006_polarPhi
         for i in range(stratification[5]):
-            with open(f'{path}/BFEE/006_PolarPhi/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/006_PolarPhi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2364,7 +2369,7 @@ class inputGenerator():
 
         # 007_r
         # eq
-        with open(f'{path}/BFEE/007_r/colvars_eq.in', 'w') as colvarsConfig:
+        with open(f'{path}/BFEE/007_r/colvars_eq.{colvarPostfix}', 'w') as colvarsConfig:
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
@@ -2434,7 +2439,7 @@ class inputGenerator():
 
         # abf
         for i in range(stratification[6]):
-            with open(f'{path}/BFEE/007_r/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/007_r/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
@@ -2519,7 +2524,7 @@ class inputGenerator():
 
         # 008_RMSDUnbound
         for i in range(stratification[7]):
-            with open(f'{path}/BFEE/008_RMSDUnbound/colvars_{i+1}.in', 'w') as colvarsConfig:
+            with open(f'{path}/BFEE/008_RMSDUnbound/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('./ligandOnly.ndx')
                 )
