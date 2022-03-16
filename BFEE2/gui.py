@@ -1559,6 +1559,14 @@ CHARMM force field files must be specified!'
                     return
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
+                    
+                    if self.selectMDEngineCombobox.currentText().lower() == 'gromacs':
+                        QMessageBox.warning(
+                            self, 'Warning', f'Please pay attention if you use the new Gromacs interface: \n\
+1. Occationally, the atom number in complex.ndx do not correct. If so, just modify it manually; \n\
+2. Make sure in complex.gro, the center of box is approximately at (x/2, y/2, z/2) rather than (0, 0, 0);  \n\
+3. Gromacs patched by the latest (master branch) version of Colvars is needed.'
+                )
 
                     # for the amber force field, files of large box must be provided
                     if forceFieldType == 'amber':
