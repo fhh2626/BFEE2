@@ -31,12 +31,19 @@ conda install -c conda-forge BFEE2
 
 ## Usage
 Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.<br>
+A step-by-step tutorial is provided [here](https://www.nature.com/articles/s41596-021-00676-1).<br>
 
 ## Citations
+When possible, please consider mentioning [Fu et al. Nat. Protoc. 2022, doi:10.1038/s41596-021-00676-1](https://www.nature.com/articles/s41596-021-00676-1#citeas) when BFEE2 is used in your project.
+
+
+Additional references:<br>
 BFEE2: [Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123](https://pubs.acs.org/doi/abs/10.1021/acs.jcim.1c00269)<br>
 Alchemical and geometric routes [Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802](https://pubs.acs.org/doi/abs/10.1021/ct3008099)<br>
 WTM-eABF: [Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264](https://pubs.acs.org/doi/abs/10.1021/acs.accounts.9b00473) and [Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745](https://pubs.acs.org/doi/abs/10.1021/acs.jpclett.8b01994)<br>
 Collective variables: [Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791)<br>
+Colvars module: [Fiorin et al. Mol. Phys. 2013 111, 3345-3362](https://www.tandfonline.com/doi/full/10.1080/00268976.2013.813594)<br>
+"Mother" of all restraint-based binding free-energy calculations: [Hermans et al. Isr. J. Chem. 1986, 27, 225–227](https://onlinelibrary.wiley.com/doi/abs/10.1002/ijch.198600032)<br>
 
 ## Contact us
 Technique issues: Haohao Fu (fhh2626@mail.nankai.edu.cn) and Haochuan Chen (yjcoshc@mail.nankai.edu.cn)<br>
