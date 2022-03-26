@@ -236,16 +236,20 @@ class geometricAdvancedSettings(QWidget):
         
         # compatibility
         self.compatibility = QGroupBox('Compatibility')
-        self.compatibilityLayout = QHBoxLayout()
+        self.compatibilityLayout = QGridLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
-
-        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
-        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        
+        self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
+        self.reflectingBoundaryCheckbox.setChecked(False)
+        
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
+        self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
 
         # membrane protein
@@ -386,7 +390,7 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(True)
-
+        
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
         self.compatibility.setLayout(self.compatibilityLayout)
@@ -557,8 +561,8 @@ class mainUI(QMainWindow):
         # NAMD and gromacs
         self.preTreatmentMainTabs = QTabWidget()
 
-        self.preTreatmentMainTabs.addTab(self.NAMDTab, 'NAMD')
-        self.preTreatmentMainTabs.addTab(self.GromacsTab, 'Gromacs')
+        self.preTreatmentMainTabs.addTab(self.NAMDTab, 'NAMD/Gromacs(CHARMM/Amber files)')
+        self.preTreatmentMainTabs.addTab(self.GromacsTab, 'Gromacs(Gromacs files)')
 
         self.preTreatmentMainLayout = QVBoxLayout()
         self.preTreatmentMainLayout.addWidget(self.preTreatmentMainTabs)
@@ -590,13 +594,19 @@ class mainUI(QMainWindow):
 
         # select strategy
         self.selectStrategyLayout = QHBoxLayout()
-        self.selectStrategyLabel = QLabel('Select strategy:  ')
+        
+        self.selectStrategyLabel = QLabel('Select MD engine and strategy: ')
         self.selectStrategyCombobox = QComboBox()
         self.selectStrategyCombobox.addItem('Geometric')
         self.selectStrategyCombobox.addItem('Alchemical')
         self.selectStrategyAdvancedButton = QPushButton('Advanced settings')
-
+        
+        self.selectMDEngineCombobox = QComboBox()
+        self.selectMDEngineCombobox.addItem('NAMD')
+        self.selectMDEngineCombobox.addItem('Gromacs')
+        
         self.selectStrategyChildLayout = QHBoxLayout()
+        self.selectStrategyChildLayout.addWidget(self.selectMDEngineCombobox)
         self.selectStrategyChildLayout.addWidget(self.selectStrategyCombobox)
         self.selectStrategyChildLayout.addWidget(self.selectStrategyAdvancedButton)
 
@@ -1220,6 +1230,41 @@ class mainUI(QMainWindow):
             self.forceFieldAddButton.setEnabled(False)
             self.forceFieldClearButton.setEnabled(False)
             self.forceFieldFilesBox.setEnabled(False)
+            
+    def _changeStrategySettingState(self):
+        """enable/disable the alchemical route and some advanced settings based on the MD engine
+        """
+        
+        if self.selectMDEngineCombobox.currentText() == 'NAMD':
+            self.selectStrategyCombobox.setEnabled(True)
+            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
+            
+        elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
+            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectStrategyCombobox.setCurrentIndex(index)
+            self.selectStrategyCombobox.setEnabled(False)
+            
+    def _changeStrategySettingStateForOldGromacs(self):
+        """enable/disable a lot of options for the old Gromacs tab
+        """
+        
+        if self.preTreatmentMainTabs.currentWidget() == self.NAMDTab:
+            self.selectStrategyAdvancedButton.setEnabled(True)
+            self.selectMDEngineCombobox.setEnabled(True)
+            
+        elif self.preTreatmentMainTabs.currentWidget() == self.GromacsTab:
+            index = self.selectMDEngineCombobox.findText('Gromacs', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectMDEngineCombobox.setCurrentIndex(index)
+            
+            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.selectStrategyCombobox.setCurrentIndex(index)
+            
+            self.selectMDEngineCombobox.setEnabled(False)
+            self.selectStrategyCombobox.setEnabled(False)
+            self.selectStrategyAdvancedButton.setEnabled(False)
 
     def _openDocFile(self):
         """open Documentation file
@@ -1514,6 +1559,14 @@ CHARMM force field files must be specified!'
                     return
                 
                 if self.selectStrategyCombobox.currentText() == 'Geometric':
+                    
+                    if self.selectMDEngineCombobox.currentText().lower() == 'gromacs':
+                        QMessageBox.warning(
+                            self, 'Warning', f'Please pay attention if you use the new Gromacs interface: \n\
+1. Occationally, the atom number in complex.ndx do not correct. If so, just modify it manually; \n\
+2. Make sure in complex.gro, the center of box is approximately at (x/2, y/2, z/2) rather than (0, 0, 0);  \n\
+3. Gromacs patched by the latest (master branch) version of Colvars is needed.'
+                )
 
                     # for the amber force field, files of large box must be provided
                     if forceFieldType == 'amber':
@@ -1549,7 +1602,9 @@ force fields!'
                             self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useOldCvCheckbox.isChecked(),
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
-                            self.mainSettings.vmdLineEdit.text()
+                            self.mainSettings.vmdLineEdit.text(),
+                            self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
+                            self.selectMDEngineCombobox.currentText().lower()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1671,7 +1726,10 @@ Unknown error! The error message is: \n\
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:
 
-                QMessageBox.warning(self, 'Warning', f'Any setting in "Advanced settings" is not supported by Gromacs!')
+                QMessageBox.warning(
+                    self, 'Warning', f'Any setting in "Advanced settings" is not supported \n\
+when using Gromacs-formatted files as inputs!'
+                )
 
                 for item in [
                         self.topLineEdit.text(), 
@@ -1838,6 +1896,7 @@ Unknown error!'
 
         # pre-treatment tab
         self.selectStrategyAdvancedButton.clicked.connect(self._advancedSettings(self.selectStrategyCombobox))
+        self.preTreatmentMainTabs.currentChanged.connect(self._changeStrategySettingStateForOldGromacs)
 
         # NAMD tab
         self.psfButton.clicked.connect(commonSlots.openFileDialog('psf/parm', self.psfLineEdit))
@@ -1847,6 +1906,9 @@ Unknown error!'
         self.forceFieldCombobox.currentTextChanged.connect(self._changeFFButtonState)
         self.forceFieldAddButton.clicked.connect(commonSlots.openFilesDialog('prm', self.forceFieldFilesBox))
         self.forceFieldClearButton.clicked.connect(self.forceFieldFilesBox.clear)
+        
+        # MD engine
+        self.selectMDEngineCombobox.currentTextChanged.connect(self._changeStrategySettingState)
 
         # gromacs tab
         self.gromacsPdbButton.clicked.connect(commonSlots.openFileDialog('pdb', self.gromacsPdbLineEdit))

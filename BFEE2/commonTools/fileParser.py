@@ -1,9 +1,15 @@
 # file parser used in bfee
 
+import math
+import os
+import shutil
+import sys
+
 import MDAnalysis
-from MDAnalysis import transformations
 import numpy as np
-import os, sys, math, shutil
+import parmed
+from MDAnalysis import transformations
+
 
 # an runtime error
 # selection corresponding to nothing
@@ -272,3 +278,50 @@ class fileParser:
 
         vec = self.measurePBC()[1] * -1.0
         self.moveSystem(vec)
+        
+def charmmToGromacs(psfFile, pdbFile, prmFiles, PBC, outputPrefix):
+    """convert a set of CHARMM files (psf + pdb + prm + pbc) into the Gromacs format
+
+    Args:
+        psfFile (str): path of the psf file
+        pdbFile (str): path of the pdb file
+        prmFiles (list of str): pathes of the prm files
+        PBC (list of flost): pbc information
+        outputPrefix (str): path + prefix of the output file
+    """
+    struct = parmed.load_file(psfFile)
+    struct.load_parameters(
+        parmed.charmm.CharmmParameterSet(*prmFiles)
+    )
+    struct.coordinates = parmed.load_file(pdbFile).coordinates
+    struct.box = [PBC[0], PBC[1], PBC[2], 90, 90, 90]
+    struct.save(f'{outputPrefix}.top', format='gromacs')
+    struct.save(f'{outputPrefix}.gro')
+
+def amberToGromacs(parmFile, rstFile, PBC, outputPrefix):
+    """convert a set of Amber files (parm7 + rst7) into the Gromacs format
+
+    Args:
+        parmFile (str): path of the parm7 file
+        rstFile (str): path of the rst7 file
+        PBC (list of flost): pbc information
+        outputPrefix (str): path + prefix of the output file
+    """
+    struct = parmed.load_file(parmFile, xyz=rstFile)
+    struct.box = [PBC[0], PBC[1], PBC[2], 90, 90, 90]
+    struct.save(f'{outputPrefix}.top', format='gromacs')
+    struct.save(f'{outputPrefix}.gro')
+
+def gromacsToAmber(topFile, groFile, PBC, outputPrefix):
+    """convert a set of Gromacs files (top + gro/pdb) into the Amber format
+
+    Args:
+        topFile (str): path of the top file
+        groFile (str): path of the gro file
+        PBC (list of flost): pbc information
+        outputPrefix (str): path + prefix of the output file
+    """
+    struct = parmed.load_file(topFile, xyz=groFile)
+    struct.box = [PBC[0], PBC[1], PBC[2], 90, 90, 90]
+    struct.save(f'{outputPrefix}.parm7', format='amber')
+    struct.save(f'{outputPrefix}.rst7', format='rst7') 

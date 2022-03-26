@@ -1,2 +1,7 @@
 
 *.pyc
+# for ease of testing
+/BFEE2Gui.py
+/unitTest/exampleInputs
+/unitTest/exampleOutputs
+/unitTest/test_output

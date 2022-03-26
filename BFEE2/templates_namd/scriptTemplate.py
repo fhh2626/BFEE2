@@ -69,3 +69,81 @@ $$aa writexyz ${path}.xyz
 ${extraCommand}
 exit
 ''')
+
+def charmmToGromacsTemplate(inputPrefix, forceFieldList):
+    return f'''
+import numpy as np
+import parmed, MDAnalysis
+from MDAnalysis import transformations
+def measurePBC(uObject):
+    atoms = uObject.select_atoms('all')
+    atomPositions = atoms.positions
+    xyz_array = np.transpose(atomPositions)
+    min_x = np.min(xyz_array[0])
+    max_x = np.max(xyz_array[0])
+    min_y = np.min(xyz_array[1])
+    max_y = np.max(xyz_array[1])
+    min_z = np.min(xyz_array[2])
+    max_z = np.max(xyz_array[2])
+    return [
+        np.array([max_x, max_y, max_z]) - np.array([min_x, min_y, min_z]),
+        (np.array([min_x, min_y, min_z]) + np.array([max_x, max_y, max_z])) / 2
+    ]
+def charmmToGromacs(psfFile, pdbFile, prmFiles, PBC, outputPrefix):
+    struct = parmed.load_file(psfFile)
+    struct.load_parameters(
+        parmed.charmm.CharmmParameterSet(*prmFiles)
+    )
+    struct.coordinates = parmed.load_file(pdbFile).coordinates
+    struct.box = [PBC[0], PBC[1], PBC[2], 90, 90, 90]
+    struct.save(f'{{outputPrefix}}.top', format='gromacs')
+    struct.save(f'{{outputPrefix}}.gro')
+uObject = MDAnalysis.Universe('{inputPrefix}.psf', '{inputPrefix}.pdb')
+pbcVector = measurePBC(uObject)
+allAtoms = uObject.select_atoms('all')
+transformations.translate((-pbcVector[1] + pbcVector[0] / 2))(allAtoms)
+allAtoms.write('{inputPrefix}.pdb', 'pdb', bonds=None)
+charmmToGromacs(
+    '{inputPrefix}.psf', 
+    '{inputPrefix}.pdb',
+    {forceFieldList},
+    pbcVector[0],
+    '{inputPrefix}_gmx'
+)'''
+
+amberToGromacsTemplate = string.Template('''
+import numpy as np
+import parmed, MDAnalysis
+from MDAnalysis import transformations
+def measurePBC(uObject):
+    atoms = uObject.select_atoms('all')
+    atomPositions = atoms.positions
+    xyz_array = np.transpose(atomPositions)
+    min_x = np.min(xyz_array[0])
+    max_x = np.max(xyz_array[0])
+    min_y = np.min(xyz_array[1])
+    max_y = np.max(xyz_array[1])
+    min_z = np.min(xyz_array[2])
+    max_z = np.max(xyz_array[2])
+    return [
+        np.array([max_x, max_y, max_z]) - np.array([min_x, min_y, min_z]),
+        (np.array([min_x, min_y, min_z]) + np.array([max_x, max_y, max_z])) / 2
+    ]
+def amberToGromacs(parmFile, rstFile, PBC, outputPrefix):
+    struct = parmed.load_file(parmFile, xyz=rstFile)
+    struct.coordinates = parmed.load_file(rstFile).coordinates
+    struct.box = [PBC[0], PBC[1], PBC[2], 90, 90, 90]
+    struct.save(f'{outputPrefix}.top', format='gromacs')
+    struct.save(f'{outputPrefix}.gro')
+uObject = MDAnalysis.Universe('${inputPrefix}.parm7', '${inputPrefix}.pdb')
+pbcVector = measurePBC(uObject)
+allAtoms = uObject.select_atoms('all')
+transformations.translate((-pbcVector[1] + pbcVector[0] / 2))(allAtoms)
+allAtoms.write('${inputPrefix}.pdb', 'pdb', bonds=None)
+amberToGromacs(
+    '${inputPrefix}.parm7',
+    '${inputPrefix}.pdb',
+    pbcVector[0],
+    '${inputPrefix}_gmx',
+)
+''')
