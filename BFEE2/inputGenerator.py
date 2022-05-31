@@ -223,7 +223,7 @@ class inputGenerator():
         ligandOnlyPdbFileFormat,
         selectionPro,
         selectionLig,
-        selectionSol='resname TIP3* or resname SPC*',
+        selectionSol='resname TIP3* or resname SPC* or resname HOH or resname WAT',
         temperature=300.0
     ):
         """generate all the input files for Gromacs Geometric simulation
