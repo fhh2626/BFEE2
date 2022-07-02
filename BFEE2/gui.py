@@ -251,7 +251,17 @@ class geometricAdvancedSettings(QWidget):
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
-
+        
+        # force field settings
+        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettingsLayout = QHBoxLayout()
+        
+        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+        self.OPLSMixingRuleCheckbox.setChecked(False)
+        
+        self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettings.setLayout(self.FFSettingsLayout)
+        
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
         self.modelingLayout = QVBoxLayout()
@@ -296,6 +306,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.compatibility)
+        self.mainLayout.addWidget(self.FFSettings)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -394,6 +405,16 @@ class alchemicalAdvancedSettings(QWidget):
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
         self.compatibility.setLayout(self.compatibilityLayout)
+        
+        # force field settings
+        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettingsLayout = QHBoxLayout()
+        
+        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+        self.OPLSMixingRuleCheckbox.setChecked(False)
+        
+        self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -426,6 +447,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.compatibility)
+        self.mainLayout.addWidget(self.FFSettings)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -1604,7 +1626,8 @@ force fields!'
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text(),
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
-                            self.selectMDEngineCombobox.currentText().lower()
+                            self.selectMDEngineCombobox.currentText().lower(),
+                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1670,10 +1693,11 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
+                            self.alchemicalAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
-                            self.mainSettings.vmdLineEdit.text()
+                            self.mainSettings.vmdLineEdit.text(),
+                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(

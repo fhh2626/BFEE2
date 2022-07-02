@@ -59,7 +59,8 @@ class inputGenerator():
         neutralizeLigOnly = 'NaCl',
         pinDownPro = True,
         useOldCv = True,
-        vmdPath = ''
+        vmdPath = '',
+        OPLSMixingRule = False
     ):
         """generate all the input files for NAMD alchemical simulation
 
@@ -86,6 +87,7 @@ class inputGenerator():
             pinDownPro (bool, optional): whether pinning down the protien. Defaults to True.
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             vmdPath (str, optional): path to vmd. Defaults to ''.
+            OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
         """
 
         assert(len(stratification) == 4)
@@ -110,7 +112,7 @@ class inputGenerator():
         
         self._generateAlchemicalNAMDConfig(
             path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
-            membraneProtein
+            membraneProtein, OPLSMixingRule=OPLSMixingRule
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv
@@ -137,7 +139,8 @@ class inputGenerator():
         parallelRuns = 1,
         vmdPath = '',
         reflectionBoundary = False,
-        MDEngine = 'namd'
+        MDEngine = 'namd',
+        OPLSMixingRule = False
     ):
         """generate all the input files for NAMD geometric simulation
 
@@ -169,6 +172,7 @@ class inputGenerator():
             vmdPath (str, optional): path to vmd. Defaults to ''.
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False.
             MDEngine (str, optional): namd or gromacs. Default to namd.
+            OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
         """ 
 
         assert(len(stratification) == 8)
@@ -198,7 +202,8 @@ class inputGenerator():
         
         if MDEngine == 'namd':
             self._generateGeometricNAMDConfig(
-                path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein
+                path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein,
+                OPLSMixingRule=OPLSMixingRule
             )
         elif MDEngine == 'gromacs':
             self._generateGeometricGromacsConfig(
@@ -803,7 +808,8 @@ class inputGenerator():
         stratification = [1,1,1,1],
         doubleWide = False,
         minBeforeSample = False,
-        membraneProtein = False
+        membraneProtein = False,
+        OPLSMixingRule = False
     ):
         """generate NAMD config fils for the alchemical route
 
@@ -820,6 +826,7 @@ class inputGenerator():
                                               Defaults to False.
             membraneProtein (bool, optional): whether simulating a membrane protein. 
                                               Defaults to False.
+            OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
         """
 
         if forceFieldType == 'charmm':
@@ -848,7 +855,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
-                    'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein
+                    'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/000_eq/000.2_eq_ligandOnly.conf', 'w') as namdConfig:
@@ -857,7 +865,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     '', '', '', pbcLig,
                     'output/eq_ligandOnly', temperature, 1000000, 'colvars_ligandOnly.in',
-                    ''
+                    '', OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -868,7 +876,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/fep_backward.coor', f'output/fep_backward.vel', f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein
+                    stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/001_MoleculeBound/001.1_fep_backward.conf', 'w') as namdConfig:
@@ -877,7 +886,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                    stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein
+                    stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
         
@@ -888,7 +898,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
-                        stratification[0], False, True, membraneProtein=membraneProtein
+                        stratification[0], False, True, membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -899,7 +910,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/ti_backward.coor', f'output/ti_backward.vel', f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_forward.in', 
-                    '', membraneProtein=membraneProtein
+                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/002_RestraintBound/002.1_ti_backward.conf', 'w') as namdConfig:
@@ -908,7 +919,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_backward.in', 
-                    '', membraneProtein=membraneProtein
+                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -920,7 +931,7 @@ class inputGenerator():
                     f'output/fep_backward.coor', f'output/fep_backward.vel', 
                     f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[2], True, False, minBeforeSample
+                    stratification[2], True, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.1_fep_backward.conf', 'w') as namdConfig:
@@ -930,7 +941,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                    stratification[2], False, False, minBeforeSample
+                    stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -942,7 +953,7 @@ class inputGenerator():
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
-                        stratification[2], False, True
+                        stratification[2], False, True, OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -954,7 +965,7 @@ class inputGenerator():
                     f'output/ti_backward.coor', f'output/ti_backward.vel', 
                     f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_forward.in', 
-                    ''
+                    '', OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
@@ -964,7 +975,7 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_backward.in', 
-                    ''
+                    '', OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1345,6 +1356,7 @@ class inputGenerator():
         temperature,
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
+        OPLSMixingRule = False
     ):
         """generate NAMD config fils for the geometric route
 
@@ -1356,6 +1368,7 @@ class inputGenerator():
             stratification (list of int, 8): number of windows for each simulation. 
                                              Defaults to [1,1,1,1,1,1,1,1].
             membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
+            OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
         """
 
         if forceFieldType == 'charmm':
@@ -1404,7 +1417,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1415,7 +1428,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.extend.conf', 'w') as namdConfig:
@@ -1424,7 +1437,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1439,7 +1453,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1449,7 +1463,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', 
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein, 
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1460,7 +1475,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.extend.conf', 'w') as namdConfig:
@@ -1469,7 +1484,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1483,7 +1499,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1493,7 +1509,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1504,7 +1521,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.extend.conf', 'w') as namdConfig:
@@ -1513,7 +1530,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1527,7 +1545,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1537,7 +1555,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1548,7 +1567,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.extend.conf', 'w') as namdConfig:
@@ -1557,7 +1576,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1571,7 +1591,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1581,7 +1601,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1592,7 +1613,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.extend.conf', 'w') as namdConfig:
@@ -1601,7 +1622,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1616,7 +1638,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1626,7 +1648,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1637,7 +1660,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.extend.conf', 'w') as namdConfig:
@@ -1646,7 +1669,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
-                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1660,7 +1684,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1670,7 +1694,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1684,7 +1709,7 @@ class inputGenerator():
                     '', '', '', 
                     pbcStep7,
                     'output/eq', temperature, 5000000, 'colvars_eq.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         # abf
@@ -1694,7 +1719,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                     'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/007_r/007.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1703,7 +1728,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
-                    CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein
+                    CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein,
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1717,7 +1743,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1727,7 +1753,8 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
-                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein
+                        CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
@@ -1739,7 +1766,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     '', '', '', 
                     pbcLig,
-                    'output/eq', temperature, 1000000
+                    'output/eq', temperature, 1000000, OPLSMixingRule=OPLSMixingRule
                 )
             )
         # abf
@@ -1748,7 +1775,8 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
-                    'output/abf_1', temperature, 5000000, 'colvars_1.in'
+                    'output/abf_1', temperature, 5000000, 'colvars_1.in',
+                    OPLSMixingRule=OPLSMixingRule
                 )
             )
         with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1757,7 +1785,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
-                    CVRestartFile=f'output/abf_1.restart'
+                    CVRestartFile=f'output/abf_1.restart', OPLSMixingRule=OPLSMixingRule
                 )
             )
 
@@ -1770,7 +1798,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
-                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in'
+                        '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
+                        OPLSMixingRule=OPLSMixingRule
                     )
                 )
                 with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1780,7 +1809,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in',
-                        CVRestartFile=f'output/abf_{i+1}.restart'
+                        CVRestartFile=f'output/abf_{i+1}.restart', OPLSMixingRule=OPLSMixingRule
                     )
                 )
                     
