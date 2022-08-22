@@ -1093,7 +1093,7 @@ class mainUI(QMainWindow):
         self.alchemicalForceConstants.setLayout(self.alchemicalFCLayout)
 
         # alchemical restraint centers
-        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit) and temperature:')
+        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit), temperature and others:')
 
         # all widgets
         self.alchemicalRCLayout = QHBoxLayout()
@@ -1105,6 +1105,10 @@ class mainUI(QMainWindow):
         self.alchemicalRCRLineEdit = QLineEdit('8')
         self.alchemicalPostTemperatureLabel = QLabel('temperature:')
         self.alchemicalPostTemperatureLineEdit = QLineEdit('300')
+        self.alchemicalPostTypeLabel = QLabel('Post-treatment type:')
+        self.alchemicalPostTypeBox = QComboBox()
+        self.alchemicalPostTypeBox.addItem('FEP')
+        self.alchemicalPostTypeBox.addItem('BAR')
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLineEdit)
@@ -1114,6 +1118,8 @@ class mainUI(QMainWindow):
         self.alchemicalRCLayout.addWidget(self.alchemicalRCRLineEdit)
         self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLineEdit)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTypeLabel)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTypeBox)
 
         self.alchemicalRestraintCenters.setLayout(self.alchemicalRCLayout)
 
@@ -1436,9 +1442,14 @@ Standard Binding Free Energy:\n\
                     float(self.alchemicalfcphiLineEdit.text()),
                     float(self.alchemicalfcRLineEdit.text())
             ]
+            temperature = float(self.alchemicalPostTemperatureLineEdit.text())
         except:
-            QMessageBox.warning(self, 'Error', f'Force constant or restraint center input error!')
+            QMessageBox.warning(self, 'Error', f'Force constant or restraint center or temperature input error!')
             return
+        if self.alchemicalPostTypeBox.currentText() == 'FEP':
+                jobType = 'fep'
+        elif self.alchemicalPostTypeBox.currentText() == 'BAR':
+                jobType = 'bar'
 
         # check inputs
         for item in [
@@ -1462,7 +1473,7 @@ Standard Binding Free Energy:\n\
                 return
 
         # calculate free energies
-        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters)
+        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType)
 
         QMessageBox.about(
             self,
