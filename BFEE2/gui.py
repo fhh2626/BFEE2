@@ -1298,8 +1298,7 @@ class mainUI(QMainWindow):
         """open Documentation file
         """
 
-        with pkg_resources.path(doc, 'Doc.pdf') as docFile:
-            webbrowser.open('file:///' + str(docFile))
+        webbrowser.open('https://www.nature.com/articles/s41596-021-00676-1')
 
     def _openPythonAPIFile(self):
         """open Python API Documentation file
