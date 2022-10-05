@@ -1384,7 +1384,26 @@ class mainUI(QMainWindow):
                 return
 
         # calculate free energies
-        result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+        try:
+            result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+        except postTreatment.RStarTooLargeError:
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+r_star cannot be larger than r_max of step 7!\n'
+            )
+            return
+        except Exception as e:
+            print(e)
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+Unknown error! The error message is: \n\
+{e}\n'
+            )
+            return
 
         QMessageBox.about(
             self,

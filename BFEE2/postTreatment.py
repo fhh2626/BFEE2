@@ -14,6 +14,12 @@ BOLTZMANN_GMX = 0.0019872041 * 4.184
 CSTAR = 1661
 CSTAR_GMX = 1.661
 
+# an runtime error
+# r* > r(pmf)
+class RStarTooLargeError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
 class postTreatment:
     """the post-treatment of BFEE outputs
     """
@@ -163,7 +169,8 @@ class postTreatment:
             float: contribution of S* and I* in the separation simulation
         """
 
-        assert(rStar <= pmf[0][-1])
+        if rStar > pmf[0][-1]:
+            raise RStarTooLargeError('r_star cannot be larger than r_max of step 7!')
 
         polarTheta0 = math.radians(polarTheta)
         polarPhi0 = math.radians(polarPhi)
