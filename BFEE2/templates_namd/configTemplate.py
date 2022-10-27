@@ -31,7 +31,8 @@ class configTemplate:
                             fepForward = True,
                             fepDoubleWide = False,
                             fepMinBeforeSample = False,
-                            membraneProtein = False
+                            membraneProtein = False,
+                            OPLSMixingRule = False
                             ):
         """the namd config file template
 
@@ -58,6 +59,7 @@ class configTemplate:
             fepMinBeforeSample (bool, optional): whether do minimization before sampling in each FEP window.
                                                  Defaults to False.
             membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
+            OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
@@ -104,6 +106,11 @@ pairlistdist         11.0               \n'
         else:
             # error
             return ''
+        
+        # OPLS mixing rule
+        if OPLSMixingRule:
+            configString += f'\
+vdwGeometricSigma    yes               \n'
 
         if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '' and PBCCondition != '':
             # set temperature

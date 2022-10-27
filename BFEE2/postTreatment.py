@@ -4,6 +4,8 @@ import math
 
 import numpy as np
 
+from BFEE2.third_party import py_bar
+
 # Boltazann constant for NAMD unit convention
 BOLTZMANN = 0.0019872041
 BOLTZMANN_GMX = 0.0019872041 * 4.184
@@ -11,6 +13,12 @@ BOLTZMANN_GMX = 0.0019872041 * 4.184
 # standard concentration
 CSTAR = 1661
 CSTAR_GMX = 1.661
+
+# an runtime error
+# r* > r(pmf)
+class RStarTooLargeError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
 
 class postTreatment:
     """the post-treatment of BFEE outputs
@@ -161,7 +169,8 @@ class postTreatment:
             float: contribution of S* and I* in the separation simulation
         """
 
-        assert(rStar <= pmf[0][-1])
+        if rStar > pmf[0][-1]:
+            raise RStarTooLargeError('r_star cannot be larger than r_max of step 7!')
 
         polarTheta0 = math.radians(polarTheta)
         polarPhi0 = math.radians(polarPhi)
@@ -372,14 +381,43 @@ class postTreatment:
             _, freeEnergyProfile = self._tiLogFile(filePath)
 
         return freeEnergyProfile[-1]
+    
+    def alchemicalFreeEnergy(self, forwardFilePath, backwardFilePath = '', temperature = 300, jobType = 'fep'):
+        """ parse a pair of fepout file, or a single double-wide file using the py_bar library
 
-    def alchemicalBindingFreeEnergy(self, filePathes, parameters):
+        Args:
+            forwardFilePath (str): path to the forward fepout file
+            backwardFilePath (str): path to the backward fepout file. Empty string
+                                    corresponds to a double-wide simulation
+            temperature (float): temperature of the simulation
+            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+                                      Defaults to 'fep'.
+        Returns:
+            tuple[float, float]: free-energy change, error
+        """
+        window, deltaU = py_bar.NAMDParser(forwardFilePath, backwardFilePath).get_data()
+        analyzer = py_bar.FEPAnalyzer(window, deltaU, temperature)
+        
+        if jobType == 'bar':
+            result = analyzer.BAR_free_energy(block_size=50, n_bootstrap=20)
+        else:
+            result = analyzer.FEP_free_energy()
+
+        freeEnergy = np.sum(result[1])
+        error = np.sqrt(np.sum(np.power(result[2], 2)))
+        
+        return freeEnergy, error
+
+    def alchemicalBindingFreeEnergy(self, filePathes, parameters, temperature = 300, jobType = 'fep'):
         """calculate binding free energy for geometric route
 
         Args:
             filePathes (list of strings, 8): pathes of alchemical output files
                                              (step1-forward, step1-backward, step2-forward ...)
             parameters (np.array, floats, 9): (eulerTheta, polarTheta, r, forceConstant1, FC2, FC3, FC4, FC5, FC6)
+            temperature (float): temperature of the simulation
+            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+                                      Defaults to 'fep'.
 
         Returns:
             tuple:
@@ -395,7 +433,9 @@ class postTreatment:
         for i in range(len(filePathes)):
             if filePathes[i] != '':
                 if (i // 2) % 2 == 0:
-                    freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'fepout'))
+                    # just a dirty solution
+                    freeEnergies.append(None)
+                    #freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'fepout'))
                 else:
                     freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'log'))
             else:
@@ -404,13 +444,8 @@ class postTreatment:
 
         contributions = np.zeros(6)
         errors = np.zeros(6)
-
-        if freeEnergies[1] is not None:
-            contributions[0] = (freeEnergies[0] - freeEnergies[1]) / 2
-            errors[0] = abs((freeEnergies[0] + freeEnergies[1]) / 1.414)
-        else:
-            contributions[0] = freeEnergies[0]
-            errors[0] = 99999
+        
+        contributions[0], errors[0] = self.alchemicalFreeEnergy(filePathes[0], filePathes[1], temperature, jobType)
 
         if freeEnergies[3] is not None:
             contributions[1] = -(freeEnergies[2] + freeEnergies[3]) / 2
@@ -418,13 +453,9 @@ class postTreatment:
         else:
             contributions[1] = -freeEnergies[2]
             errors[1] = 99999
-
-        if freeEnergies[5] is not None:
-            contributions[2] = -(freeEnergies[4] - freeEnergies[5]) / 2
-            errors[2] = abs((freeEnergies[4] + freeEnergies[5]) / 1.414)
-        else:
-            contributions[2] = -freeEnergies[4]
-            errors[2] = 99999
+            
+        contributions[2], errors[2] = self.alchemicalFreeEnergy(filePathes[4], filePathes[5], temperature, jobType)
+        contributions[2] = -contributions[2]
 
         if freeEnergies[7] is not None:
             contributions[3] = (freeEnergies[6] + freeEnergies[7]) / 2

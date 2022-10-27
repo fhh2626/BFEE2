@@ -251,7 +251,17 @@ class geometricAdvancedSettings(QWidget):
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
-
+        
+        # force field settings
+        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettingsLayout = QHBoxLayout()
+        
+        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+        self.OPLSMixingRuleCheckbox.setChecked(False)
+        
+        self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettings.setLayout(self.FFSettingsLayout)
+        
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
         self.modelingLayout = QVBoxLayout()
@@ -296,6 +306,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.nonStandardSolvent)
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.compatibility)
+        self.mainLayout.addWidget(self.FFSettings)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -394,6 +405,16 @@ class alchemicalAdvancedSettings(QWidget):
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
         self.compatibility.setLayout(self.compatibilityLayout)
+        
+        # force field settings
+        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettingsLayout = QHBoxLayout()
+        
+        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+        self.OPLSMixingRuleCheckbox.setChecked(False)
+        
+        self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -426,6 +447,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.compatibility)
+        self.mainLayout.addWidget(self.FFSettings)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -1071,7 +1093,7 @@ class mainUI(QMainWindow):
         self.alchemicalForceConstants.setLayout(self.alchemicalFCLayout)
 
         # alchemical restraint centers
-        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit) and temperature:')
+        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit), temperature and others:')
 
         # all widgets
         self.alchemicalRCLayout = QHBoxLayout()
@@ -1083,6 +1105,10 @@ class mainUI(QMainWindow):
         self.alchemicalRCRLineEdit = QLineEdit('8')
         self.alchemicalPostTemperatureLabel = QLabel('temperature:')
         self.alchemicalPostTemperatureLineEdit = QLineEdit('300')
+        self.alchemicalPostTypeLabel = QLabel('Post-treatment type:')
+        self.alchemicalPostTypeBox = QComboBox()
+        self.alchemicalPostTypeBox.addItem('FEP')
+        self.alchemicalPostTypeBox.addItem('BAR')
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLineEdit)
@@ -1092,6 +1118,8 @@ class mainUI(QMainWindow):
         self.alchemicalRCLayout.addWidget(self.alchemicalRCRLineEdit)
         self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalPostTemperatureLineEdit)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTypeLabel)
+        self.alchemicalRCLayout.addWidget(self.alchemicalPostTypeBox)
 
         self.alchemicalRestraintCenters.setLayout(self.alchemicalRCLayout)
 
@@ -1270,8 +1298,7 @@ class mainUI(QMainWindow):
         """open Documentation file
         """
 
-        with pkg_resources.path(doc, 'Doc.pdf') as docFile:
-            webbrowser.open('file:///' + str(docFile))
+        webbrowser.open('https://www.nature.com/articles/s41596-021-00676-1')
 
     def _openPythonAPIFile(self):
         """open Python API Documentation file
@@ -1304,7 +1331,7 @@ class mainUI(QMainWindow):
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
                 <b>Reference:</b><br>
-                <b>BFEE2:</b> Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123<br>
+                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123<br>
                 <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802<br>
                 <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745<br>
                 <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178<br>
@@ -1357,7 +1384,26 @@ class mainUI(QMainWindow):
                 return
 
         # calculate free energies
-        result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+        try:
+            result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+        except postTreatment.RStarTooLargeError:
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+r_star cannot be larger than r_max of step 7!\n'
+            )
+            return
+        except Exception as e:
+            print(e)
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+Unknown error! The error message is: \n\
+{e}\n'
+            )
+            return
 
         QMessageBox.about(
             self,
@@ -1414,9 +1460,14 @@ Standard Binding Free Energy:\n\
                     float(self.alchemicalfcphiLineEdit.text()),
                     float(self.alchemicalfcRLineEdit.text())
             ]
+            temperature = float(self.alchemicalPostTemperatureLineEdit.text())
         except:
-            QMessageBox.warning(self, 'Error', f'Force constant or restraint center input error!')
+            QMessageBox.warning(self, 'Error', f'Force constant or restraint center or temperature input error!')
             return
+        if self.alchemicalPostTypeBox.currentText() == 'FEP':
+                jobType = 'fep'
+        elif self.alchemicalPostTypeBox.currentText() == 'BAR':
+                jobType = 'bar'
 
         # check inputs
         for item in [
@@ -1440,7 +1491,7 @@ Standard Binding Free Energy:\n\
                 return
 
         # calculate free energies
-        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters)
+        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType)
 
         QMessageBox.about(
             self,
@@ -1604,7 +1655,8 @@ force fields!'
                             int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
                             self.mainSettings.vmdLineEdit.text(),
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
-                            self.selectMDEngineCombobox.currentText().lower()
+                            self.selectMDEngineCombobox.currentText().lower(),
+                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1670,10 +1722,11 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.minBeforeSampleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.memProCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
+                            self.alchemicalAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
-                            self.mainSettings.vmdLineEdit.text()
+                            self.mainSettings.vmdLineEdit.text(),
+                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
