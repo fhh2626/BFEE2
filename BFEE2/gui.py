@@ -1266,12 +1266,19 @@ class mainUI(QMainWindow):
         if self.selectMDEngineCombobox.currentText() == 'NAMD':
             self.selectStrategyCombobox.setEnabled(True)
             self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(True)
             
         elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
             index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
             self.selectStrategyCombobox.setEnabled(False)
+
+            self.geometricAdvancedSettings.useOldCvCheckbox.setChecked(False)
+            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(False)
+
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(False)
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(False)
             
     def _changeStrategySettingStateForOldGromacs(self):
         """enable/disable a lot of options for the old Gromacs tab
