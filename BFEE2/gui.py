@@ -491,6 +491,7 @@ class mainUI(QMainWindow):
 
         self.setGeometry(0,0,0,0)
         self.setWindowTitle(__PROGRAM_NAME__)    
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
 
     def _initActions(self):
