@@ -1386,10 +1386,12 @@ class mainUI(QMainWindow):
             return
 
         # check inputs
-        for item in pmfs:
-            if not os.path.exists(item):
+        for index, item in enumerate(pmfs):
+            if (index != 0) and (index != 7) and (not os.path.exists(item)):
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
+            if (index == 7) and (not os.path.exists(item)):
+                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
 
         # calculate free energies
         try:

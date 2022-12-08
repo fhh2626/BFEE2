@@ -213,7 +213,9 @@ class postTreatment:
         """calculate binding free energy for geometric route
 
         Args:
-            filePathes (list of strings, 8): pathes of PMF files for step1 - step8
+            filePathes (list of strings, 8): pathes of PMF files for step1 - step8.
+                                             PMFs for steps 1 and 8 can be omitted, which 
+                                             indicates the investication of a rigid ligand.
             parameters (np.array, floats, 8): (forceConstant1, FC2, FC3, FC4, FC5, FC6, r*, FC8)
 
         Returns:
@@ -224,12 +226,20 @@ class postTreatment:
         assert len(filePathes) == 8
 
         pmfs = []
-        for path in filePathes:
-            pmfs.append(self._readPMF(path))
+        rigid_ligand = False
+        for index, path in enumerate(filePathes):
+            if (index == 0 or index == 7) and path == '':
+                rigid_ligand = True
+                pmfs.append(None)
+            else:
+                pmfs.append(self._readPMF(path))
         self._geometricJacobianCorrection(pmfs[6])
 
         contributions = np.zeros(10)
-        contributions[0] = self._geometricRestraintContribution(pmfs[0], parameters[0], True, False)
+        if not rigid_ligand:
+            contributions[0] = self._geometricRestraintContribution(pmfs[0], parameters[0], True, False)
+        else:
+            contributions[0] = 0.0
         contributions[1] = self._geometricRestraintContribution(pmfs[1], parameters[1], False, False)
         contributions[2] = self._geometricRestraintContribution(pmfs[2], parameters[2], False, False)
         contributions[3] = self._geometricRestraintContribution(pmfs[3], parameters[3], False, False)
@@ -239,9 +249,12 @@ class postTreatment:
             parameters[6], pmfs[6], pmfs[4][0][np.argmin(pmfs[4][1])], pmfs[5][0][np.argmin(pmfs[5][1])],
             parameters[4], parameters[5]
         )
-        contributions[7] = self._geometricRestraintContribution(pmfs[7], parameters[7], True, True)
+        if not rigid_ligand:
+            contributions[7] = self._geometricRestraintContribution(pmfs[7], parameters[7], True, True)
+        else:
+            contributions[7] = 0.0
         contributions[8] = self._geometricRestraintContributionBulk(
-            pmfs[1][0][np.argmin(pmfs[1][1])], parameters[1], parameters[2], parameters[3]
+                pmfs[1][0][np.argmin(pmfs[1][1])], parameters[1], parameters[2], parameters[3]
         )
 
         contributions[9] = np.sum(contributions[:9])
