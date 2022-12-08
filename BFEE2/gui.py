@@ -1868,7 +1868,17 @@ Unknown error!'
 
             path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
 
-            pmfs = [ploter.readPMF(self.mergePmfBox.item(i).text()) for i in range(self.mergePmfBox.count())]
+            pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+
+            if not ploter.isGaWTM(pmfFiles):
+                pmfs = [ploter.readPMF(item) for item in pmfFiles]
+            else:
+                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+                try:
+                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
+                except ploter.NoCorrectionFileError:
+                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                    return
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.writePMF(path, mergedPMF)
@@ -1887,8 +1897,18 @@ Unknown error!'
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
                 return
 
-            pmfs = [ploter.readPMF(self.plotPmfBox.item(i).text()) for i in range(self.plotPmfBox.count())]
+            pmfFiles = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
 
+            if not ploter.isGaWTM(pmfFiles):
+                pmfs = [ploter.readPMF(item) for item in pmfFiles]
+            else:
+                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+                try:
+                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
+                except ploter.NoCorrectionFileError:
+                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                    return
+            
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
         return f
