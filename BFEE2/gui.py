@@ -261,6 +261,16 @@ class geometricAdvancedSettings(QWidget):
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettings.setLayout(self.FFSettingsLayout)
+
+        # strategy settings
+        self.strategy = QGroupBox('Strategy settings')
+        self.strategyLayout = QHBoxLayout()
+
+        self.considerRMSDCVCheckbox = QCheckBox('Consider RMSD CV')
+        self.considerRMSDCVCheckbox.setChecked(True)
+
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategy.setLayout(self.strategyLayout)
         
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -307,6 +317,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.FFSettings)
+        self.mainLayout.addWidget(self.strategy)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -1666,7 +1677,8 @@ force fields!'
                             self.mainSettings.vmdLineEdit.text(),
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
                             self.selectMDEngineCombobox.currentText().lower(),
-                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
+                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
