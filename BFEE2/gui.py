@@ -266,7 +266,7 @@ class geometricAdvancedSettings(QWidget):
         self.strategy = QGroupBox('Strategy settings')
         self.strategyLayout = QHBoxLayout()
 
-        self.considerRMSDCVCheckbox = QCheckBox('Consider RMSD CV')
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
 
         self.useGaWTMCheckbox = QCheckBox('Use GaWTM-eABF')
@@ -1668,11 +1668,9 @@ force fields!'
                                 f'\
 The feature of using GaWTM-eABF as the workhorse engine is \
 experimental! Known issues:\n \
-1. In step 8, GaWTM-eABF after minimization may fail. The \
-end-user may separate minimization and free-energy calculation \
-manually. 2. The config files for extending GaWTM-eABF simulations \
-will do pre-equilibration again. One can revise it manually to \
-avoid it'
+The config files for extending GaWTM-eABF simulations \
+will do pre-equilibration again. This may cause some errors. \
+One can revise the config file manually to avoid it'
                         )
 
                     try:

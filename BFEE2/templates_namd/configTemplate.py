@@ -184,7 +184,9 @@ useConstantRatio     no                         \n'
         # colvars definition
         if cvFile != '':
             configString += f'\
-colvars    on                                   \n\
+colvars    on                                   \n'
+            if not GaWTM:
+                configString += f'\
 colvarsConfig    {cvFile}                       \n'
 
             if CVRestartFile != '':
@@ -832,20 +834,26 @@ colvar {{                            \n\
 
         return string
 
-    def cvHeadTemplate(self, indexFile):
+    def cvHeadTemplate(self, indexFile, reweightAMD=False):
         """return the head of colvars file
 
         Args:
             indexFile (str): name of ndx file
+            reweightAMD (bool, optional): if reweightAMD, there should be "smp off" in the 
+                                          head. Default to False.
 
         Returns:
             str: head of colvars file
         """
         
-        return f'\
+        string = f'\
 colvarsTrajFrequency      5000             \n\
 colvarsRestartFrequency   5000            \n\
 indexFile                 {indexFile}      \n'
+        if reweightAMD:
+            string += f'\
+smp                       off              \n'
+        return string
 
     def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall, unit = 'namd'):
         ''' template of harmonic wall bias

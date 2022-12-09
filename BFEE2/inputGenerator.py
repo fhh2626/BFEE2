@@ -2148,7 +2148,7 @@ class inputGenerator():
             for i in range(stratification[0]):
                 with open(f'{path}/BFEE/001_RMSDBound/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                     colvarsConfig.write(
-                        self.cTemplate.cvHeadTemplate('../complex.ndx')
+                        self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                     )
                     colvarsConfig.write(
                         self.cTemplate.cvRMSDTemplate(
@@ -2180,7 +2180,7 @@ class inputGenerator():
         for i in range(stratification[1]):
             with open(f'{path}/BFEE/002_EulerTheta/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2225,7 +2225,7 @@ class inputGenerator():
         for i in range(stratification[2]):
             with open(f'{path}/BFEE/003_EulerPhi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2279,7 +2279,7 @@ class inputGenerator():
         for i in range(stratification[3]):
             with open(f'{path}/BFEE/004_EulerPsi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2342,7 +2342,7 @@ class inputGenerator():
         for i in range(stratification[4]):
             with open(f'{path}/BFEE/005_PolarTheta/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2414,7 +2414,7 @@ class inputGenerator():
         for i in range(stratification[5]):
             with open(f'{path}/BFEE/006_PolarPhi/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2567,7 +2567,7 @@ class inputGenerator():
         for i in range(stratification[6]):
             with open(f'{path}/BFEE/007_r/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                    self.cTemplate.cvHeadTemplate('../complex.ndx', reweightAMD=reweightAMD)
                 )
                 colvarsConfig.write(
                     self.cTemplate.cvRMSDTemplate(
@@ -2658,7 +2658,7 @@ class inputGenerator():
             for i in range(stratification[7]):
                 with open(f'{path}/BFEE/008_RMSDUnbound/colvars_{i+1}.{colvarPostfix}', 'w') as colvarsConfig:
                     colvarsConfig.write(
-                        self.cTemplate.cvHeadTemplate('./ligandOnly.ndx')
+                        self.cTemplate.cvHeadTemplate('./ligandOnly.ndx', reweightAMD=reweightAMD)
                     )
                     colvarsConfig.write(
                         self.cTemplate.cvRMSDTemplate(
