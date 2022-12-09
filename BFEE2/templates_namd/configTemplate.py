@@ -32,7 +32,8 @@ class configTemplate:
                             fepDoubleWide = False,
                             fepMinBeforeSample = False,
                             membraneProtein = False,
-                            OPLSMixingRule = False
+                            OPLSMixingRule = False,
+                            GaWTM = False
                             ):
         """the namd config file template
 
@@ -60,6 +61,7 @@ class configTemplate:
                                                  Defaults to False.
             membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
+            GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
             
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
@@ -200,8 +202,32 @@ source     {cvDefinitionFile}                   \n'
                 configString += f'\
 minimize    500                                 \n\
 reinitvels    {temperature}                     \n'
-            configString += f'\
+            if not GaWTM:
+                configString += f'\
 run    {numSteps}                               \n'
+            else:
+                configString += f'\
+accelMD                         on                     \n\
+accelMDG                        on                     \n\
+accelMDGcMDSteps                500000                 \n\
+accelMDGcMDPrepSteps            100000                 \n\
+accelMDGEquiPrepSteps           100000                 \n\
+accelMDGEquiSteps               500000                 \n\
+accelMDdihe                     on                     \n\
+accelMDOutFreq                  1000                   \n\
+accelMDGSigma0D                 6.0                    \n\
+for {{set stage 0}} {{$stage < 2}} {{incr stage}} {{   \n\
+    if {{$stage == 0}} {{                              \n\
+        puts "Probing the GaMD parameters..."          \n\
+        cv configfile {cvFile}                         \n\
+        run norepeat 1000000                           \n\
+    }} elseif {{$stage == 1}} {{                       \n\
+        puts "Starting eABF + GaMD..."                 \n\
+        cv reset                                       \n\
+        cv configfile {cvFile + ".amd"}                \n\
+        run norepeat   {numSteps}                      \n\
+    }}                                                 \n\
+}}                                                     \n'
         else:
             # currently the alchemical route is somewhat hard-coded
             # this will be improved in the future
@@ -960,6 +986,22 @@ histogram {{                     \n\
   outputFileDX  none             \n\
   outputFreq 10000               \n\
 }}                               \n'
+        return string
+
+    def cvReweightAMDTemplate(self, cv):
+        """ template for reweight aMD results
+
+        Args:
+            cv (str): name of the colvars
+            
+        Returns:
+            str: string of the reweightamd definition
+        """
+        
+        string = f'\
+reweightamd {{                  \n\
+  colvars  {cv}                 \n\
+}}                              \n'
         return string
 
     def cvProteinTemplate(self, centerCoor, refFile, unit = 'namd'):

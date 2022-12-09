@@ -269,7 +269,11 @@ class geometricAdvancedSettings(QWidget):
         self.considerRMSDCVCheckbox = QCheckBox('Consider RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
 
+        self.useGaWTMCheckbox = QCheckBox('Use GaWTM-eABF')
+        self.useGaWTMCheckbox.setChecked(False)
+
         self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLayout.addWidget(self.useGaWTMCheckbox)
         self.strategy.setLayout(self.strategyLayout)
         
         # membrane protein
@@ -1279,6 +1283,7 @@ class mainUI(QMainWindow):
             self.selectStrategyCombobox.setEnabled(True)
             self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(True)
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(True)
             
         elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
             index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
@@ -1291,6 +1296,9 @@ class mainUI(QMainWindow):
 
             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(False)
             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(False)
+
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(False)
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
             
     def _changeStrategySettingStateForOldGromacs(self):
         """enable/disable a lot of options for the old Gromacs tab
@@ -1655,6 +1663,18 @@ force fields!'
                             )
                             return
                     
+                    if self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked():
+                        QMessageBox.warning(self, 'Error', 
+                                f'\
+The feature of using GaWTM-eABF as the workhorse engine is \
+experimental! Known issues:\n \
+1. In step 8, GaWTM-eABF after minimization may fail. The \
+end-user may separate minimization and free-energy calculation \
+manually. 2. The config files for extending GaWTM-eABF simulations \
+will do pre-equilibration again. One can revise it manually to \
+avoid it'
+                        )
+
                     try:
                         iGenerator.generateNAMDGeometricFiles(
                             path,
@@ -1678,7 +1698,8 @@ force fields!'
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
                             self.selectMDEngineCombobox.currentText().lower(),
                             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked()
+                            self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1748,7 +1769,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
-                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                         )
                     except PermissionError:
                         QMessageBox.warning(

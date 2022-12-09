@@ -141,7 +141,8 @@ class inputGenerator():
         reflectionBoundary = False,
         MDEngine = 'namd',
         OPLSMixingRule = False,
-        considerRMSDCV = True
+        considerRMSDCV = True,
+        GaWTM = False
     ):
         """generate all the input files for NAMD geometric simulation
 
@@ -175,6 +176,7 @@ class inputGenerator():
             MDEngine (str, optional): namd or gromacs. Default to namd.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            GaWTM (bool, optional): Whether performing GaWTM-eABF simulations. Default to False
         """ 
 
         assert(len(stratification) == 8)
@@ -205,7 +207,7 @@ class inputGenerator():
         if MDEngine == 'namd':
             self._generateGeometricNAMDConfig(
                 path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein,
-                OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV
+                OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV, GaWTM=GaWTM
             )
         elif MDEngine == 'gromacs':
             self._generateGeometricGromacsConfig(
@@ -215,8 +217,16 @@ class inputGenerator():
         self._generateGeometricColvarsConfig(
             path, topType, coorType, selectionPro, selectionLig, selectionRef, 
             stratification, pinDownPro, useOldCv, reflectionBoundary, MDEngine,
-            considerRMSDCV=considerRMSDCV
+            considerRMSDCV=considerRMSDCV, reweightAMD=False
         )
+        # for GaWTM-eABF simulations, two colvars config files are needed. One for pre-equilibration
+        # and the other for production
+        if GaWTM:
+            self._generateGeometricColvarsConfig(
+                path, topType, coorType, selectionPro, selectionLig, selectionRef, 
+                stratification, pinDownPro, useOldCv, reflectionBoundary, MDEngine,
+                considerRMSDCV=considerRMSDCV, reweightAMD=True
+            )
 
         self._duplicateFileFolder(path, parallelRuns)
 
@@ -1375,7 +1385,8 @@ class inputGenerator():
         stratification = [1,1,1,1,1,1,1,1],
         membraneProtein = False,
         OPLSMixingRule = False,
-        considerRMSDCV = True
+        considerRMSDCV = True,
+        GaWTM = False
     ):
         """generate NAMD config fils for the geometric route
 
@@ -1389,6 +1400,7 @@ class inputGenerator():
             membraneProtein (bool, optional): whether simulating a membrane protein. Defaults to False.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
         """
 
         if forceFieldType == 'charmm':
@@ -1437,7 +1449,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=False
                 )
             )
 
@@ -1449,7 +1462,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                         '', 'output/abf_1', temperature, 5000000, 'colvars_1.in',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
             with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.extend.conf', 'w') as namdConfig:
@@ -1459,7 +1473,7 @@ class inputGenerator():
                         f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                         '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
                         CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1473,7 +1487,8 @@ class inputGenerator():
                             f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                             f'output/abf_{i}.restart.xsc',
                             '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
-                            membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                            membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                            GaWTM=GaWTM
                         )
                     )
                     with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1484,7 +1499,7 @@ class inputGenerator():
                             f'output/abf_{i+1}.restart.xsc',
                             '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', 
                             CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein, 
-                            OPLSMixingRule=OPLSMixingRule
+                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                         )
                     )
 
@@ -1495,7 +1510,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.extend.conf', 'w') as namdConfig:
@@ -1505,7 +1521,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1519,7 +1535,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1530,7 +1547,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1541,7 +1558,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.extend.conf', 'w') as namdConfig:
@@ -1551,7 +1569,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1565,7 +1583,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1576,7 +1595,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1587,7 +1606,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.extend.conf', 'w') as namdConfig:
@@ -1597,7 +1617,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1611,7 +1631,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1622,7 +1643,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1633,7 +1654,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.extend.conf', 'w') as namdConfig:
@@ -1643,7 +1665,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1658,7 +1680,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1669,7 +1692,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1680,7 +1703,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.extend.conf', 'w') as namdConfig:
@@ -1690,7 +1714,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1704,7 +1728,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1715,7 +1740,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1728,7 +1753,8 @@ class inputGenerator():
                     '', '', '', 
                     pbcStep7,
                     'output/eq', temperature, 5000000, 'colvars_eq.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=False
                 )
             )
         # abf
@@ -1738,7 +1764,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                     'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
-                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    GaWTM=GaWTM
                 )
             )
         with open(f'{path}/BFEE/007_r/007.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1748,7 +1775,7 @@ class inputGenerator():
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
                     CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                 )
             )
 
@@ -1762,7 +1789,8 @@ class inputGenerator():
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
-                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                        membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
                 with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1773,7 +1801,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
 
@@ -1786,7 +1814,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         '', '', '', 
                         pbcLig,
-                        'output/eq', temperature, 1000000, OPLSMixingRule=OPLSMixingRule
+                        'output/eq', temperature, 1000000, OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=False
                     )
                 )
             # abf
@@ -1796,7 +1825,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                         'output/abf_1', temperature, 5000000, 'colvars_1.in',
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                     )
                 )
             with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1805,7 +1834,8 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                         'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
-                        CVRestartFile=f'output/abf_1.restart', OPLSMixingRule=OPLSMixingRule
+                        CVRestartFile=f'output/abf_1.restart', OPLSMixingRule=OPLSMixingRule,
+                        GaWTM=GaWTM
                     )
                 )
 
@@ -1819,7 +1849,7 @@ class inputGenerator():
                             f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                             f'output/abf_{i}.restart.xsc',
                             '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
-                            OPLSMixingRule=OPLSMixingRule
+                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
                         )
                     )
                     with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1829,7 +1859,8 @@ class inputGenerator():
                             f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                             f'output/abf_{i+1}.restart.xsc',
                             '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in',
-                            CVRestartFile=f'output/abf_{i+1}.restart', OPLSMixingRule=OPLSMixingRule
+                            CVRestartFile=f'output/abf_{i+1}.restart', OPLSMixingRule=OPLSMixingRule,
+                            GaWTM=GaWTM
                         )
                     )
                     
@@ -1988,7 +2019,8 @@ class inputGenerator():
         useOldCv=True,
         reflectingBoundary=False,
         unit='namd',
-        considerRMSDCV=True
+        considerRMSDCV=True,
+        reweightAMD=False
     ):
         """generate Colvars config fils for geometric route
 
@@ -2005,15 +2037,21 @@ class inputGenerator():
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False
             unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
-            considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
+            reweightAMD (bool, optional): Whether add reweightAMD action. If this option is on, colvars config files for
+                                          equilibration will not be generated. Default to False
         """    
 
         assert(len(stratification) == 8)
         
         if unit == 'namd':
-            colvarPostfix = 'in'
+            if not reweightAMD:
+                colvarPostfix = 'in'
+            else:
+                colvarPostfix = 'in.amd'
         elif unit == 'gromacs':
             colvarPostfix = 'dat'
+            assert(not reweightAMD)
 
         # read the original topology and coordinate file
         fParser = fileParser.fileParser(f'{path}/BFEE/complex.{topType}', f'{path}/BFEE/complex.pdb')
@@ -2028,81 +2066,82 @@ class inputGenerator():
             centerLargeBox = center
 
         # 000_eq
-        with open(f'{path}/BFEE/000_eq/colvars.{colvarPostfix}', 'w') as colvarsConfig:
-            colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
-            )
-            # monitor CVs during equilibration
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    True, 0, 10, '../complex.xyz',
-                    extendedLagrangian = False,
-                    unit = unit
+        if not reweightAMD:
+            with open(f'{path}/BFEE/000_eq/colvars.{colvarPostfix}', 'w') as colvarsConfig:
+                colvarsConfig.write(
+                    self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    True, -90, 90, 'eulerTheta', '../complex.xyz', useOldCv,
-                    extendedLagrangian = False
+                # monitor CVs during equilibration
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        True, 0, 10, '../complex.xyz',
+                        extendedLagrangian = False,
+                        unit = unit
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    True, -180, 180, 'eulerPhi', '../complex.xyz', useOldCv,
-                    extendedLagrangian = False
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        True, -90, 90, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    True, -180, 180, 'eulerPsi', '../complex.xyz', useOldCv,
-                    extendedLagrangian = False
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        True, -180, 180, 'eulerPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    True, 0, 180, 'polarTheta', '../complex.xyz', useOldCv,
-                    extendedLagrangian = False
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        True, -180, 180, 'eulerPsi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    True, -180, 180, 'polarPhi', '../complex.xyz', useOldCv,
-                    extendedLagrangian = False
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        True, 0, 180, 'polarTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
-                    True, (distance - 5 if distance - 5 > 0 else 0), 
-                    distance + 22, extendedLagrangian = False,
-                    unit = unit
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        True, -180, 180, 'polarPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('RMSD')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('eulerTheta')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('eulerPhi')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('eulerPsi')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('polarTheta')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('polarPhi')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHistogramTemplate('r')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(
-                    center, '../complex.xyz', unit = unit
+                colvarsConfig.write(
+                    self.cTemplate.cvRTemplate(
+                        True, (distance - 5 if distance - 5 > 0 else 0), 
+                        distance + 22, extendedLagrangian = False,
+                        unit = unit
+                    )
                 )
-            )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('RMSD')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('eulerTheta')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('eulerPhi')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('eulerPsi')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('polarTheta')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('polarPhi')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHistogramTemplate('r')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvProteinTemplate(
+                        center, '../complex.xyz', unit = unit
+                    )
+                )
 
         # 001_RMSDBound
         if considerRMSDCV:
@@ -2121,6 +2160,10 @@ class inputGenerator():
                     colvarsConfig.write(
                         self.cTemplate.cvABFTemplate('RMSD', unit = unit)
                     )
+                    if reweightAMD:
+                        colvarsConfig.write(
+                            self.cTemplate.cvReweightAMDTemplate('RMSD')
+                        )
                     if not reflectingBoundary:
                         colvarsConfig.write(
                             self.cTemplate.cvHarmonicWallsTemplate(
@@ -2156,6 +2199,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerTheta', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('eulerTheta')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2203,6 +2250,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerPhi', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('eulerPhi')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2259,6 +2310,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('eulerPsi', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('eulerPsi')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2325,6 +2380,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('polarTheta', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('polarTheta')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2399,6 +2458,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('polarPhi', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('polarPhi')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2429,75 +2492,76 @@ class inputGenerator():
                     )
 
         # 007_r
-        # eq
-        with open(f'{path}/BFEE/007_r/colvars_eq.{colvarPostfix}', 'w') as colvarsConfig:
-            colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../complex.ndx')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', './complex_largeBox.xyz',
-                    extendedLagrangian = False,
-                    unit = unit
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv,
-                    extendedLagrangian = False
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv,
-                    extendedLagrangian = False
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv,
-                    extendedLagrangian = False
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv,
-                    extendedLagrangian = False
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvAngleTemplate(
-                    False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv,
-                    extendedLagrangian = False
-                )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRTemplate(
-                    False, 0, 0, extendedLagrangian = False, unit = unit
-                )
-            )
-            if considerRMSDCV:
+        if not reweightAMD:
+            # eq
+            with open(f'{path}/BFEE/007_r/colvars_eq.{colvarPostfix}', 'w') as colvarsConfig:
                 colvarsConfig.write(
-                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
+                    self.cTemplate.cvHeadTemplate('../complex.ndx')
                 )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0], unit = unit)
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1], unit = unit)
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz', unit = unit)
-            )
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', './complex_largeBox.xyz',
+                        extendedLagrangian = False,
+                        unit = unit
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarTheta', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarPhi', './complex_largeBox.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvRTemplate(
+                        False, 0, 0, extendedLagrangian = False, unit = unit
+                    )
+                )
+                if considerRMSDCV:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0, unit = unit)
+                    )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0, unit = unit)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0, unit = unit)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0, unit = unit)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0], unit = unit)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1], unit = unit)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvProteinTemplate(centerLargeBox, './complex_largeBox.xyz', unit = unit)
+                )
 
         # abf
         for i in range(stratification[6]):
@@ -2553,6 +2617,10 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvABFTemplate('r', unit = unit)
                 )
+                if reweightAMD:
+                    colvarsConfig.write(
+                        self.cTemplate.cvReweightAMDTemplate('r')
+                    )
                 if not reflectingBoundary:
                     colvarsConfig.write(
                         self.cTemplate.cvHarmonicWallsTemplate(
@@ -2602,6 +2670,10 @@ class inputGenerator():
                     colvarsConfig.write(
                         self.cTemplate.cvABFTemplate('RMSD', unit = unit)
                     )
+                    if reweightAMD:
+                        colvarsConfig.write(
+                            self.cTemplate.cvReweightAMDTemplate('RMSD')
+                        )
                     if not reflectingBoundary:
                         colvarsConfig.write(
                             self.cTemplate.cvHarmonicWallsTemplate(
