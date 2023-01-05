@@ -259,7 +259,7 @@ def updateGeometricFiles():
         # *.in in folder 
         files = []
         for file in os.listdir(folder):
-            if file.endswith('.in'):
+            if file.endswith('.in') or file.endswith('.in.amd'):
                 files.append(os.path.join(folder, file))
                 
         for inFile in files:
