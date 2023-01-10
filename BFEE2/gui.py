@@ -242,10 +242,10 @@ class geometricAdvancedSettings(QWidget):
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
-        self.useOldCvCheckbox.setChecked(True)
+        self.useOldCvCheckbox.setChecked(False)
         
         self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
-        self.reflectingBoundaryCheckbox.setChecked(False)
+        self.reflectingBoundaryCheckbox.setChecked(True)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
@@ -415,7 +415,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
-        self.useOldCvCheckbox.setChecked(True)
+        self.useOldCvCheckbox.setChecked(False)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
