@@ -18,7 +18,7 @@ Support many file formats for the input complex structure (PSF/PDB/PRM, PRM7/RST
 ...<br>
 
 ## Requirements
-Python 3.6+, PySide 2, numpy, matplotlib and MDAnalysis.<br>
+Python 3.6+, PySide 2, numpy, scipy, matplotlib, parmed and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [Colvars patched Gromacs](https://github.com/Colvars/colvars).<br>
 **Note: BFEE2 uses cutting-edge features of NAMD and Colvars. We highly suggest the end-user download the devel branch of NAMD from [here](https://gitlab.com/tcbgUIUC/namd/-/tree/devel) and patch it with [Colvars](https://github.com/Colvars/colvars) to prevent possible problems.**
 

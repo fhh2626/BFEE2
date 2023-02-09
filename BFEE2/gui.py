@@ -242,10 +242,10 @@ class geometricAdvancedSettings(QWidget):
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
-        self.useOldCvCheckbox.setChecked(True)
+        self.useOldCvCheckbox.setChecked(False)
         
         self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
-        self.reflectingBoundaryCheckbox.setChecked(False)
+        self.reflectingBoundaryCheckbox.setChecked(True)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
@@ -261,6 +261,20 @@ class geometricAdvancedSettings(QWidget):
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettings.setLayout(self.FFSettingsLayout)
+
+        # strategy settings
+        self.strategy = QGroupBox('Strategy settings')
+        self.strategyLayout = QHBoxLayout()
+
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox.setChecked(True)
+
+        self.useGaWTMCheckbox = QCheckBox('Use GaWTM-eABF')
+        self.useGaWTMCheckbox.setChecked(False)
+
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLayout.addWidget(self.useGaWTMCheckbox)
+        self.strategy.setLayout(self.strategyLayout)
         
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
@@ -307,6 +321,7 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.FFSettings)
+        self.mainLayout.addWidget(self.strategy)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addWidget(self.parallelRuns)
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
@@ -400,7 +415,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
-        self.useOldCvCheckbox.setChecked(True)
+        self.useOldCvCheckbox.setChecked(False)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
@@ -491,6 +506,7 @@ class mainUI(QMainWindow):
 
         self.setGeometry(0,0,0,0)
         self.setWindowTitle(__PROGRAM_NAME__)    
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
 
     def _initActions(self):
@@ -1266,12 +1282,23 @@ class mainUI(QMainWindow):
         if self.selectMDEngineCombobox.currentText() == 'NAMD':
             self.selectStrategyCombobox.setEnabled(True)
             self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(True)
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(True)
             
         elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
             index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
             self.selectStrategyCombobox.setEnabled(False)
+
+            self.geometricAdvancedSettings.useOldCvCheckbox.setChecked(False)
+            self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(False)
+
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(False)
+            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(False)
+
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(False)
+            self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
             
     def _changeStrategySettingStateForOldGromacs(self):
         """enable/disable a lot of options for the old Gromacs tab
@@ -1378,10 +1405,12 @@ class mainUI(QMainWindow):
             return
 
         # check inputs
-        for item in pmfs:
-            if not os.path.exists(item):
+        for index, item in enumerate(pmfs):
+            if (index != 0) and (index != 7) and (not os.path.exists(item)):
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
+            if (index == 7) and (not os.path.exists(item)):
+                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
 
         # calculate free energies
         try:
@@ -1634,6 +1663,16 @@ force fields!'
                             )
                             return
                     
+                    if self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked():
+                        QMessageBox.warning(self, 'Error', 
+                                f'\
+The feature of using GaWTM-eABF as the workhorse engine is \
+experimental! Known issues:\n \
+The config files for extending GaWTM-eABF simulations \
+will do pre-equilibration again. This may cause some errors. \
+One can revise the config file manually to avoid it'
+                        )
+
                     try:
                         iGenerator.generateNAMDGeometricFiles(
                             path,
@@ -1656,7 +1695,9 @@ force fields!'
                             self.mainSettings.vmdLineEdit.text(),
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
                             self.selectMDEngineCombobox.currentText().lower(),
-                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
+                            self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1726,7 +1767,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
-                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                         )
                     except PermissionError:
                         QMessageBox.warning(
@@ -1860,7 +1901,17 @@ Unknown error!'
 
             path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
 
-            pmfs = [ploter.readPMF(self.mergePmfBox.item(i).text()) for i in range(self.mergePmfBox.count())]
+            pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+
+            if not ploter.isGaWTM(pmfFiles):
+                pmfs = [ploter.readPMF(item) for item in pmfFiles]
+            else:
+                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+                try:
+                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
+                except ploter.NoCorrectionFileError:
+                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                    return
 
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.writePMF(path, mergedPMF)
@@ -1879,8 +1930,18 @@ Unknown error!'
                 QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
                 return
 
-            pmfs = [ploter.readPMF(self.plotPmfBox.item(i).text()) for i in range(self.plotPmfBox.count())]
+            pmfFiles = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
 
+            if not ploter.isGaWTM(pmfFiles):
+                pmfs = [ploter.readPMF(item) for item in pmfFiles]
+            else:
+                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+                try:
+                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
+                except ploter.NoCorrectionFileError:
+                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                    return
+            
             mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
         return f

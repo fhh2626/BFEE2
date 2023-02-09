@@ -1,9 +1,58 @@
 # plot figures
 
-import os, math
-import numpy as np
+import math
+import os
+import pathlib
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy import interpolate
+
+
+# an runtime error
+# does not have corresponding correction for a pmf
+class NoCorrectionFileError(RuntimeError):
+    def __init__(self, arg):
+        self.args = arg
+
+def isGaWTM(pmfFiles):
+    """determine whether the input PMFs indicate Gs-WTM simulations
+
+    Args:
+        pmfFiles (list[str]): path to a set of PMFs (and pmf corrections)
+    
+    Returns:
+        bool: GaWTM simulation or not
+    """
+
+    for file in pmfFiles:
+        if ''.join(pathlib.Path(file).suffixes) == '.reweightamd1.cumulant.pmf':
+            return True
+    return False
+
+def correctGaWTM(pmfFile):
+    """read a 1D namd PMF file and correct it using cumulant.pmf file
+
+    Args:
+        pmfFile (str): path to the pmf File
+    
+    Returns:
+        np.array (N*2): 1D PMF
+    """
+
+    pmf = np.loadtxt(pmfFile)
+    correction_pmfFile = pmfFile.replace('.czar.pmf', '') + '.reweightamd1.cumulant.pmf'
+
+    if not os.path.exists(correction_pmfFile):
+        raise NoCorrectionFileError(f'{pmfFile} does not have a corresponding correction!')
+
+    correction_data = np.loadtxt(correction_pmfFile)
+    correction_interpolate = interpolate.interp1d(correction_data[:,0], correction_data[:,1], fill_value="extrapolate")
+
+    pmf[:,1] += correction_interpolate(pmf[:,0])
+
+    return pmf
 
 def readPMF(pmfFile):
     """read a 1D namd PMF file
