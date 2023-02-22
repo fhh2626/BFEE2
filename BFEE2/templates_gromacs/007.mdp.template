@@ -52,7 +52,7 @@ morse                   = no
 implicit-solvent    = no
 
 ;Pressure coupling
-pcoupl              = berendsen
+pcoupl              = Parrinello-Rahman
 pcoupltype          = Isotropic
 nstpcouple          = -1
 tau-p               = 2
