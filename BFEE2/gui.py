@@ -1819,11 +1819,15 @@ Unknown error! The error message is: \n\
 
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:
-
+                
                 QMessageBox.warning(
-                    self, 'Warning', f'Any setting in "Advanced settings" is not supported \n\
-when using Gromacs-formatted files as inputs!'
-                )
+                    self, 'Warning', ('<ol>\
+                  <li>Any setting in "Advanced settings" is not supported\
+                      when using Gromacs-formatted files as inputs!</li>\
+                   <li>C-rescale pressure coupling (pcoupl) is used for all simulations, \
+                      GROMACS version >= 2021 with Colvars module is required. \
+                      You may need to download it from the \
+                      <a href=\'https://github.com/Colvars/colvars/\'>Colvars website</a>.</li></ol>'))
 
                 for item in [
                         self.topLineEdit.text(), 
