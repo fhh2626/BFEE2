@@ -850,9 +850,9 @@ colvar {{                            \n\
 colvarsTrajFrequency      5000             \n\
 colvarsRestartFrequency   5000            \n\
 indexFile                 {indexFile}      \n'
-        if reweightAMD:
-            string += f'\
-smp                       off              \n'
+#        if reweightAMD:
+#            string += f'\
+#smp                       off              \n'
         return string
 
     def cvHarmonicWallsTemplate(self, cv, lowerWall, upperWall, unit = 'namd'):
