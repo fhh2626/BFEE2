@@ -1667,10 +1667,7 @@ force fields!'
                         QMessageBox.warning(self, 'Error', 
                                 f'\
 The feature of using GaWTM-eABF as the workhorse engine is \
-experimental! Known issues:\n \
-The config files for extending GaWTM-eABF simulations \
-will do pre-equilibration again. This may cause some errors. \
-One can revise the config file manually to avoid it'
+experimental! Please always use the latest devel version of NAMD!\n'
                         )
 
                     try:

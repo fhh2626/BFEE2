@@ -189,8 +189,8 @@ colvars    on                                   \n'
                 configString += f'\
 colvarsConfig    {cvFile}                       \n'
 
-            if CVRestartFile != '':
-                configString += f'\
+                if CVRestartFile != '':
+                    configString += f'\
 colvarsInput     {CVRestartFile}                \n'
 
 
@@ -211,13 +211,16 @@ run    {numSteps}                               \n'
                 configString += f'\
 accelMD                         on                     \n\
 accelMDG                        on                     \n\
+accelMDdihe                     on                     \n\
+accelMDOutFreq                  1000                   \n\
+accelMDGSigma0D                 6.0                    \n'
+                if CVRestartFile == '':
+                     # new GaMD-WTM-eABF simulation
+                     configString += f'\
 accelMDGcMDSteps                500000                 \n\
 accelMDGcMDPrepSteps            100000                 \n\
 accelMDGEquiPrepSteps           100000                 \n\
 accelMDGEquiSteps               500000                 \n\
-accelMDdihe                     on                     \n\
-accelMDOutFreq                  1000                   \n\
-accelMDGSigma0D                 6.0                    \n\
 for {{set stage 0}} {{$stage < 2}} {{incr stage}} {{   \n\
     if {{$stage == 0}} {{                              \n\
         puts "Probing the GaMD parameters..."          \n\
@@ -230,6 +233,18 @@ for {{set stage 0}} {{$stage < 2}} {{incr stage}} {{   \n\
         run norepeat   {numSteps}                      \n\
     }}                                                 \n\
 }}                                                     \n'
+                else:
+                     configString += f'\
+accelMDGcMDSteps                0                      \n\
+accelMDGcMDPrepSteps            0                      \n\
+accelMDGEquiPrepSteps           0                      \n\
+accelMDGEquiSteps               0                      \n\
+accelMDGRestart                 on                     \n\
+accelMDGRestartFile             {CVRestartFile}.gamd   \n\
+colvarsConfig                   {cvFile + ".amd"}      \n\
+colvarsInput                    {CVRestartFile}        \n\
+run norepeat   {numSteps}                              \n'
+
         else:
             # currently the alchemical route is somewhat hard-coded
             # this will be improved in the future
