@@ -53,7 +53,7 @@ implicit-solvent    = no
 
 ;Pressure coupling
 ;Pressure coupling
-pcoupl              = berendsen
+pcoupl              = C-rescale
 pcoupltype          = Isotropic
 nstpcouple          = -1
 tau-p               = 2
