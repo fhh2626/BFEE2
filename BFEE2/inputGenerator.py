@@ -60,7 +60,8 @@ class inputGenerator():
         pinDownPro = True,
         useOldCv = True,
         vmdPath = '',
-        OPLSMixingRule = False
+        OPLSMixingRule = False,
+        considerRMSDCV = True
     ):
         """generate all the input files for NAMD alchemical simulation
 
@@ -88,6 +89,7 @@ class inputGenerator():
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             vmdPath (str, optional): path to vmd. Defaults to ''.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
+            considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
         """
 
         assert(len(stratification) == 4)
@@ -96,7 +98,7 @@ class inputGenerator():
         # determine the type of input top and coor file
         topType, coorType = self._determineFileType(topFile, coorFile)
 
-        self._makeDirectories(path, 'alchemical')
+        self._makeDirectories(path, 'alchemical', considerRMSDCV=considerRMSDCV)
         # after copying files
         # the coordinate file is converted to pdb
         self._copyFiles(
@@ -112,10 +114,11 @@ class inputGenerator():
         
         self._generateAlchemicalNAMDConfig(
             path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
-            membraneProtein, OPLSMixingRule=OPLSMixingRule
+            membraneProtein, OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV
         )
         self._generateAlchemicalColvarsConfig(
-            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv
+            path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv,
+            considerRMSDCV=considerRMSDCV
         )
 
     def generateNAMDGeometricFiles(
@@ -175,7 +178,7 @@ class inputGenerator():
             reflectingBoundary (bool, optional): Whether use reflecting boundaries, requires setBoundary on. Default to False.
             MDEngine (str, optional): namd or gromacs. Default to namd.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
-            considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
             GaWTM (bool, optional): Whether performing GaWTM-eABF simulations. Default to False
         """ 
 
@@ -378,14 +381,17 @@ class inputGenerator():
             
 
         if jobType == 'alchemical':
+            if considerRMSDCV:
+                os.mkdir(f'{path}/BFEE/004_RestraintUnbound')
+                os.mkdir(f'{path}/BFEE/004_RestraintUnbound/output')
+
             os.mkdir(f'{path}/BFEE/001_MoleculeBound')
             os.mkdir(f'{path}/BFEE/002_RestraintBound')
             os.mkdir(f'{path}/BFEE/003_MoleculeUnbound')
-            os.mkdir(f'{path}/BFEE/004_RestraintUnbound')
             os.mkdir(f'{path}/BFEE/001_MoleculeBound/output')
             os.mkdir(f'{path}/BFEE/002_RestraintBound/output')
             os.mkdir(f'{path}/BFEE/003_MoleculeUnbound/output')
-            os.mkdir(f'{path}/BFEE/004_RestraintUnbound/output')
+            
 
 
     def _copyFiles(
@@ -837,7 +843,8 @@ class inputGenerator():
         doubleWide = False,
         minBeforeSample = False,
         membraneProtein = False,
-        OPLSMixingRule = False
+        OPLSMixingRule = False,
+        considerRMSDCV = True
     ):
         """generate NAMD config fils for the alchemical route
 
@@ -855,6 +862,7 @@ class inputGenerator():
             membraneProtein (bool, optional): whether simulating a membrane protein. 
                                               Defaults to False.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
+            considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
         """
 
         if forceFieldType == 'charmm':
@@ -950,15 +958,19 @@ class inputGenerator():
                     '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
                 )
             )
-
+            
         # 003_MoleculeUnbound
+        if considerRMSDCV:
+            step3ColvarsConfig = 'colvars.in'
+        else:
+            step3ColvarsConfig = ''
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'output/fep_backward.coor', f'output/fep_backward.vel', 
                     f'output/fep_backward.xsc', '',
-                    'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
+                    'output/fep_forward', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
                     stratification[2], True, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
                 )
             )
@@ -968,7 +980,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
-                    'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
+                    'output/fep_backward', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
                     stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
                 )
             )
@@ -980,36 +992,38 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
-                        'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
+                        'output/fep_doubleWide', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
                         stratification[2], False, True, OPLSMixingRule=OPLSMixingRule
                     )
                 )
 
-        # 004_RestraintUnbound
-        with open(f'{path}/BFEE/004_RestraintUnbound/004.2_ti_forward.conf', 'w') as namdConfig:
-            namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
-                    forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    f'output/ti_backward.coor', f'output/ti_backward.vel', 
-                    f'output/ti_backward.xsc', '',
-                    'output/ti_forward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_forward.in', 
-                    '', OPLSMixingRule=OPLSMixingRule
+
+        if considerRMSDCV:
+            # 004_RestraintUnbound
+            with open(f'{path}/BFEE/004_RestraintUnbound/004.2_ti_forward.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
+                        f'output/ti_backward.coor', f'output/ti_backward.vel', 
+                        f'output/ti_backward.xsc', '',
+                        'output/ti_forward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_forward.in', 
+                        '', OPLSMixingRule=OPLSMixingRule
+                    )
                 )
-            )
-        with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
-            namdConfig.write(
-                self.cTemplate.namdConfigTemplate(
-                    forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
-                    f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
-                    f'../000_eq/output/eq_ligandOnly.xsc', '',
-                    'output/ti_backward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_backward.in', 
-                    '', OPLSMixingRule=OPLSMixingRule
+            with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
+                        f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
+                        f'../000_eq/output/eq_ligandOnly.xsc', '',
+                        'output/ti_backward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_backward.in', 
+                        '', OPLSMixingRule=OPLSMixingRule
+                    )
                 )
-            )
 
     def _generateAlchemicalColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, 
-        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True
+        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True, considerRMSDCV=True
     ):
         """generate Colvars config fils for geometric route
 
@@ -1024,6 +1038,7 @@ class inputGenerator():
                                                        Defaults to [1,1,1,1].
             pinDownPro (bool, optinal): Whether pinning down the protein. Defaults to True.
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
+            considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
         """
 
         assert(len(stratification) == 4)
@@ -1116,21 +1131,23 @@ class inputGenerator():
                     extendedLagrangian = False
                 )
             )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
-            )
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                )
 
         # 001_MoleculeBound
         with open(f'{path}/BFEE/001_MoleculeBound/colvars.in', 'w') as colvarsConfig:
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../complex.xyz',
-                    extendedLagrangian = False
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
+                    )
                 )
-            )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
@@ -1166,9 +1183,10 @@ class inputGenerator():
                     False, 0, 0, extendedLagrangian = False
                 )
             )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
-            )
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
             )
@@ -1197,12 +1215,13 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../complex.xyz',
-                    extendedLagrangian = False
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz',
+                        extendedLagrangian = False
+                    )
                 )
-            )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
@@ -1238,9 +1257,10 @@ class inputGenerator():
                     False, 0, 0, extendedLagrangian = False
                 )
             )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], True, 10)
-            )
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], True, 10)
+                )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], True, 0.1)
             )
@@ -1267,11 +1287,12 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvHeadTemplate('../complex.ndx')
             )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../complex.xyz', extendedLagrangian = False
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../complex.xyz', extendedLagrangian = False
+                    )
                 )
-            )
             colvarsConfig.write(
                 self.cTemplate.cvAngleTemplate(
                     False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
@@ -1307,9 +1328,10 @@ class inputGenerator():
                     False, 0, 0, extendedLagrangian = False
                 )
             )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], False, 10)
-            )
+            if considerRMSDCV:
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[1], False, 10)
+                )
             colvarsConfig.write(
                 self.cTemplate.cvHarmonicTemplate('eulerTheta', 0, 0, stratification[1], False, 0.1)
             )
@@ -1333,48 +1355,49 @@ class inputGenerator():
                     self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
                 )
 
-        # 003_MoleculeUnbound
-        with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
-            colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../ligandOnly.xyz',
-                    extendedLagrangian = False
+        if considerRMSDCV:
+            # 003_MoleculeUnbound
+            with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
+                colvarsConfig.write(
+                    self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
-            )
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../ligandOnly.xyz',
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                )
 
-        # 004_RestraintUnbound
-        with open(f'{path}/BFEE/004_RestraintUnbound/colvars_forward.in', 'w') as colvarsConfig:
-            colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../ligandOnly.xyz',
-                    extendedLagrangian = False
+            # 004_RestraintUnbound
+            with open(f'{path}/BFEE/004_RestraintUnbound/colvars_forward.in', 'w') as colvarsConfig:
+                colvarsConfig.write(
+                    self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], True, 10)
-            )
-        with open(f'{path}/BFEE/004_RestraintUnbound/colvars_backward.in', 'w') as colvarsConfig:
-            colvarsConfig.write(
-                self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvRMSDTemplate(
-                    False, '', '', '../ligandOnly.xyz',
-                    extendedLagrangian = False
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../ligandOnly.xyz',
+                        extendedLagrangian = False
+                    )
                 )
-            )
-            colvarsConfig.write(
-                self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
-            )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], True, 10)
+                )
+            with open(f'{path}/BFEE/004_RestraintUnbound/colvars_backward.in', 'w') as colvarsConfig:
+                colvarsConfig.write(
+                    self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvRMSDTemplate(
+                        False, '', '', '../ligandOnly.xyz',
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
+                )
 
     def _generateGeometricNAMDConfig(
         self,

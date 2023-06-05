@@ -331,11 +331,12 @@ class postTreatment:
         return np.array((Lambda, np.cumsum(dA_dLambda)))
 
         
-    def _tiLogFile(self, filePath):
+    def _tiLogFile(self, filePath, rigidLigand = False):
         """parse a ti log file and return the lambda-free energy relationship
 
         Args:
             filePath (str): path of the fepout file
+            rigidLigand (bool): whether dealing with a rigid ligand. Default to False.
         
         Returns:
             tuple (2D np.array): lambda-free energy relationship
@@ -343,6 +344,11 @@ class postTreatment:
         
         Lambda = []
         dA_dLambda = []
+
+        if rigidLigand:
+            numCVs = 6
+        else:
+            numCVs = 7
 
         with open(filePath, 'r', encoding='utf-8') as fepoutFile:
             for line in fepoutFile.readlines():
@@ -357,10 +363,10 @@ class postTreatment:
             correctedLambda = []
             correctedDA_dLambda = []
             
-            for i in range(0, len(Lambda), 7):
+            for i in range(0, len(Lambda), numCVs):
                 correctedLambda.append(Lambda[i])
                 totalDA_dLambda = 0
-                for j in range(7):
+                for j in range(numCVs):
                     totalDA_dLambda += dA_dLambda[i+j]
                 correctedDA_dLambda.append(totalDA_dLambda)
             
@@ -376,12 +382,13 @@ class postTreatment:
         
         return np.array((Lambda, np.cumsum(dA_dLambda)))
 
-    def _alchemicalFepoutFile(self, filePath, fileType = 'fepout'):
+    def _alchemicalFepoutFile(self, filePath, fileType = 'fepout', rigidLigand = False):
         """parse a fepout/log file and return the total free energy change
 
         Args:
             filePath (str): path of the fepout file
             fileType (str): 'fepout' (decouping atoms) or 'log' (decoupling restraints). Defaults to 'fepout'.
+            rigidLigand (bool): whether dealing with a rigid ligand. Default to False.
 
         Returns:
             float: free-energy change
@@ -391,7 +398,7 @@ class postTreatment:
             _, freeEnergyProfile = self._fepoutFile(filePath)
 
         if fileType == 'log':
-            _, freeEnergyProfile = self._tiLogFile(filePath)
+            _, freeEnergyProfile = self._tiLogFile(filePath, rigidLigand)
 
         return freeEnergyProfile[-1]
     
@@ -421,8 +428,8 @@ class postTreatment:
         
         return freeEnergy, error
 
-    def alchemicalBindingFreeEnergy(self, filePathes, parameters, temperature = 300, jobType = 'fep'):
-        """calculate binding free energy for geometric route
+    def alchemicalBindingFreeEnergy(self, filePathes, parameters, temperature = 300, jobType = 'fep', rigidLigand = False):
+        """calculate binding free energy for alchemical route
 
         Args:
             filePathes (list of strings, 8): pathes of alchemical output files
@@ -431,6 +438,7 @@ class postTreatment:
             temperature (float): temperature of the simulation
             jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
                                       Defaults to 'fep'.
+            rigidLigand (bool): whether dealing with a rigid ligand. Default to False.
 
         Returns:
             tuple:
@@ -441,6 +449,10 @@ class postTreatment:
         assert len(parameters) == 9
         assert len(filePathes) == 8
 
+        rigid_ligand = False
+        if (filePathes[6] == ''):
+            rigid_ligand = True
+
         # get free energies from fep outputs
         freeEnergies = []
         for i in range(len(filePathes)):
@@ -450,7 +462,7 @@ class postTreatment:
                     freeEnergies.append(None)
                     #freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'fepout'))
                 else:
-                    freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'log'))
+                    freeEnergies.append(self._alchemicalFepoutFile(filePathes[i], 'log', rigidLigand))
             else:
                 # backward file can be empty
                 freeEnergies.append(None)
@@ -470,12 +482,16 @@ class postTreatment:
         contributions[2], errors[2] = self.alchemicalFreeEnergy(filePathes[4], filePathes[5], temperature, jobType)
         contributions[2] = -contributions[2]
 
-        if freeEnergies[7] is not None:
-            contributions[3] = (freeEnergies[6] + freeEnergies[7]) / 2
-            errors[3] = abs((freeEnergies[6] - freeEnergies[7]) / 1.414)
+        if not rigid_ligand:
+            if freeEnergies[7] is not None:
+                contributions[3] = (freeEnergies[6] + freeEnergies[7]) / 2
+                errors[3] = abs((freeEnergies[6] - freeEnergies[7]) / 1.414)
+            else:
+                contributions[3] = freeEnergies[6]
+                errors[3] = 99999
         else:
-            contributions[3] = freeEnergies[6]
-            errors[3] = 99999
+            contributions[3] = 0
+            errors[3] = 0
 
         contributions[4] = self._alchemicalRestraintContributionBulk(*parameters)
         errors[4] = 0

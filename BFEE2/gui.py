@@ -431,6 +431,16 @@ class alchemicalAdvancedSettings(QWidget):
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
+        # strategy settings
+        self.strategy = QGroupBox('Strategy settings')
+        self.strategyLayout = QHBoxLayout()
+
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox.setChecked(True)
+
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategy.setLayout(self.strategyLayout)
+
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
         self.modelingLayout = QVBoxLayout()
@@ -463,6 +473,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.FFSettings)
+        self.mainLayout.addWidget(self.strategy)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -1463,7 +1474,7 @@ Standard Binding Free Energy:\n\
         """
         
         pTreat = postTreatment.postTreatment(
-            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'geometric')
+            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'alchemical')
         
         # alchemical outputs
         files = [
@@ -1499,28 +1510,32 @@ Standard Binding Free Energy:\n\
                 jobType = 'bar'
 
         # check inputs
-        for item in [
+        rigid_ligand = False
+        for index, item in enumerate([
                     self.alchemicalBackwardLineEdit1.text(), 
                     self.alchemicalBackwardLineEdit2.text(), 
                     self.alchemicalBackwardLineEdit3.text(), 
                     self.alchemicalBackwardLineEdit4.text()
-        ]:
-            if (not os.path.exists(item)) and item != '':
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
                 QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
                 return
 
-        for item in [
+        for index, item in enumerate([
                     self.alchemicalForwardLineEdit1.text(), 
                     self.alchemicalForwardLineEdit2.text(), 
                     self.alchemicalForwardLineEdit3.text(), 
                     self.alchemicalForwardLineEdit4.text(), 
-        ]:
-            if not os.path.exists(item):
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
+            elif (not os.path.exists(item)) and (index == 3):
+                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                rigid_ligand = True
 
         # calculate free energies
-        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType)
+        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType, rigid_ligand)
 
         QMessageBox.about(
             self,
@@ -1765,6 +1780,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
