@@ -188,8 +188,6 @@ class NAMDParser:
         """
         
         return self._windows, self._deltaU_data
-    
-                
 
 class FEPAnalyzer:
     """ Analyze FEP simulations
@@ -237,7 +235,7 @@ class FEPAnalyzer:
         self, 
         tolerance: float = 1e-6,
         block_size: int = 20,
-        n_bootstrap: int = 20
+        n_bootstrap: int = 20,
     ) -> Tuple[List[Tuple[float, float]], List[NDArray], List[NDArray]]:
         """ Calculate and return the free-energy change using the BAR estimator
         
@@ -255,6 +253,7 @@ class FEPAnalyzer:
         for i in range(len(self._windows)):
             dA = self._BAR_estimator(self._deltaU_data[i], tolerance)
             err = self._BAR_error_estimator(self._deltaU_data[i], tolerance, block_size, n_bootstrap)
+            
             free_energies.append(dA)
             errors.append(err)
         return self._windows, free_energies, errors
@@ -314,23 +313,21 @@ class FEPAnalyzer:
         if bootstrap_samples < 1:
             raise RuntimeError('Error! block_size larger than sample size!')
         
-        # bootstrap
-        estimates = []
+        # block bootstrap
+        estimates = np.zeros(n_bootstrap)
+
         for i in range(n_bootstrap):
-            forward_bootstrap = []
-            for j in np.random.randint(0, forward_size - block_size - 1, bootstrap_samples):
-                for k in range(block_size):
-                    forward_bootstrap.append(j + k)
+            forward_bootstrap = np.zeros(bootstrap_samples * block_size, dtype=int)
+            for idx, j in enumerate(np.random.randint(0, forward_size - block_size - 1, bootstrap_samples)):
+                forward_bootstrap[idx*block_size:idx*block_size+block_size] = j + np.arange(block_size)
                     
-            backward_bootstrap = []
-            for j in np.random.randint(0, backward_size - block_size - 1, bootstrap_samples):
-                for k in range(block_size):
-                    backward_bootstrap.append(j + k)
+            backward_bootstrap = np.zeros(bootstrap_samples * block_size, dtype=int)
+            for idx, j in enumerate(np.random.randint(0, backward_size - block_size - 1, bootstrap_samples)):
+                backward_bootstrap[idx*block_size:idx*block_size+block_size] = j + np.arange(block_size)
             
-            estimates.append(
-                self._BAR_estimator(
-                    (deltaU[0][forward_bootstrap], deltaU[1][backward_bootstrap]),
-                    tolerance
-                )
-            )
+            estimates[i] = self._BAR_estimator(
+                            (deltaU[0][forward_bootstrap], deltaU[1][backward_bootstrap]),
+                            tolerance
+                        )
+
         return np.std(estimates)
