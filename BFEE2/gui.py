@@ -32,6 +32,7 @@ import BFEE2.version
 from BFEE2 import doc
 
 __PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
+__NAMD_VERSION__ = f'v{BFEE2.version.__NAMD_VERSION__}'
 
 class mainSettings(QWidget):
     """settings in the menubar
@@ -494,7 +495,7 @@ class mainUI(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        
+
         self._initActions()
 
         self._initNAMDTab()
@@ -519,6 +520,17 @@ class mainUI(QMainWindow):
         self.setWindowTitle(__PROGRAM_NAME__)    
         self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
+
+        self._showNAMDVersionWarning()
+
+    def _showNAMDVersionWarning(self):
+        ''' show a message box ask for the latest NAMD version '''
+        QMessageBox.warning(self, 
+                            'Warning', 
+                            f'\
+{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__}. \n\
+Please use the same or a later version of NAMD if you have any problem.\n'
+                        )
 
     def _initActions(self):
         ''' initialize actions for menubar '''
