@@ -32,6 +32,7 @@ import BFEE2.version
 from BFEE2 import doc
 
 __PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
+__NAMD_VERSION__ = f'v{BFEE2.version.__NAMD_VERSION__}'
 
 class mainSettings(QWidget):
     """settings in the menubar
@@ -431,6 +432,16 @@ class alchemicalAdvancedSettings(QWidget):
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
+        # strategy settings
+        self.strategy = QGroupBox('Strategy settings')
+        self.strategyLayout = QHBoxLayout()
+
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox.setChecked(True)
+
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategy.setLayout(self.strategyLayout)
+
         # membrane protein
         self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
         self.modelingLayout = QVBoxLayout()
@@ -463,6 +474,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.compatibility)
         self.mainLayout.addWidget(self.FFSettings)
+        self.mainLayout.addWidget(self.strategy)
         self.mainLayout.addWidget(self.minBeforeSample)
         self.mainLayout.addWidget(self.modeling)
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
@@ -483,7 +495,7 @@ class mainUI(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        
+
         self._initActions()
 
         self._initNAMDTab()
@@ -508,6 +520,17 @@ class mainUI(QMainWindow):
         self.setWindowTitle(__PROGRAM_NAME__)    
         self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
+
+        self._showNAMDVersionWarning()
+
+    def _showNAMDVersionWarning(self):
+        ''' show a message box ask for the latest NAMD version '''
+        QMessageBox.warning(self, 
+                            'Warning', 
+                            f'\
+{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__}. \n\
+Please use the same or a later version of NAMD if you have any problem.\n'
+                        )
 
     def _initActions(self):
         ''' initialize actions for menubar '''
@@ -1463,7 +1486,7 @@ Standard Binding Free Energy:\n\
         """
         
         pTreat = postTreatment.postTreatment(
-            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'geometric')
+            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'alchemical')
         
         # alchemical outputs
         files = [
@@ -1499,28 +1522,32 @@ Standard Binding Free Energy:\n\
                 jobType = 'bar'
 
         # check inputs
-        for item in [
+        rigid_ligand = False
+        for index, item in enumerate([
                     self.alchemicalBackwardLineEdit1.text(), 
                     self.alchemicalBackwardLineEdit2.text(), 
                     self.alchemicalBackwardLineEdit3.text(), 
                     self.alchemicalBackwardLineEdit4.text()
-        ]:
-            if (not os.path.exists(item)) and item != '':
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
                 QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
                 return
 
-        for item in [
+        for index, item in enumerate([
                     self.alchemicalForwardLineEdit1.text(), 
                     self.alchemicalForwardLineEdit2.text(), 
                     self.alchemicalForwardLineEdit3.text(), 
                     self.alchemicalForwardLineEdit4.text(), 
-        ]:
-            if not os.path.exists(item):
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
+            elif (not os.path.exists(item)) and (index == 3):
+                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                rigid_ligand = True
 
         # calculate free energies
-        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType)
+        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType, rigid_ligand)
 
         QMessageBox.about(
             self,
@@ -1667,10 +1694,7 @@ force fields!'
                         QMessageBox.warning(self, 'Error', 
                                 f'\
 The feature of using GaWTM-eABF as the workhorse engine is \
-experimental! Known issues:\n \
-The config files for extending GaWTM-eABF simulations \
-will do pre-equilibration again. This may cause some errors. \
-One can revise the config file manually to avoid it'
+experimental! Please always use the latest devel version of NAMD!\n'
                         )
 
                     try:
@@ -1768,6 +1792,7 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
