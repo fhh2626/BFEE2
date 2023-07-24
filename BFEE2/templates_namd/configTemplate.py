@@ -1,5 +1,7 @@
 # generate NAMD/Gromacs/Colvars config files
 
+import numpy as np
+
 class configTemplate:
     ''' generate NAMD/Gromacs/Colvars config files
         In the Colvars config file, ndx and xyz files are used to indicate the group of atoms
@@ -114,7 +116,7 @@ pairlistdist         11.0               \n'
             configString += f'\
 vdwGeometricSigma    yes               \n'
 
-        if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '' and PBCCondition != '':
+        if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '' and isinstance(PBCCondition, np.ndarray):
             # set temperature
             configString += f'\
 temperature    {temperature}                      \n\
