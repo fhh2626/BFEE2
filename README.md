@@ -15,6 +15,7 @@ Generates all the input files for absolute binding free energy calculations;<br>
 Perform post-treatment automatedly;<br>
 Support NAMD (alchemical and geometric route) and Gromacs (geometric route) as molecular dynamics engines;<br>
 Support many file formats for the input complex structure (PSF/PDB/PRM, PRM7/RST7, TOP/PDB);<br>
+Support both rigid (exclude RMSD CV) and flexible (include RMSD CV) ligands and protein-protein complexes (streamlined geometrical route);<br>
 ...<br>
 
 ## Requirements
