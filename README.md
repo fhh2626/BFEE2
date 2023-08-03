@@ -33,6 +33,7 @@ conda install -c conda-forge BFEE2
 ## Usage
 Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.<br>
 A step-by-step tutorial is provided [here](https://www.nature.com/articles/s41596-021-00676-1).<br>
+A tutorial about new streamlined geometrical route is provided in the SI of [this paper](https://pubs.acs.org/doi/full/10.1021/acs.jcim.3c00487).<br>
 
 ## Citations
 When possible, please consider mentioning [Fu et al. Nat. Protoc. 2022, doi:10.1038/s41596-021-00676-1](https://www.nature.com/articles/s41596-021-00676-1#citeas) when BFEE2 is used in your project.
