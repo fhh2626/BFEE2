@@ -104,7 +104,9 @@ class NAMDParser:
                 if not line:
                     break
                 
-                if line.startswith('#NEW FEP WINDOW: LAMBDA SET TO 1'):
+                if line.startswith('#NEW FEP WINDOW: LAMBDA SET TO 1') and windows != []:
+                    last_window = True
+                if line.startswith('#NEW FEP WINDOW: LAMBDA SET TO 0 ') and windows != []:
                     last_window = True
                 
                 if not last_window:
