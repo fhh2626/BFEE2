@@ -96,7 +96,7 @@
 ##############################################################
 
 proc runFEPlist { lambdaList nSteps { IDWS false } { prev_lambda -1 } } {
-    set epsilon 1e-15
+    set epsilon 1e-12
 
     # Keep track of window number
     global win
