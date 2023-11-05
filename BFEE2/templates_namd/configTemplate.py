@@ -36,7 +36,8 @@ class configTemplate:
                             membraneProtein = False,
                             OPLSMixingRule = False,
                             GaWTM = False,
-                            CUDASOAIntegrator = False
+                            CUDASOAIntegrator = False,
+                            timestep = 2.0
                             ):
         """the namd config file template
 
@@ -66,6 +67,7 @@ class configTemplate:
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
             CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
+            timestep (float, optional): timestep of the simulation. Default to 2.0
             
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
@@ -165,7 +167,7 @@ PME                  yes                        \n\
 PMETolerance         10e-6                      \n\
 PMEInterpOrder       4                          \n\
 PMEGridSpacing       1.0                        \n\
-timestep             2.0                        \n\
+timestep             {timestep}                 \n\
 fullelectfrequency   2                          \n\
 nonbondedfreq        1                          \n\
 rigidbonds           all                        \n\

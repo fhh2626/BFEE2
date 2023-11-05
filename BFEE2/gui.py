@@ -15,7 +15,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton,
                                QSplitter, QTabWidget, QToolBar, QVBoxLayout,
-                               QWidget)
+                               QWidget, QSpacerItem)
 
 import BFEE2.inputGenerator as inputGenerator
 import BFEE2.postTreatment as postTreatment
@@ -263,8 +263,15 @@ class geometricAdvancedSettings(QWidget):
         
         self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
         self.OPLSMixingRuleCheckbox.setChecked(False)
+
+        self.timestepLayout = QHBoxLayout()
+        self.timestepLabel = QLabel('    Timestep:')
+        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLayout.addWidget(self.timestepLabel)
+        self.timestepLayout.addWidget(self.timestepLineEdit)
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
@@ -436,8 +443,15 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
         self.OPLSMixingRuleCheckbox.setChecked(False)
+
+        self.timestepLayout = QHBoxLayout()
+        self.timestepLabel = QLabel('    Timestep:')
+        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLayout.addWidget(self.timestepLabel)
+        self.timestepLayout.addWidget(self.timestepLineEdit)
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
@@ -1738,7 +1752,8 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked()
+                            self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked(),
+                            float(self.geometricAdvancedSettings.timestepLineEdit.text())
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1810,7 +1825,8 @@ Unknown error! The error message is: \n\
                             self.mainSettings.vmdLineEdit.text(),
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked()
+                            self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
+                            float(self.alchemicalAdvancedSettings.timestepLineEdit.text())
                         )
                     except PermissionError:
                         QMessageBox.warning(
