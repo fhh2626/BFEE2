@@ -61,7 +61,8 @@ class inputGenerator():
         useOldCv = True,
         vmdPath = '',
         OPLSMixingRule = False,
-        considerRMSDCV = True
+        considerRMSDCV = True,
+        CUDASOAIntegrator = False
     ):
         """generate all the input files for NAMD alchemical simulation
 
@@ -90,6 +91,7 @@ class inputGenerator():
             vmdPath (str, optional): path to vmd. Defaults to ''.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
+            CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
         """
 
         assert(len(stratification) == 4)
@@ -114,7 +116,8 @@ class inputGenerator():
         
         self._generateAlchemicalNAMDConfig(
             path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
-            membraneProtein, OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV
+            membraneProtein, OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV,
+            CUDASOAIntegrator=CUDASOAIntegrator
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv,
@@ -145,7 +148,8 @@ class inputGenerator():
         MDEngine = 'namd',
         OPLSMixingRule = False,
         considerRMSDCV = True,
-        GaWTM = False
+        GaWTM = False,
+        CUDASOAIntegrator = False
     ):
         """generate all the input files for NAMD geometric simulation
 
@@ -179,7 +183,8 @@ class inputGenerator():
             MDEngine (str, optional): namd or gromacs. Default to namd.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
-            GaWTM (bool, optional): Whether performing GaWTM-eABF simulations. Default to False
+            GaWTM (bool, optional): Whether performing GaWTM-eABF simulations. Default to False.
+            CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
         """ 
 
         assert(len(stratification) == 8)
@@ -210,7 +215,8 @@ class inputGenerator():
         if MDEngine == 'namd':
             self._generateGeometricNAMDConfig(
                 path, forceFieldType, relativeFFPath, temperature, stratification, membraneProtein,
-                OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV, GaWTM=GaWTM
+                OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV, GaWTM=GaWTM,
+                CUDASOAIntegrator=CUDASOAIntegrator
             )
         elif MDEngine == 'gromacs':
             self._generateGeometricGromacsConfig(
@@ -844,7 +850,8 @@ class inputGenerator():
         minBeforeSample = False,
         membraneProtein = False,
         OPLSMixingRule = False,
-        considerRMSDCV = True
+        considerRMSDCV = True,
+        CUDASOAIntegrator = False
     ):
         """generate NAMD config fils for the alchemical route
 
@@ -863,6 +870,7 @@ class inputGenerator():
                                               Defaults to False.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
         """
 
         if forceFieldType == 'charmm':
@@ -892,7 +900,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/000_eq/000.2_eq_ligandOnly.conf', 'w') as namdConfig:
@@ -901,7 +909,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     '', '', '', pbcLig,
                     'output/eq_ligandOnly', temperature, 1000000, 'colvars_ligandOnly.in',
-                    '', OPLSMixingRule=OPLSMixingRule
+                    '', OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -913,7 +921,7 @@ class inputGenerator():
                     f'output/fep_backward.coor', f'output/fep_backward.vel', f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                     stratification[0], True, False, minBeforeSample, membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/001_MoleculeBound/001.1_fep_backward.conf', 'w') as namdConfig:
@@ -923,7 +931,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                     stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule
+                    OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         
@@ -935,7 +943,7 @@ class inputGenerator():
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                         stratification[0], False, True, membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule
+                        OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -946,7 +954,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'output/ti_backward.coor', f'output/ti_backward.vel', f'output/ti_backward.xsc', '',
                     'output/ti_forward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_forward.in', 
-                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/002_RestraintBound/002.1_ti_backward.conf', 'w') as namdConfig:
@@ -955,7 +964,8 @@ class inputGenerator():
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_backward.in', 
-                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule
+                    '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
+                    CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
             
@@ -971,7 +981,8 @@ class inputGenerator():
                     f'output/fep_backward.coor', f'output/fep_backward.vel', 
                     f'output/fep_backward.xsc', '',
                     'output/fep_forward', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
-                    stratification[2], True, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
+                    stratification[2], True, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule,
+                    CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/003_MoleculeUnbound/003.1_fep_backward.conf', 'w') as namdConfig:
@@ -981,7 +992,8 @@ class inputGenerator():
                     f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                     f'../000_eq/output/eq_ligandOnly.xsc', '',
                     'output/fep_backward', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
-                    stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule
+                    stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule,
+                    CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -993,7 +1005,7 @@ class inputGenerator():
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
                         'output/fep_doubleWide', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
-                        stratification[2], False, True, OPLSMixingRule=OPLSMixingRule
+                        stratification[2], False, True, OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1007,7 +1019,7 @@ class inputGenerator():
                         f'output/ti_backward.coor', f'output/ti_backward.vel', 
                         f'output/ti_backward.xsc', '',
                         'output/ti_forward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_forward.in', 
-                        '', OPLSMixingRule=OPLSMixingRule
+                        '', OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
             with open(f'{path}/BFEE/004_RestraintUnbound/004.1_ti_backward.conf', 'w') as namdConfig:
@@ -1017,7 +1029,7 @@ class inputGenerator():
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
                         'output/ti_backward', temperature, f'{500000*(stratification[3]+1)}', 'colvars_backward.in', 
-                        '', OPLSMixingRule=OPLSMixingRule
+                        '', OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1409,7 +1421,8 @@ class inputGenerator():
         membraneProtein = False,
         OPLSMixingRule = False,
         considerRMSDCV = True,
-        GaWTM = False
+        GaWTM = False,
+        CUDASOAIntegrator = False
     ):
         """generate NAMD config fils for the geometric route
 
@@ -1424,6 +1437,7 @@ class inputGenerator():
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
             GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
+            CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
         """
 
         if forceFieldType == 'charmm':
@@ -1473,7 +1487,7 @@ class inputGenerator():
                     '', '', '', pbc,
                     'output/eq', temperature, 5000000, 'colvars.in',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=False
+                    GaWTM=False, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1486,7 +1500,7 @@ class inputGenerator():
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                         '', 'output/abf_1', temperature, 5000000, 'colvars_1.in',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
             with open(f'{path}/BFEE/001_RMSDBound/001_abf_1.extend.conf', 'w') as namdConfig:
@@ -1496,7 +1510,7 @@ class inputGenerator():
                         f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                         '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', 
                         CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1511,7 +1525,7 @@ class inputGenerator():
                             f'output/abf_{i}.restart.xsc',
                             '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
                             membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                            GaWTM=GaWTM
+                            GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                         )
                     )
                     with open(f'{path}/BFEE/001_RMSDBound/001_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1522,7 +1536,7 @@ class inputGenerator():
                             f'output/abf_{i+1}.restart.xsc',
                             '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', 
                             CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein, 
-                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                         )
                     )
 
@@ -1534,7 +1548,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/002_EulerTheta/002_abf_1.extend.conf', 'w') as namdConfig:
@@ -1544,7 +1558,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1559,7 +1573,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/002_EulerTheta/002_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1570,7 +1584,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1582,7 +1596,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/003_EulerPhi/003_abf_1.extend.conf', 'w') as namdConfig:
@@ -1592,7 +1606,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1607,7 +1621,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/003_EulerPhi/003_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1618,7 +1632,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1630,7 +1644,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '', 
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/004_EulerPsi/004_abf_1.extend.conf', 'w') as namdConfig:
@@ -1640,7 +1654,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1655,7 +1669,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/004_EulerPsi/004_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1666,7 +1680,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1678,7 +1692,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/005_PolarTheta/005_abf_1.extend.conf', 'w') as namdConfig:
@@ -1688,7 +1702,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1704,7 +1718,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/005_PolarTheta/005_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1715,7 +1729,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1727,7 +1741,7 @@ class inputGenerator():
                     f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc',
                     '', 'output/abf_1', temperature, 5000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/006_PolarPhi/006_abf_1.extend.conf', 'w') as namdConfig:
@@ -1737,7 +1751,7 @@ class inputGenerator():
                     f'output/abf_1.restart.coor', f'output/abf_1.restart.vel', f'output/abf_1.restart.xsc',
                     '', 'output/abf_1.extend', temperature, 5000000, 'colvars_1.in', '',
                     CVRestartFile='output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1752,7 +1766,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/006_PolarPhi/006_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1763,7 +1777,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1777,7 +1791,7 @@ class inputGenerator():
                     pbcStep7,
                     'output/eq', temperature, 5000000, 'colvars_eq.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=False
+                    GaWTM=False, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         # abf
@@ -1788,7 +1802,7 @@ class inputGenerator():
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                     'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                    GaWTM=GaWTM
+                    GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
         with open(f'{path}/BFEE/007_r/007.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1798,7 +1812,7 @@ class inputGenerator():
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                     'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
                     CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein,
-                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                    OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                 )
             )
 
@@ -1813,7 +1827,7 @@ class inputGenerator():
                         f'output/abf_{i}.restart.xsc',
                         '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
                 with open(f'{path}/BFEE/007_r/007.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1824,7 +1838,7 @@ class inputGenerator():
                         f'output/abf_{i+1}.restart.xsc',
                         '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1838,7 +1852,7 @@ class inputGenerator():
                         '', '', '', 
                         pbcLig,
                         'output/eq', temperature, 1000000, OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=False
+                        GaWTM=False, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
             # abf
@@ -1848,7 +1862,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./ligandOnly.{topType}', f'./ligandOnly.pdb',
                         'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
                         'output/abf_1', temperature, 5000000, 'colvars_1.in',
-                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                        OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
             with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_1.extend.conf', 'w') as namdConfig:
@@ -1858,7 +1872,7 @@ class inputGenerator():
                         'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
                         'output/abf_1.extend', temperature, 5000000, 'colvars_1.in',
                         CVRestartFile=f'output/abf_1.restart', OPLSMixingRule=OPLSMixingRule,
-                        GaWTM=GaWTM
+                        GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                     )
                 )
 
@@ -1872,7 +1886,7 @@ class inputGenerator():
                             f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                             f'output/abf_{i}.restart.xsc',
                             '', f'output/abf_{i+1}', temperature, 5000000, f'colvars_{i+1}.in',
-                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM
+                            OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                         )
                     )
                     with open(f'{path}/BFEE/008_RMSDUnbound/008.2_abf_{i+1}.extend.conf', 'w') as namdConfig:
@@ -1883,7 +1897,7 @@ class inputGenerator():
                             f'output/abf_{i+1}.restart.xsc',
                             '', f'output/abf_{i+1}.extend', temperature, 5000000, f'colvars_{i+1}.in',
                             CVRestartFile=f'output/abf_{i+1}.restart', OPLSMixingRule=OPLSMixingRule,
-                            GaWTM=GaWTM
+                            GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator
                         )
                     )
                     

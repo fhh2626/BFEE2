@@ -35,7 +35,8 @@ class configTemplate:
                             fepMinBeforeSample = False,
                             membraneProtein = False,
                             OPLSMixingRule = False,
-                            GaWTM = False
+                            GaWTM = False,
+                            CUDASOAIntegrator = False
                             ):
         """the namd config file template
 
@@ -64,6 +65,7 @@ class configTemplate:
             membraneProtein (bool, optional): whether simulating a membrame protein. Defaults to False.
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
+            CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
             
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
@@ -182,6 +184,11 @@ useConstantRatio     yes                        \n'
             configString += f'\
 useflexiblecell      no                         \n\
 useConstantRatio     no                         \n'
+            
+        # CUDASOA integrator
+        if CUDASOAIntegrator:
+            configString += f'\
+CUDASOAIntegrate     on                         \n'
 
         # colvars definition
         if cvFile != '':

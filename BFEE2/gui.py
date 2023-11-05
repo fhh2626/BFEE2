@@ -247,10 +247,14 @@ class geometricAdvancedSettings(QWidget):
         
         self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
         self.reflectingBoundaryCheckbox.setChecked(True)
+
+        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator.setChecked(False)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
+        self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 1)
         self.compatibility.setLayout(self.compatibilityLayout)
         
         # force field settings
@@ -410,16 +414,20 @@ class alchemicalAdvancedSettings(QWidget):
         
         # compatibility
         self.compatibility = QGroupBox('Compatibility')
-        self.compatibilityLayout = QHBoxLayout()
+        self.compatibilityLayout = QGridLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(False)
+
+        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator.setChecked(False)
         
-        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
-        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
+        self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
         
         # force field settings
@@ -1691,7 +1699,15 @@ force fields!'
                             return
                     
                     if self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked():
-                        QMessageBox.warning(self, 'Error', 
+
+                        if self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked():
+                            QMessageBox.warning(self, 'Error', 
+                                f'\
+GaWTM-eABF is not compatible with CUDASOAIntegrator in NAMD! \n'
+                            )
+                            return
+
+                        QMessageBox.warning(self, 'Warning', 
                                 f'\
 The feature of using GaWTM-eABF as the workhorse engine is \
 experimental! Please always use the latest devel version of NAMD!\n'
@@ -1721,7 +1737,8 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             self.selectMDEngineCombobox.currentText().lower(),
                             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked()
+                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked()
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1792,7 +1809,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
