@@ -461,7 +461,11 @@ class alchemicalAdvancedSettings(QWidget):
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
 
+        self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
+        self.reEqCheckbox.setChecked(False)
+
         self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLayout.addWidget(self.reEqCheckbox)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -1824,7 +1828,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
-                            float(self.alchemicalAdvancedSettings.timestepLineEdit.text())
+                            float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
+                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(

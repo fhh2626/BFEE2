@@ -63,7 +63,8 @@ class inputGenerator():
         OPLSMixingRule = False,
         considerRMSDCV = True,
         CUDASOAIntegrator = False,
-        timestep = 2.0
+        timestep = 2.0,
+        reEq = False
     ):
         """generate all the input files for NAMD alchemical simulation
 
@@ -94,6 +95,7 @@ class inputGenerator():
             considerRMSDCV (bool, optional): Whether consider the RMSD CV. Default to True.
             CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False.
             timestep (float, optional): timestep of the simulation. Default to 2.0
+            reEq (bool, optional): re-equilibration after histogram. Defaule to False.
         """
 
         assert(len(stratification) == 4)
@@ -119,11 +121,11 @@ class inputGenerator():
         self._generateAlchemicalNAMDConfig(
             path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
             membraneProtein, OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV,
-            CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
+            CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep, reEq=reEq
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv,
-            considerRMSDCV=considerRMSDCV
+            considerRMSDCV=considerRMSDCV, reEq=reEq
         )
 
     def generateNAMDGeometricFiles(
@@ -856,7 +858,8 @@ class inputGenerator():
         OPLSMixingRule = False,
         considerRMSDCV = True,
         CUDASOAIntegrator = False,
-        timestep = 2.0
+        timestep = 2.0,
+        reEq = False
     ):
         """generate NAMD config fils for the alchemical route
 
@@ -876,7 +879,8 @@ class inputGenerator():
             OPLSMixingRule (bool, optional): whether use the OPLS mixing rules. Defaults to False.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
             CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False.
-            timestep (float, optional): timestep of the simulation. Default to 2.0
+            timestep (float, optional): timestep of the simulation. Default to 2.0.
+            reEq (bool, optional): re-equilibration after histogram. Defaule to False.
         """
 
         if forceFieldType == 'charmm':
@@ -909,6 +913,18 @@ class inputGenerator():
                     OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                 )
             )
+
+        if reEq:
+            with open(f'{path}/BFEE/000_eq/000.1_eq2_re-eq.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                        'output/eq2', temperature, 5000000, 'colvars2.in', '', membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
+                    )
+                )
+
         with open(f'{path}/BFEE/000_eq/000.2_eq_ligandOnly.conf', 'w') as namdConfig:
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
@@ -1046,7 +1062,8 @@ class inputGenerator():
 
     def _generateAlchemicalColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, 
-        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True, considerRMSDCV=True
+        stratification=[1,1,1,1], pinDownPro=True, useOldCv=True, considerRMSDCV=True,
+        reEq = False
     ):
         """generate Colvars config fils for geometric route
 
@@ -1062,6 +1079,7 @@ class inputGenerator():
             pinDownPro (bool, optinal): Whether pinning down the protein. Defaults to True.
             useOldCv (bool, optional): whether used old, custom-function-based cv. Defaults to True.
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
+            reEq (bool, optional): re-equilibration after histogram. Defaule to False.
         """
 
         assert(len(stratification) == 4)
@@ -1143,6 +1161,81 @@ class inputGenerator():
             colvarsConfig.write(
                 self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
             )
+
+        if reEq:
+            # 001_MoleculeBound
+            with open(f'{path}/BFEE/000_eq/colvars2.in', 'w') as colvarsConfig:
+                colvarsConfig.write(
+                    self.cTemplate.cvHeadTemplate('../complex.ndx')
+                )
+                if considerRMSDCV:
+                    colvarsConfig.write(
+                        self.cTemplate.cvRMSDTemplate(
+                            False, '', '', '../complex.xyz',
+                            extendedLagrangian = False
+                        )
+                    )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'eulerPsi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarTheta', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvAngleTemplate(
+                        False, 0, 0, 'polarPhi', '../complex.xyz', useOldCv,
+                        extendedLagrangian = False
+                    )
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvRTemplate(
+                        False, 0, 0, extendedLagrangian = False
+                    )
+                )
+                if considerRMSDCV:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
+                    )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerTheta', 0.1, 0)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerPhi', 0.1, 0)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('eulerPsi', 0.1, 0)
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('polarTheta', 0.1, polarAngles[0])
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('polarPhi', 0.1, polarAngles[1])
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvHarmonicTemplate('r', 10, distance)
+                )
+                if pinDownPro:
+                    colvarsConfig.write(
+                        self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                    )
 
         with open(f'{path}/BFEE/000_eq/colvars_ligandOnly.in', 'w') as colvarsConfig:
             colvarsConfig.write(
