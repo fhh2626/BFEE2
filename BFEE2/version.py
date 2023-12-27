@@ -1,2 +1,2 @@
-__VERSION__ = '2.4.1'
-__NAMD_VERSION__ = '3.0b4'
+__VERSION__ = '2.5.0'
+__NAMD_VERSION__ = '3.0b5'
