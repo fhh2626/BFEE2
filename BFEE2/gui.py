@@ -15,7 +15,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton,
                                QSplitter, QTabWidget, QToolBar, QVBoxLayout,
-                               QWidget)
+                               QWidget, QSpacerItem)
 
 import BFEE2.inputGenerator as inputGenerator
 import BFEE2.postTreatment as postTreatment
@@ -247,10 +247,14 @@ class geometricAdvancedSettings(QWidget):
         
         self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
         self.reflectingBoundaryCheckbox.setChecked(True)
+
+        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator.setChecked(False)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
+        self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 1)
         self.compatibility.setLayout(self.compatibilityLayout)
         
         # force field settings
@@ -259,8 +263,15 @@ class geometricAdvancedSettings(QWidget):
         
         self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
         self.OPLSMixingRuleCheckbox.setChecked(False)
+
+        self.timestepLayout = QHBoxLayout()
+        self.timestepLabel = QLabel('    Timestep:')
+        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLayout.addWidget(self.timestepLabel)
+        self.timestepLayout.addWidget(self.timestepLineEdit)
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
@@ -410,16 +421,20 @@ class alchemicalAdvancedSettings(QWidget):
         
         # compatibility
         self.compatibility = QGroupBox('Compatibility')
-        self.compatibilityLayout = QHBoxLayout()
+        self.compatibilityLayout = QGridLayout()
         
         self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
         self.pinDownProCheckbox.setChecked(True)
         
         self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
         self.useOldCvCheckbox.setChecked(False)
+
+        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator.setChecked(False)
         
-        self.compatibilityLayout.addWidget(self.pinDownProCheckbox)
-        self.compatibilityLayout.addWidget(self.useOldCvCheckbox)
+        self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
+        self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
+        self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
         
         # force field settings
@@ -428,8 +443,15 @@ class alchemicalAdvancedSettings(QWidget):
         
         self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
         self.OPLSMixingRuleCheckbox.setChecked(False)
+
+        self.timestepLayout = QHBoxLayout()
+        self.timestepLabel = QLabel('    Timestep:')
+        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLayout.addWidget(self.timestepLabel)
+        self.timestepLayout.addWidget(self.timestepLineEdit)
         
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
+        self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
@@ -439,7 +461,11 @@ class alchemicalAdvancedSettings(QWidget):
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
 
+        self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
+        self.reEqCheckbox.setChecked(False)
+
         self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLayout.addWidget(self.reEqCheckbox)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -1385,9 +1411,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
                 <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802<br>
                 <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745<br>
                 <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178<br>
-                <b>Contact</b> Wensheng Cai (<a href="mailto:wscai@nankai.edu.cn">wscai@nankai.edu.cn</a>)
-                and Chris Chipot (<a href="mailto:chipot@ks.uiuc.edu">chipot@ks.uiuc.edu</a>)
-                for further copyright information.
+                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512–2519<br>
                 ''')
         return f
 
@@ -1691,7 +1715,15 @@ force fields!'
                             return
                     
                     if self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked():
-                        QMessageBox.warning(self, 'Error', 
+
+                        if self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked():
+                            QMessageBox.warning(self, 'Error', 
+                                f'\
+GaWTM-eABF is not compatible with CUDASOAIntegrator in NAMD! \n'
+                            )
+                            return
+
+                        QMessageBox.warning(self, 'Warning', 
                                 f'\
 The feature of using GaWTM-eABF as the workhorse engine is \
 experimental! Please always use the latest devel version of NAMD!\n'
@@ -1721,7 +1753,9 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             self.selectMDEngineCombobox.currentText().lower(),
                             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
-                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked()
+                            self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked(),
+                            self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked(),
+                            float(self.geometricAdvancedSettings.timestepLineEdit.text())
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
@@ -1792,7 +1826,10 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useOldCvCheckbox.isChecked(),
                             self.mainSettings.vmdLineEdit.text(),
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
+                            float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
+                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(

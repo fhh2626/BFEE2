@@ -1,7 +1,7 @@
 # Read eq.histogramX.dat and update Centers in *.in files
 # This step is optional but may improve the convergence
 
-import os, sys
+import os, sys, re
 import numpy as np
 
 def isGeometric():
@@ -222,12 +222,16 @@ def updateAlchemicalFiles():
     """
     
     files = [
+        './colvars2.in',
         '../001_MoleculeBound/colvars.in',
         '../002_RestraintBound/colvars_forward.in',
         '../002_RestraintBound/colvars_backward.in'
     ]
     
     for file in files:
+        if not os.path.exists(file):
+            print(f'File {file} does not exist!')
+            continue
         changeCenters(
             file, 
             [
@@ -236,6 +240,26 @@ def updateAlchemicalFiles():
             findOptimalCVs()[1:]
         )
         print(f'File {file} updated!')
+
+    # if re-eqilibrated
+    if os.path.exists('./000.1_eq2_re-eq.conf'):
+        confFiles = [
+            '../001_MoleculeBound/001.1_fep_backward.conf',
+            '../001_MoleculeBound/001_fep_doubleWide.conf',
+            '../002_RestraintBound/002.1_ti_backward.conf',
+        ]
+        for confFile in confFiles:
+            if not os.path.exists(confFile):
+                print(f'File {confFile} does not exist!')
+                continue
+            with open(confFile,'r') as readFile:
+                data=readFile.read()
+            data = re.sub('../000_eq/output/eq.coor', '../000_eq/output/eq2.coor', data)
+            data = re.sub('../000_eq/output/eq.vel', '../000_eq/output/eq2.vel', data)
+            data = re.sub('../000_eq/output/eq.xsc', '../000_eq/output/eq2.xsc', data)
+            with open(confFile,'w') as writeFile:
+                writeFile.write(data)
+            print(f'File {confFile} updated!')
         
 def updateGeometricFiles():
     """Update the Centers of *.in files based on equilibration
