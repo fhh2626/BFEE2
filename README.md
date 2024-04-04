@@ -1,5 +1,6 @@
 # Binding Free Energy Estimator 2
 [![DOI](https://zenodo.org/badge/322234705.svg)](https://zenodo.org/badge/latestdoi/322234705)
+[![Downloads](https://static.pepy.tech/badge/bfee2)](https://pepy.tech/project/bfee2)
 
 Binding free energy estimator (BFEE) is a python-based software that automates absolute binding free energy calculations through either the alchemical or geometric route by molecular dynamics simulations.<br>
 
