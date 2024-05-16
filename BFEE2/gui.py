@@ -9,8 +9,8 @@ import numpy as np
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide6 import QtCore
-from PySide6.QtGui import QFont, QIcon
-from PySide6.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
+from PySide6.QtGui import QFont, QIcon, QAction
+from PySide6.QtWidgets import ( QApplication, QCheckBox, QComboBox,
                                QFileDialog, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton,
