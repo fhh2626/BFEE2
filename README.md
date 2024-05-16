@@ -27,9 +27,7 @@ Python 3.6+, PySide 2, numpy, scipy, matplotlib, parmed and MDAnalysis.<br>
 ## Installation
 We suggest to install BFEE2 through conda. It will be safe if conda is install in a new environment<br>
 ```
-conda create --name bfee   (optional)
-conda activate bfee        (optional)
-conda install -c conda-forge BFEE2
+conda env create -f qt6.yml
 ```
 
 ## Usage
