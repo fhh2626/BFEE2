@@ -936,8 +936,6 @@ class inputGenerator():
                 )
             )
 
-        eq_label = 'eq2' if reEq else 'eq'
-
         # 001_MoleculeBound
         with open(f'{path}/BFEE/001_MoleculeBound/001.2_fep_forward.conf', 'w') as namdConfig:
             namdConfig.write(
@@ -954,7 +952,7 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'../000_eq/output/{eq_label}.coor', f'../000_eq/output/{eq_label}.vel', f'../000_eq/output/{eq_label}.xsc', '',
+                    f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/fep_backward', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                     stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein,
                     OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator,
@@ -967,7 +965,7 @@ class inputGenerator():
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                        f'../000_eq/output/{eq_label}.coor', f'../000_eq/output/{eq_label}.vel', f'../000_eq/output/{eq_label}.xsc', '',
+                        f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                         'output/fep_doubleWide', temperature, 0, 'colvars.in', '', '', '../fep.pdb', 
                         stratification[0], False, True, membraneProtein=membraneProtein,
                         OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator,
@@ -990,7 +988,7 @@ class inputGenerator():
             namdConfig.write(
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
-                    f'../000_eq/output/{eq_label}.coor', f'../000_eq/output/{eq_label}.vel', f'../000_eq/output/{eq_label}.xsc', '',
+                    f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
                     'output/ti_backward', temperature, f'{500000*(stratification[1]+1)}', 'colvars_backward.in', 
                     '', membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
                     CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
