@@ -571,6 +571,28 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(QApplication.quit)
 
+        # quick settings
+        # geometrical protein protein
+        self.quickGeometricProteinProteinAction = QAction('Protein-Protein / Geometrical')
+        self.quickGeometricProteinProteinAction.setStatusTip(
+            'Change settings for geometrical protein-protein binding free-energy calculations'
+        )
+        self.quickGeometricProteinProteinAction.triggered.connect(self._quickSetProteinProteinGeometric)
+
+        # geometrical protein ligand
+        self.quickGeometricProteinLigandAction = QAction('Protein-Ligand / Geometrical')
+        self.quickGeometricProteinLigandAction.setStatusTip(
+            'Change settings for geometrical protein-ligand binding free-energy calculations'
+        )
+        self.quickGeometricProteinLigandAction.triggered.connect(self._quickSetProteinLigandGeometric)
+
+        # alchemical protein ligand
+        self.quickAlchemicalProteinLigandAction = QAction('Protein-Ligand / Alchemical')
+        self.quickAlchemicalProteinLigandAction.setStatusTip(
+            'Change settings for alchemical protein-ligand binding free-energy calculations'
+        )
+        self.quickAlchemicalProteinLigandAction.triggered.connect(self._quickSetProteinLigandAlchemical)
+
         # help
         self.helpAction = QAction('&Help', self)
         self.helpAction.setStatusTip('Open user manual')
@@ -601,6 +623,11 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.fileMenu.addAction(self.settingsAction)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAction)
+
+        self.quickSettingsMenu = menubar.addMenu('&Quick Settings')
+        self.quickSettingsMenu.addAction(self.quickGeometricProteinProteinAction)
+        self.quickSettingsMenu.addAction(self.quickGeometricProteinLigandAction)
+        self.quickSettingsMenu.addAction(self.quickAlchemicalProteinLigandAction)
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
@@ -2068,7 +2095,50 @@ Unknown error!'
                 backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath))
             ploter.plotHysteresis(forwardProfile, backwardProfile)
         return f
+    
+    def _quickSetProteinProteinGeometric(self):
+        """quick setting for protein-protein binding free energy calculations through the geometrical route
+        """
 
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
+        self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(False)
+        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+        self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(True)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-protein binding free-energy calculations \
+                                                    through the geometrical route!')
+        
+    def _quickSetProteinLigandGeometric(self):
+        """quick setting for protein-ligand binding free energy calculations through the geometrical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.setText("3")
+        self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.setText("3")
+        self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
+        self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+        self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the geometrical route!')
+        
+    def _quickSetProteinLigandAlchemical(self):
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Alchemical")
+        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText("200")
+        self.alchemicalAdvancedSettings.boundRestraintsLineEdit.setText("200")
+        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText("100")
+        self.alchemicalAdvancedSettings.unboundRestraintsLineEdit.setText("100")
+        self.alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+        self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the alchemical route!')
 
     def _initSingalsSlots(self):
         """initialize (connect) singals and slots
