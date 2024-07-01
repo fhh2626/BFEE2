@@ -1434,11 +1434,12 @@ Please use the same or a later version of NAMD if you have any problem.\n'
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
                 <b>Reference:</b><br>
-                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123<br>
-                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802<br>
-                <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745<br>
-                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178<br>
-                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512–2519<br>
+                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
+                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
+                <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254-3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738-4745<br>
+                <b>GaWTM-eABF:</b> Chen et al. J. Chem. Theory Comput. 2021, 17, 3886-3894<br>
+                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
+                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
                 ''')
         return f
 
