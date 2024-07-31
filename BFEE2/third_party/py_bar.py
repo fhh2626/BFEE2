@@ -260,6 +260,14 @@ class FEPAnalyzer:
             errors.append(err)
         return self._windows, free_energies, errors
     
+    def Window_boundaries(self) -> List[Tuple[float, float]]:
+        """ Get the boundaries of windows
+
+        Returns:
+            List[Tuple[float, float]]: windows boundaries
+        """
+        return self._windows
+    
     def _BAR_estimator(self, deltaU: Tuple[NDArray, NDArray], tolerance: float = 1e-6) -> float:
         """ Estimate the free energy of a window using the BAR estimator
 
