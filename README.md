@@ -21,8 +21,8 @@ Support both rigid (exclude RMSD CV) and flexible (include RMSD CV) ligands and 
 
 ## Requirements
 Python 3.6+, PySide 2, numpy, scipy, matplotlib, parmed and MDAnalysis.<br>
-[NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [Colvars patched Gromacs](https://github.com/Colvars/colvars).<br>
-**Note: BFEE2 uses cutting-edge features of NAMD and Colvars. We highly suggest the end-user download the devel branch of NAMD from [here](https://gitlab.com/tcbgUIUC/namd/-/tree/devel) and patch it with [Colvars](https://github.com/Colvars/colvars) to prevent possible problems.**
+[NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [GROMACS 2024 or later](https://manual.gromacs.org/).<br>
+**Note: BFEE2 uses cutting-edge features of NAMD and Colvars. We highly suggest the end-user download the devel branch of NAMD from [here](https://gitlab.com/tcbgUIUC/namd/-/tree/devel) or GROMACS from [here](https://gitlab.com/gromacs/gromacs/) and patch them with the current version of [Colvars](https://github.com/Colvars/colvars) to access new features.**
 
 ## Installation
 We suggest to install BFEE2 through conda. It will be safe if conda is install in a new environment<br>
