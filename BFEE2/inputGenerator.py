@@ -938,7 +938,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
-                    'output/eq', temperature, 5000000, 'colvars.in', '', membraneProtein=membraneProtein,
+                    'output/eq', temperature, 50000000, 'colvars.in', '', membraneProtein=membraneProtein,
                     OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                 )
             )
@@ -949,7 +949,7 @@ class inputGenerator():
                     self.cTemplate.namdConfigTemplate(
                         forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                         f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
-                        'output/eq2', temperature, 5000000, 'colvars2.in', '', membraneProtein=membraneProtein,
+                        'output/eq2', temperature, 50000000, 'colvars2.in', '', membraneProtein=membraneProtein,
                         OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                     )
                 )
@@ -959,7 +959,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                     '', '', '', pbcLig,
-                    'output/eq_ligandOnly', temperature, 1000000, 'colvars_ligandOnly.in',
+                    'output/eq_ligandOnly', temperature, 10000000, 'colvars_ligandOnly.in',
                     '', OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator,
                     timestep=timestep
                 )
@@ -1626,7 +1626,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
                     '', '', '', pbc,
-                    'output/eq', temperature, 5000000, 'colvars.in',
+                    'output/eq', temperature, 50000000, 'colvars.in',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
                     GaWTM=False, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                 )
@@ -1942,7 +1942,7 @@ class inputGenerator():
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     '', '', '', 
                     pbcStep7,
-                    'output/eq', temperature, 5000000, 'colvars_eq.in', '',
+                    'output/eq', temperature, 50000000, 'colvars_eq.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
                     GaWTM=False, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                 )
@@ -1953,7 +1953,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/eq.coor', 'output/eq.vel', 'output/eq.xsc', '',
-                    'output/abf_1', temperature, 20000000, 'colvars_1.in', '',
+                    'output/abf_1', temperature, 100000000, 'colvars_1.in', '',
                     membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
                     GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                 )
@@ -1963,7 +1963,7 @@ class inputGenerator():
                 self.cTemplate.namdConfigTemplate(
                     forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                     'output/abf_1.restart.coor', 'output/abf_1.restart.vel', 'output/abf_1.restart.xsc', '',
-                    'output/abf_1.extend', temperature, 20000000, 'colvars_1.in', '',
+                    'output/abf_1.extend', temperature, 100000000, 'colvars_1.in', '',
                     CVRestartFile=f'output/abf_1.restart', membraneProtein=membraneProtein,
                     OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator,
                     timestep=timestep
@@ -1979,7 +1979,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i}.restart.coor', f'output/abf_{i}.restart.vel', 
                         f'output/abf_{i}.restart.xsc',
-                        '', f'output/abf_{i+1}', temperature, 20000000, f'colvars_{i+1}.in', '',
+                        '', f'output/abf_{i+1}', temperature, 100000000, f'colvars_{i+1}.in', '',
                         membraneProtein=membraneProtein, OPLSMixingRule=OPLSMixingRule,
                         GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep
                     )
@@ -1990,7 +1990,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'./complex_largeBox.{topType}', f'./complex_largeBox.pdb',
                         f'output/abf_{i+1}.restart.coor', f'output/abf_{i+1}.restart.vel', 
                         f'output/abf_{i+1}.restart.xsc',
-                        '', f'output/abf_{i+1}.extend', temperature, 20000000, f'colvars_{i+1}.in', '',
+                        '', f'output/abf_{i+1}.extend', temperature, 100000000, f'colvars_{i+1}.in', '',
                         CVRestartFile=f'output/abf_{i+1}.restart', membraneProtein=membraneProtein,
                         OPLSMixingRule=OPLSMixingRule, GaWTM=GaWTM, CUDASOAIntegrator=CUDASOAIntegrator,
                         timestep=timestep
