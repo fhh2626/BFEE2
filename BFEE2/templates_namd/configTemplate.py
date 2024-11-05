@@ -574,7 +574,6 @@ colvar {{                              \n\
             indexGroup  ligand                 \n\
             centerReference    on              \n\
             rotateReference    on              \n\
-	        enableFitGradients no              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\
@@ -645,7 +644,6 @@ colvar {{                                   \n\
             indexGroup  reference           \n\
             centerReference    on           \n\
             rotateReference    on           \n\
-            enableFitGradients no           \n\
             fittingGroup {{                 \n\
                 indexGroup  protein         \n\
             }}                              \n\
@@ -655,7 +653,6 @@ colvar {{                                   \n\
             indexGroup  ligand              \n\
             centerReference    on           \n\
             rotateReference    on           \n\
-            enableFitGradients no           \n\
             fittingGroup {{                 \n\
                 indexGroup  protein         \n\
             }}                              \n\
@@ -715,7 +712,6 @@ colvar {{                              \n\
             centerReference    on              \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
-	        enableFitGradients on              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\
