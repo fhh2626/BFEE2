@@ -456,7 +456,8 @@ class alchemicalAdvancedSettings(QWidget):
 
         # strategy settings
         self.strategy = QGroupBox('Strategy settings')
-        self.strategyLayout = QHBoxLayout()
+        self.strategyLayout = QVBoxLayout()
+        self.strategyLine1Layout = QHBoxLayout()
 
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
@@ -464,8 +465,14 @@ class alchemicalAdvancedSettings(QWidget):
         self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
         self.reEqCheckbox.setChecked(False)
 
-        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
-        self.strategyLayout.addWidget(self.reEqCheckbox)
+        self.LDDMCheckbox = QCheckBox('Use LDDM strategy')
+        self.LDDMCheckbox.setChecked(False)
+
+        self.strategyLine1Layout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLine1Layout.addWidget(self.reEqCheckbox)
+
+        self.strategyLayout.addLayout(self.strategyLine1Layout)
+        self.strategyLayout.addWidget(self.LDDMCheckbox)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -506,10 +513,36 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
+    # below are slow functions
+    def _toggleLDDMBox(self, checked):
+        """when enable LDDM, restraint simulations and considering RMSD are not needed, and 
+           re-equilbration and double-wide simulations are necessary.
+        """
+
+        if checked:
+            self.boundRestraintsLineEdit.setEnabled(False)
+            self.unboundRestraintsLineEdit.setEnabled(False)
+            self.considerRMSDCVCheckbox.setChecked(False)
+            self.considerRMSDCVCheckbox.setEnabled(False)
+            self.reEqCheckbox.setChecked(True)
+            self.reEqCheckbox.setEnabled(False)
+            self.doubleWideCheckbox.setChecked(True)
+            self.doubleWideCheckbox.setEnabled(False)
+            self.minBeforeSampleCheckbox.setChecked(False)
+            self.minBeforeSampleCheckbox.setEnabled(False)
+        else:
+            self.boundRestraintsLineEdit.setEnabled(True)
+            self.unboundRestraintsLineEdit.setEnabled(True)
+            self.considerRMSDCVCheckbox.setEnabled(True)
+            self.reEqCheckbox.setEnabled(True)
+            self.doubleWideCheckbox.setEnabled(True)
+            self.minBeforeSampleCheckbox.setEnabled(True)
+
     def _initSingalsSlots(self):
         """initialize (connect) signals and slots for the alchemical advanced settings
         """
 
+        self.LDDMCheckbox.toggled.connect(self._toggleLDDMBox)
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
 
 class mainUI(QMainWindow):
@@ -593,6 +626,13 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         )
         self.quickAlchemicalProteinLigandAction.triggered.connect(self._quickSetProteinLigandAlchemical)
 
+        # LDDM
+        self.quickLDDMProteinLigandAction = QAction('Protein-Ligand / LDDM')
+        self.quickLDDMProteinLigandAction.setStatusTip(
+            'Change settings for protein-ligand binding free-energy calculations using the LDDM strategy'
+        )
+        self.quickLDDMProteinLigandAction.triggered.connect(self._quickSetProteinLigandLDDM)
+
         # help
         self.helpAction = QAction('&Help', self)
         self.helpAction.setStatusTip('Open user manual')
@@ -628,6 +668,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.quickSettingsMenu.addAction(self.quickGeometricProteinProteinAction)
         self.quickSettingsMenu.addAction(self.quickGeometricProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickAlchemicalProteinLigandAction)
+        self.quickSettingsMenu.addAction(self.quickLDDMProteinLigandAction)
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
@@ -1857,7 +1898,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
                             float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
-                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
@@ -2140,6 +2182,25 @@ Unknown error!'
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
                                                     through the alchemical route!')
+    
+    def _quickSetProteinLigandLDDM(self):
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Alchemical")
+        
+        self.alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+
+        self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(True)
+
+        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText('200')
+        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText('100')
+
+        self.alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the LDDM!')
 
     def _initSingalsSlots(self):
         """initialize (connect) singals and slots
@@ -2205,3 +2266,4 @@ Unknown error!'
         self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))
         self.plotHysteresisBackwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisBackwardLineEdit))
         self.plotHysteresisPlotButton.clicked.connect(self._plotHysteresis())
+        
