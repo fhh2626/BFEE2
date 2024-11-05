@@ -564,6 +564,7 @@ class mainUI(QMainWindow):
 
         self._initGeometricTab()
         self._initAlchemicalTab()
+        self._initLDDMTab()
         self._initPostTreatmentTab()
 
         self._initSingalsSlots()
@@ -936,6 +937,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
 
         self.postTreatmentMainTabs.addTab(self.geometricTab, 'Geometric')
         self.postTreatmentMainTabs.addTab(self.alchemicalTab, 'Alchemical')
+        self.postTreatmentMainTabs.addTab(self.LDDMTab, 'LDDM')
 
         self.postTreatmentMainLayout = QVBoxLayout()
         self.postTreatmentMainLayout.addWidget(self.postTreatmentMainTabs)
@@ -1260,6 +1262,93 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalTabLayout.addWidget(self.alchemicalForceConstants)
         self.alchemicalTabLayout.addWidget(self.alchemicalRestraintCenters)
         self.alchemicalTab.setLayout(self.alchemicalTabLayout)
+
+    def _initLDDMTab(self):
+        """initialize LDDM tab of post-treatment
+        """
+
+        self.LDDMTab = QWidget()
+        self.LDDMTabLayout = QVBoxLayout()
+
+        
+        self.LDDMSimulationInputs = QGroupBox('Inputs for LDDM simulations:')
+        self.LDDMSimulationInputsLayout = QVBoxLayout()
+
+        # step 1
+        self.LDDMStep1Label = QLabel('Step 1:')
+        self.LDDMStep1Layout = QGridLayout()
+        
+        self.LDDMStep1ColvarsLabel = QLabel('colvars.in.tmp file:')
+        self.LDDMStep1ColvarsLineEdit = QLineEdit()
+        self.LDDMStep1ColvarsButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLabel, 0, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLineEdit, 0, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsButton, 0, 2)
+
+        self.LDDMStep1ColvarsTrajLabel = QLabel('colvars.traj file:')
+        self.LDDMStep1ColvarsTrajLineEdit = QLineEdit()
+        self.LDDMStep1ColvarsTrajButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLabel, 1, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLineEdit, 1, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajButton, 1, 2)
+
+        self.LDDMStep1FepoutLabel = QLabel('fepout file:')
+        self.LDDMStep1FepoutLineEdit = QLineEdit()
+        self.LDDMStep1FepoutButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLabel, 2, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLineEdit, 2, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutButton, 2, 2)
+
+        self.LDDMStep3Label = QLabel('Step 3:')
+        self.LDDMStep3Layout = QGridLayout()
+        
+        self.LDDMStep3FepoutLabel = QLabel('fepout file:            ')
+        self.LDDMStep3FepoutLineEdit = QLineEdit()
+        self.LDDMStep3FepoutButton = QPushButton('Browse')
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLabel, 0, 0)
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLineEdit, 0, 1)
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutButton, 0, 2)
+
+        self.LDDMSimulationInputsLayout.addWidget(self.LDDMStep1Label)
+        self.LDDMSimulationInputsLayout.addLayout(self.LDDMStep1Layout)
+        self.LDDMSimulationInputsLayout.addWidget(self.LDDMStep3Label)
+        self.LDDMSimulationInputsLayout.addLayout(self.LDDMStep3Layout)
+        self.LDDMSimulationInputs.setLayout(self.LDDMSimulationInputsLayout)
+
+        # other parameter
+        self.LDDMParameters = QGroupBox('Other parameters:')
+
+        # all widgets
+        self.LDDMParametersLayout = QGridLayout()
+        self.LDDMStep1StepsPerWindowLabel = QLabel('Steps per window (Step 1):')
+        self.LDDMStep1StepsPerWindowLineEdit = QLineEdit('500000')
+        self.LDDMStep1EquilStepsPerWindowLabel = QLabel('Equilbration per window (Step 1): ')
+        self.LDDMStep1EquilStepsPerWindowLineEdit = QLineEdit('100000')
+        self.LDDMStep1WindowsLabel = QLabel('Windows (Step 1):  ')
+        self.LDDMStep1WindowsLineEdit = QLineEdit('200')
+        self.LDDMPostTemperatureLabel = QLabel('temperature:')
+        self.LDDMPostTemperatureLineEdit = QLineEdit('300')
+        self.LDDMPostTypeLabel = QLabel('Post-treatment type:')
+        self.LDDMPostTypeBox = QComboBox()
+        self.LDDMPostTypeBox.addItem('FEP')
+        self.LDDMPostTypeBox.addItem('BAR')
+
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLabel, 0, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLineEdit, 0, 1)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLabel, 0, 2)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLineEdit, 0, 3)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLabel, 1, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLineEdit, 1, 1)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLabel, 1, 2)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLineEdit, 1, 3)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTypeLabel, 2, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTypeBox, 2, 1)
+
+        self.LDDMParameters.setLayout(self.LDDMParametersLayout)
+
+        self.LDDMTabLayout.addWidget(self.LDDMSimulationInputs)
+        self.LDDMTabLayout.addWidget(self.LDDMParameters)
+        self.LDDMTab.setLayout(self.LDDMTabLayout)
 
     def _initQuickPlotTab(self):
         """initialize quick-plot tab
@@ -1657,6 +1746,84 @@ Standard Binding Free Energy:\n\
 ΔG(total)         = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n'
         )
 
+    def _showLDDMResults(self, unit):
+        """calculate binding from the LDDM route,
+            parameters in the LDDM tab will be read.
+            Show a QMessageBox for the result
+
+        Args:
+            unit (str): 'namd' or 'gromacs'
+        """
+        
+        pTreat = postTreatment.postTreatment(
+            float(self.LDDMPostTemperatureLineEdit.text()), unit, 'LDDM')
+        
+        # alchemical outputs  
+        try:
+            temperature = float(self.LDDMPostTemperatureLineEdit.text())
+        except:
+            QMessageBox.warning(self, 'Error', f'temperature input error!')
+            return
+        if self.LDDMPostTypeBox.currentText() == 'FEP':
+                jobType = 'fep'
+        elif self.LDDMPostTypeBox.currentText() == 'BAR':
+                jobType = 'bar'
+
+        # check inputs
+        rigid_ligand = False
+        for index, item in enumerate([
+                    self.LDDMStep1ColvarsLineEdit.text(), 
+                    self.LDDMStep1ColvarsTrajLineEdit.text(), 
+                    self.LDDMStep1FepoutLineEdit.text(), 
+                    self.LDDMStep3FepoutLineEdit.text()
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
+                QMessageBox.warning(self, 'Error', f'{item} does not exist and is not empty!')
+                return
+        
+        try:
+            int(self.LDDMStep1StepsPerWindowLineEdit.text())
+            int(self.LDDMStep1EquilStepsPerWindowLineEdit.text())
+            int(self.LDDMStep1WindowsLineEdit.text())
+        except:
+            QMessageBox.warning(self, 'Error', f'Invalid value in LDDM parameters!')
+            return
+
+        # calculate free energies
+        try:
+            step1_result, step3_result = pTreat.LDDMBindingFreeEnergy(
+                self.LDDMStep1ColvarsLineEdit.text(),
+                self.LDDMStep1ColvarsTrajLineEdit.text(),
+                self.LDDMStep1FepoutLineEdit.text(),
+                int(self.LDDMStep1StepsPerWindowLineEdit.text()),
+                int(self.LDDMStep1EquilStepsPerWindowLineEdit.text()),
+                int(self.LDDMStep1WindowsLineEdit.text()) + 1,
+                self.LDDMStep3FepoutLineEdit.text(),
+                temperature = temperature, 
+                jobType = jobType
+            )
+        except Exception as e:
+            print(e)
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+LDDM result calculation failed! The error message is: \n\
+{e}\n'
+            )
+
+        QMessageBox.about(
+            self,
+            'Result',
+            f'\
+Results:\n\
+ΔG(Step 1)   = {step1_result[0]:.2f} ± {step1_result[1]:.2f} kcal/mol\n\
+ΔG(Step 3)  = {step3_result[0]:.2f} ± {step3_result[1]:.2f} kcal/mol\n\
+\n\
+Standard Binding Free Energy:\n\
+ΔG(total)         = {step1_result[0] + step3_result[0]:.2f} ± {np.sqrt(step1_result[1]**2 + step3_result[1]**2):.2f} kcal/mol\n'
+        )
+
     def _showFinalResults(self):
         """calculate binding free energy and show the final results
         
@@ -1674,11 +1841,15 @@ Standard Binding Free Energy:\n\
                 jobType = 'geometric'
             elif self.postTreatmentMainTabs.currentIndex() == 1:
                 jobType = 'alchemical'
+            elif self.postTreatmentMainTabs.currentIndex() == 2:
+                jobType = 'LDDM'
 
             if jobType == 'geometric':
                 self._showGeometricResults(unit)
             elif jobType == 'alchemical':
                 self._showAlchemicalResults(unit)
+            elif jobType == 'LDDM':
+                self._showLDDMResults(unit)
             
         return f
 
@@ -2247,6 +2418,12 @@ Unknown error!'
         self.alchemicalBackwardButton3.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalBackwardLineEdit3))
         self.alchemicalForwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalForwardLineEdit4))
         self.alchemicalBackwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalBackwardLineEdit4))
+
+        # LDDM tab
+        self.LDDMStep1ColvarsButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep1ColvarsLineEdit))
+        self.LDDMStep1ColvarsTrajButton.clicked.connect(commonSlots.openFileDialog('colvars.traj', self.LDDMStep1ColvarsTrajLineEdit))
+        self.LDDMStep1FepoutButton.clicked.connect(commonSlots.openFileDialog('fepout', self.LDDMStep1FepoutLineEdit))
+        self.LDDMStep3FepoutButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep3FepoutLineEdit))
 
         # generate input files
         self.generateInputButton.clicked.connect(self._generateInputFiles())

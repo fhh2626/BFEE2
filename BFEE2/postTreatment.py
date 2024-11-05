@@ -500,3 +500,159 @@ class postTreatment:
         errors[5] = math.sqrt(errors[0]**2 + errors[1]**2 +errors[2]**2 + errors[3]**2 + errors[4]**2)
 
         return contributions, errors
+
+    def _LDDMReadColvarsTmp(self, file_path):
+        """ Read an Colvars Tmp file in binding free energy calculations,
+            get the force constants and centers constants of restraints for LDDM
+
+        Args:
+            file_path (str): path to the Colvars.tmp file
+
+        Returns:
+            Tuple[List, List]: lists of force constants and centers
+        """
+
+        force_constants = []
+        centers = []
+
+        with open(file_path, 'r') as colvars_tmp_file:
+            center_line = False
+            for line in colvars_tmp_file.readlines():
+                splited_line = line.strip().split()
+
+                if len(splited_line) < 2:
+                    center_line = False
+                    continue
+
+                if splited_line[1].startswith('$afc_'):
+                    force_constants.append(float(splited_line[1].replace('$afc_', '')))
+                    center_line = True
+                    continue
+
+                if center_line:
+                    centers.append(float(splited_line[1]))
+
+                continue
+        
+        return force_constants, centers
+
+    def _LDDMBoundStateFreeEnergy(
+            self,
+            colvars_tmp_path,
+            cvtrj_path,
+            fepout_path,
+            steps_per_window,
+            equilbration_steps_per_window,
+            num_windows,
+            temperature = 300,
+            jobtype = 'fep'
+        ):
+        """ Calculate bound state free-energy contribution and error
+
+        Args:
+            colvars_tmp_path (str): path to colvars tmp file
+            cvtrj_path (str): path to colvars.traj file
+            fepout_path (str): path to fepout file
+            steps_per_window (int): steps per FEP window
+            equilbration_steps_per_window (int): equilibration steps per FEP window
+            num_windows (int): number of windows
+            temperature (float): temperature of the simulation, defaults to 300
+            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+                                      Defaults to 'fep'.
+
+        Returns:
+            Tuple[float, float, float]: free-energy contribution of decoupling the molecule,
+                                        error, and contribution of the restraints
+        """
+        force_contants, centers = self._LDDMReadColvarsTmp(colvars_tmp_path)
+        colvars_parser = py_bar.ColvarsParser(cvtrj_path, steps_per_window, equilbration_steps_per_window, 
+                                    force_contants, centers,
+                                    np.linspace(0, 1, num_windows))
+        window, deltaU = colvars_parser.get_data()
+        b = py_bar.FEPAnalyzer(window, deltaU, temperature)
+
+        window2, deltaU2 = py_bar.NAMDParser(fepout_path).get_data()
+        success = b.MergeData(window2, deltaU2)
+        if not success:
+            raise RuntimeError('Failed in merging fepout and colvars.traj! Probably wrong number of windows or crupted simulations!')
+        
+        if jobtype == 'fep':
+            result = b.FEP_free_energy()
+        else:
+            result = b.BAR_free_energy(block_size=50, n_bootstrap=20)
+
+        #windows = b.Window_boundaries()
+        #with open(fepout_path + ".convergence.data", "w") as convergence_file:
+        #    convergence_file.write(f"    lambda      dA      stdev_A   \n")
+        #    for window, dA, stdA in zip(windows, result[1], resul[2]):
+        #        convergence_file.write(f" {window}      {dA:.4f}      {stdA:.4f}   \n")
+
+        return -np.sum(result[1]), np.sqrt(np.sum(np.power(result[2], 2))), colvars_parser.get_restraint_contribution()
+
+    def _LDDMFreeStateFreeEnergy(self, fepout_path, temperature = 300, jobtype = 'fep'):
+        """ Calculate free state free-energy contribution and error
+
+        Args:
+            fepout_path (str): path to fepout file
+            temperature (float, optional): temperature of the simulation. Defaults to 300.
+            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+                                      Defaults to 'fep'.
+
+        Returns:
+            Tuple[float, float]: free-energy contribution and the error of decoupling the molecule
+        """
+        window, deltaU = py_bar.NAMDParser(fepout_path).get_data()
+        b = py_bar.FEPAnalyzer(window, deltaU, temperature)
+
+        if jobtype == 'fep':
+            result = b.FEP_free_energy()
+        else:
+            result = b.BAR_free_energy(block_size=50, n_bootstrap=20)
+
+        # convergence file
+        #windows = b.Window_boundaries()
+        #with open(fepout_path + "convergence.data", "w") as convergence_file:
+        #    convergence_file.write(f"    lambda      dA      stdev_A   \n")
+        #    for window, dA, stdA in zip(windows, result_fep[1], result_fep[2]):
+        #        convergence_file.write(f" {window}      {dA:.4f}      {stdA:.4f}   \n")
+
+        return np.sum(result[1]), np.sqrt(np.sum(np.power(result[2], 2)))
+    
+    def LDDMBindingFreeEnergy(
+            self, 
+            colvars_tmp_path,
+            cvtrj_path,
+            step1_fepout_path,
+            steps_per_window,
+            equilbration_steps_per_window,
+            num_windows,
+            step3_fepout_path,
+            temperature = 300, 
+            jobType = 'fep'):
+        """calculate binding free energy for LDDM
+
+        Args:
+            colvars_tmp_path (str): path to colvars tmp file of step 1
+            cvtrj_path (str): path to colvars.traj file of step 1
+            step1_fepout_path (str): path to fepout file of step 1
+            steps_per_window (int): steps per FEP window of step 1
+            equilbration_steps_per_window (int): equilibration steps per FEP window of step 1
+            num_windows (int): number of windows of step 1
+            step3_fepout_path (str): path to fepout file of step 3
+            temperature (float): temperature of the simulation, defaults to 300
+            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+                                      Defaults to 'fep'.
+
+        Returns:
+            tuple:
+                np.array, float, 2: (contributions for step1, and step 3)
+                np.array, float, 2: errors corresponding each contribution
+        """
+
+        step1_dG, step1_error, step3_dG_restraint = self._LDDMBoundStateFreeEnergy(
+            colvars_tmp_path, cvtrj_path, step1_fepout_path, steps_per_window, equilbration_steps_per_window,
+            num_windows, temperature, jobType
+        )
+        step3_dG_molecule, step3_error = self._LDDMFreeStateFreeEnergy(step3_fepout_path, temperature, jobType)
+
+        return np.array([step1_dG, step1_error]), np.array([step3_dG_molecule + step3_dG_restraint, step3_error])
