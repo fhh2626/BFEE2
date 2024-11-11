@@ -223,7 +223,7 @@ def updateForceConstant(filename, CVs, newForceConstants):
         with open(filename + '.tmp', 'w') as newColvarsFile:
             for line in oldColvarsFile.readlines():
                 if line.strip().lower().startswith('colvarstrajfrequency'):
-                    newColvarsFile.write(f'colvarsTrajFrequency      50\n')
+                    newColvarsFile.write(f'colvarsTrajFrequency      50\\n')
                     continue
 
                 splitedLine = line.strip().split()
@@ -238,7 +238,7 @@ def updateForceConstant(filename, CVs, newForceConstants):
                         if inBlock == -1:
                             newColvarsFile.write(line)
                         else:
-                            newColvarsFile.write(f'    ForceConstant    $$afc_{newForceConstants[inBlock]}\n')
+                            newColvarsFile.write(f'    ForceConstant    $$afc_{newForceConstants[inBlock]}\\n')
                     
                     if len(splitedLine) > 0:
                         if splitedLine[0] == '}':
@@ -289,7 +289,7 @@ def generateColvarsFiles(template_file, windows, prefix):
                 if len(splitedLine) < 2 or (not splitedLine[1].startswith("$$afc_")):
                     new_colvars_file.write(lines[j])
                 else:
-                    new_colvars_file.write(f"    forceConstant  {float(splitedLine[1].split('_')[1]) * (float(i) / windows)}\n")
+                    new_colvars_file.write(f"    forceConstant  {float(splitedLine[1].split('_')[1]) * (float(i) / windows)}\\n")
     
     with open(f"./{prefix}/colvars_{windows}.in", "w") as new_colvars_file:
         for j in range(len(lines)):
@@ -297,7 +297,7 @@ def generateColvarsFiles(template_file, windows, prefix):
             if len(splitedLine) < 2 or (not splitedLine[1].startswith("$$afc_")):
                 new_colvars_file.write(lines[j])
             else:
-                new_colvars_file.write(f"    forceConstant  {float(splitedLine[1].split('_')[1])}\n")
+                new_colvars_file.write(f"    forceConstant  {float(splitedLine[1].split('_')[1])}\\n")
 
 updateAllForceConstants(TEMPERATURE)
 generateColvarsFiles("colvars.in.tmp", WINDOWS, "colvars_files")
