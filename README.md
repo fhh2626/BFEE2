@@ -58,4 +58,4 @@ Colvars module: [Fiorin et al. Mol. Phys. 2013 111, 3345-3362](https://www.tandf
 "Mother" of all restraint-based binding free-energy calculations: [Hermans et al. Isr. J. Chem. 1986, 27, 225–227](https://onlinelibrary.wiley.com/doi/abs/10.1002/ijch.198600032)<br>
 
 ## Contact us
-This software is under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license. For more information about BFEE, contact Haohao Fu (fhh2626@mail.nankai.edu.cn) and Haochuan Chen (yjcoshc@mail.nankai.edu.cn).
+This software is under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license. For more information about BFEE, contact Haohao Fu (fhh2626@nankai.edu.cn) and Haochuan Chen (yjcoshc@mail.nankai.edu.cn).
