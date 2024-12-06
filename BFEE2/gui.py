@@ -1244,6 +1244,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalPostTypeBox = QComboBox()
         self.alchemicalPostTypeBox.addItem('FEP')
         self.alchemicalPostTypeBox.addItem('BAR')
+        self.alchemicalPostTypeBox.setCurrentIndex(1)
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLineEdit)
@@ -1332,6 +1333,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.LDDMPostTypeBox = QComboBox()
         self.LDDMPostTypeBox.addItem('FEP')
         self.LDDMPostTypeBox.addItem('BAR')
+        self.LDDMPostTypeBox.setCurrentIndex(1)
 
         self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLabel, 0, 0)
         self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLineEdit, 0, 1)
