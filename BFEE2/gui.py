@@ -2353,6 +2353,8 @@ Unknown error!'
         self.alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
+        self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
                                                     through the alchemical route!')
     
