@@ -1,10 +1,15 @@
+import sys, math
 from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
+# VERSION
+VERSION = 1.0
+
 # boltzmann constant
 BOLTZMANN = 0.0019872041
+CSTAR = 1661
 
 # type of FEP files
 fep_type = Literal['forward', 'backward', 'double-wide']
@@ -191,6 +196,182 @@ class NAMDParser:
         
         return self._windows, self._deltaU_data
 
+class ColvarsParser:
+    """ parse Colvars cvtrj files and get the necessary data
+    """
+    def __init__(self, 
+            cvtrj_file: str, 
+            step_per_window: int, 
+            equilibration_per_window: int,
+            force_constants: List[int],
+            centers: List[int],
+            lambda_list: List[float]) -> None:
+        
+        self._windows, self._deltaU_data = self._read_double_wide_cvtrj(
+                                                    cvtrj_file,
+                                                    step_per_window, 
+                                                    equilibration_per_window,
+                                                    force_constants,
+                                                    centers,
+                                                    lambda_list
+                                                )
+            
+        if len(self._windows) != len(self._deltaU_data):
+            print(len(self._windows))
+            print(len(self._deltaU_data))
+            raise RuntimeError('Internal numbers of windows and deltaU do not match! This is a bug!')
+        
+        self._restaint_contribution = \
+            self._alchemicalRestraintContributionBulk(centers[0], centers[3], centers[5], *force_constants)
+        
+    def _read_double_wide_cvtrj(
+            self, 
+            cvtrj_file: str, 
+            step_per_window: int, 
+            equilibration_per_window: int,
+            force_constants: List[int],
+            centers: List[int],
+            lambda_list: List[float]
+        ) -> Tuple[List[Tuple[float, float]], List[Tuple[NDArray, NDArray]]]:
+        """ Read an Colvars cvtrj file and regard it as double-wide free-energy calculation. 
+            Return the window and bidirectional deltaU information.
+
+        Args:
+            cvtrj_file (str): the path of the fepout file
+            step_per_window (int): total steps of a window 
+            equilibration_per_window (int): steps of equilibration of a window
+            force_constants (List[int]) force constants of each CV.
+            centers (List[int]): the center (lambda=1) of each CV. The first N CVs are considered.
+            lambda_list (List[float]): Lambda schedule [0, ..., 1] or [1, ..., 0]
+            
+        Returns:
+            Tuple[List[Tuple[float, float]], List[Tuple[NDArray, NDArray]]]: recording the boundary and 
+                                                                             deltaU of each window of
+                                                                             bidirectional simulations
+        """
+
+        assert len(force_constants) == len(centers), "Error, The lengths of force_constants of centers are not equal!"
+
+        force_constants = np.array(force_constants)
+        centers = np.array(centers)
+        lambda_list = np.array(lambda_list)
+        
+        windows = []
+        for i in range(len(lambda_list) - 1):
+            windows.append((lambda_list[i], lambda_list[i + 1]))
+
+        deltaU_forward = []
+        deltaU_backward = []
+
+        num_CVs = len(force_constants)
+        num_windows = len(lambda_list)
+
+        with open(cvtrj_file, 'r') as input_fepout:
+            # The first window samples forward only, the last window backward only
+            window_index = 0
+
+            while True:
+                line = input_fepout.readline()
+                if not line:
+                    break
+                if line.startswith("#"):
+                    continue
+                splitedLine = line.strip().split()
+                step = int(splitedLine[0])
+                
+                if step % step_per_window == 0:
+                    # collecting deltaU
+                    deltaU_forward_per_window = []
+                    deltaU_backward_per_window = []
+
+                    while True:
+                        line = input_fepout.readline()
+                        if not line:
+                            break
+                        if line.startswith("#"):
+                            continue
+                        splitedLine = line.strip().split()
+                        step = int(splitedLine[0])
+
+                        if step % step_per_window == 0:
+                            if window_index == 0:
+                                deltaU_forward.append(deltaU_forward_per_window)
+                            elif window_index == num_windows - 1:
+                                deltaU_backward.append(deltaU_backward_per_window)
+                            else:
+                                deltaU_forward.append(deltaU_forward_per_window)
+                                deltaU_backward.append(deltaU_backward_per_window)
+                            window_index += 1
+                            break
+
+                        # equilibration
+                        if step < window_index * step_per_window + equilibration_per_window:
+                            continue
+                        else:
+                            dis = abs(np.array(splitedLine[1:1+num_CVs]).astype(float) - centers)
+                            dis[dis>180] -= 360
+                            if window_index == 0:
+                                deltaU_forward_per_window.append(0.5 * np.sum((lambda_list[window_index + 1] - lambda_list[window_index]) * force_constants * (dis**2)))
+                            elif window_index == num_windows - 1:
+                                deltaU_backward_per_window.append(0.5 * np.sum((lambda_list[window_index - 1] - lambda_list[window_index]) * force_constants * (dis**2)))
+                            else:
+                                deltaU_forward_per_window.append(0.5 * np.sum((lambda_list[window_index + 1] - lambda_list[window_index]) * force_constants * (dis**2)))
+                                deltaU_backward_per_window.append(0.5 * np.sum((lambda_list[window_index - 1] - lambda_list[window_index]) * force_constants * (dis**2)))
+        
+        if len(deltaU_forward) != len(deltaU_backward):
+            raise RuntimeError('Forward and backward data do not match!')
+        
+        deltaU = []
+        for i in range(len(deltaU_forward)):
+            deltaU.append((np.array(deltaU_forward[i]), np.array(deltaU_backward[i])))
+        
+        return windows, deltaU
+    
+    def get_data(self) -> Tuple[List[Tuple[float, float]], List[Tuple[NDArray, NDArray]]]:
+        return self._windows, self._deltaU_data
+    
+    def get_restraint_contribution(self) -> float:
+        return self._restaint_contribution
+    
+    def _alchemicalRestraintContributionBulk(
+        self, eulerTheta, polarTheta, R, 
+        forceConstantTheta=0.1, forceConstantPhi=0.1, forceConstantPsi=0.1,
+        forceConstanttheta=0.1, forceConstantphi=0.1, forceConstantR=10
+    ):
+        """contribution of (standard concentration corrected) rotational 
+           and orienetational restraints in the unbounded state
+
+        Args:
+            eulerTheta (float): restraining center of the Euler angle theta
+            polarTheta (float): restraining center of the polar angle theta
+            R (float): restraining center of anger R
+            forceConstantTheta (float): restraining force constant for euler Theta. Defaults to 0.1.
+            forceConstantPhi (float, optional): restraining force constant for euler Phi. Defaults to 0.1.
+            forceConstantPsi (float, optional): restraining force constant for euler Psi. Defaults to 0.1.
+            forceConstanttheta (float, optional): restraining force constant for polar theta. Defaults to 0.1.
+            forceConstantphi (float, optional): restraining force constant for polar phi. Defaults to 0.1.
+            forceConstantR (int, optional): restraining force constant for distance R. Defaults to 10.
+
+        Returns:
+            float: contribution of the geometric restraint in the unbound state
+        """
+
+        # degrees to rad
+        eulerTheta = math.radians(eulerTheta + 90)
+        polarTheta = math.radians(polarTheta)
+        forceConstantTheta *= (180 / math.pi)**2
+        forceConstantPhi *= (180 / math.pi)**2
+        forceConstantPsi *= (180 / math.pi)**2
+        forceConstanttheta *= (180 / math.pi)**2
+        forceConstantphi *= (180 / math.pi)**2
+
+        contribution = BOLTZMANN * 300 * math.log(
+            8 * (math.pi**2) * CSTAR / ((R**2) * math.sin(eulerTheta) * math.sin(polarTheta)) * \
+            math.sqrt(forceConstantTheta * forceConstantPhi * forceConstantPsi * forceConstanttheta * \
+            forceConstantphi * forceConstantR ) / ((2 * math.pi * BOLTZMANN * 300)**3)
+        )
+        return contribution
+
 class FEPAnalyzer:
     """ Analyze FEP simulations
     """
@@ -214,6 +395,67 @@ class FEPAnalyzer:
         self._temperature = temperature
         if len(self._windows) != len(self._deltaU_data):
             raise RuntimeError('Internal numbers of windows and deltaU do not match! This is a bug!')
+        
+    def MergeData(
+            self, 
+            window_boundaries: List[Tuple[float, float]], 
+            deltaU_data: List[Tuple[NDArray, NDArray]]
+    ) -> bool:
+        """ Merge the exist dU with another one. Used in FEP + Colvars_FEP tasks.
+            window boundaries and the number of deltaU in a window must be the same
+
+        Args:
+            window_boundaries (List[Tuple[float, float]]): boundaries of each window
+            deltaU_data (List[Tuple[NDArray, NDArray]]): deltaU for forward and backward simulations
+                                                         of each window. The two deltaU should be opposite
+                                                         numbers.
+
+        Returns:
+            bool: Whether merge is successful
+        """
+        if len(window_boundaries) != len(self._windows):
+            print(1)
+            return False
+        
+        #for i in range(len(window_boundaries)):
+        #    print(f'FEP: {self._windows[i]}   Colvars: {window_boundaries[i]}')
+        #    print(f'FEP: {len(deltaU_data[i][0])}   Colvars: {len(self._deltaU_data[i][0])}')
+
+        for i in range(len(window_boundaries)):
+            if (len(deltaU_data[i][0]) - 1) != len(self._deltaU_data[i][0]) \
+                and (len(deltaU_data[i][0]) - 1) != len(self._deltaU_data[i][0]) / 2 \
+                and len(deltaU_data[i][0]) != len(self._deltaU_data[i][0]) \
+                and len(deltaU_data[i][0]) != len(self._deltaU_data[i][0]) / 2:
+                return False
+            if (len(deltaU_data[i][1]) - 1) != len(self._deltaU_data[i][1]) \
+                and (len(deltaU_data[i][1]) - 1) != len(self._deltaU_data[i][1]) / 2 \
+                and len(deltaU_data[i][1]) != len(self._deltaU_data[i][1]) \
+                and len(deltaU_data[i][1]) != len(self._deltaU_data[i][1]) / 2:
+                return False
+            if (len(deltaU_data[i][0]) - 1) == len(self._deltaU_data[i][0]):
+                temp_forward = self._deltaU_data[i][0] + deltaU_data[i][0][:-1]
+            elif (len(deltaU_data[i][0]) - 1) == len(self._deltaU_data[i][0]) / 2:
+                temp_forward = self._deltaU_data[i][0][1::2] 
+                temp_forward += deltaU_data[i][0][:-1]
+            elif len(deltaU_data[i][0]) == len(self._deltaU_data[i][0]):
+                temp_forward = self._deltaU_data[i][0] + deltaU_data[i][0]
+            elif len(deltaU_data[i][0]) == len(self._deltaU_data[i][0]) / 2:
+                temp_forward = self._deltaU_data[i][0][1::2] 
+                temp_forward += deltaU_data[i][0]
+
+            if (len(deltaU_data[i][1]) - 1) == len(self._deltaU_data[i][1]):
+                temp_backward = self._deltaU_data[i][1] + deltaU_data[i][1][:-1]
+            elif (len(deltaU_data[i][1]) - 1) == len(self._deltaU_data[i][1]) / 2:
+                temp_backward = self._deltaU_data[i][1][::2] 
+                temp_backward += deltaU_data[i][1][:-1]
+            elif len(deltaU_data[i][1]) == len(self._deltaU_data[i][1]):
+                temp_backward = self._deltaU_data[i][1] + deltaU_data[i][1]
+            elif len(deltaU_data[i][1]) == len(self._deltaU_data[i][1]) / 2:
+                temp_backward = self._deltaU_data[i][1][::2] 
+                temp_backward += deltaU_data[i][1]
+            self._deltaU_data[i] = (temp_forward, temp_backward)
+
+        return True
     
     def FEP_free_energy(self) -> Tuple[List[Tuple[float, float]], List[NDArray], List[NDArray]]:
         """ Calculate and return the free-energy change using the FEP equation
@@ -230,7 +472,7 @@ class FEPAnalyzer:
             backward_free_energy = -BOLTZMANN * self._temperature * \
                 np.log(np.mean(np.exp(-self._deltaU_data[i][1] / (BOLTZMANN * self._temperature))))
             free_energies.append((forward_free_energy - backward_free_energy) / 2)
-            errors.append((forward_free_energy + backward_free_energy) / np.sqrt(2))
+            errors.append(np.abs(forward_free_energy + backward_free_energy) / np.sqrt(2))
         return self._windows, free_energies, errors
     
     def BAR_free_energy(
@@ -259,6 +501,14 @@ class FEPAnalyzer:
             free_energies.append(dA)
             errors.append(err)
         return self._windows, free_energies, errors
+    
+    def Window_boundaries(self) -> List[Tuple[float, float]]:
+        """ Get the boundaries of windows
+
+        Returns:
+            List[Tuple[float, float]]: windows boundaries
+        """
+        return self._windows
     
     def _BAR_estimator(self, deltaU: Tuple[NDArray, NDArray], tolerance: float = 1e-6) -> float:
         """ Estimate the free energy of a window using the BAR estimator
