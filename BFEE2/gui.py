@@ -8,9 +8,9 @@ import webbrowser
 import numpy as np
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
-from PySide2 import QtCore
-from PySide2.QtGui import QFont, QIcon
-from PySide2.QtWidgets import (QAction, QApplication, QCheckBox, QComboBox,
+from PySide6 import QtCore
+from PySide6.QtGui import QFont, QIcon, QAction
+from PySide6.QtWidgets import ( QApplication, QCheckBox, QComboBox,
                                QFileDialog, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton,
@@ -456,7 +456,8 @@ class alchemicalAdvancedSettings(QWidget):
 
         # strategy settings
         self.strategy = QGroupBox('Strategy settings')
-        self.strategyLayout = QHBoxLayout()
+        self.strategyLayout = QVBoxLayout()
+        self.strategyLine1Layout = QHBoxLayout()
 
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
@@ -464,8 +465,14 @@ class alchemicalAdvancedSettings(QWidget):
         self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
         self.reEqCheckbox.setChecked(False)
 
-        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
-        self.strategyLayout.addWidget(self.reEqCheckbox)
+        self.LDDMCheckbox = QCheckBox('Use LDDM strategy')
+        self.LDDMCheckbox.setChecked(False)
+
+        self.strategyLine1Layout.addWidget(self.considerRMSDCVCheckbox)
+        self.strategyLine1Layout.addWidget(self.reEqCheckbox)
+
+        self.strategyLayout.addLayout(self.strategyLine1Layout)
+        self.strategyLayout.addWidget(self.LDDMCheckbox)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -506,10 +513,36 @@ class alchemicalAdvancedSettings(QWidget):
         self.mainLayout.addLayout(self.alchemicalAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
+    # below are slow functions
+    def _toggleLDDMBox(self, checked):
+        """when enable LDDM, restraint simulations and considering RMSD are not needed, and 
+           re-equilbration and double-wide simulations are necessary.
+        """
+
+        if checked:
+            self.boundRestraintsLineEdit.setEnabled(False)
+            self.unboundRestraintsLineEdit.setEnabled(False)
+            self.considerRMSDCVCheckbox.setChecked(False)
+            self.considerRMSDCVCheckbox.setEnabled(False)
+            self.reEqCheckbox.setChecked(True)
+            self.reEqCheckbox.setEnabled(False)
+            self.doubleWideCheckbox.setChecked(True)
+            self.doubleWideCheckbox.setEnabled(False)
+            self.minBeforeSampleCheckbox.setChecked(False)
+            self.minBeforeSampleCheckbox.setEnabled(False)
+        else:
+            self.boundRestraintsLineEdit.setEnabled(True)
+            self.unboundRestraintsLineEdit.setEnabled(True)
+            self.considerRMSDCVCheckbox.setEnabled(True)
+            self.reEqCheckbox.setEnabled(True)
+            self.doubleWideCheckbox.setEnabled(True)
+            self.minBeforeSampleCheckbox.setEnabled(True)
+
     def _initSingalsSlots(self):
         """initialize (connect) signals and slots for the alchemical advanced settings
         """
 
+        self.LDDMCheckbox.toggled.connect(self._toggleLDDMBox)
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
 
 class mainUI(QMainWindow):
@@ -531,6 +564,7 @@ class mainUI(QMainWindow):
 
         self._initGeometricTab()
         self._initAlchemicalTab()
+        self._initLDDMTab()
         self._initPostTreatmentTab()
 
         self._initSingalsSlots()
@@ -571,6 +605,35 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(QApplication.quit)
 
+        # quick settings
+        # geometrical protein protein
+        self.quickGeometricProteinProteinAction = QAction('Protein-Protein / Geometrical')
+        self.quickGeometricProteinProteinAction.setStatusTip(
+            'Change settings for geometrical protein-protein binding free-energy calculations'
+        )
+        self.quickGeometricProteinProteinAction.triggered.connect(self._quickSetProteinProteinGeometric)
+
+        # geometrical protein ligand
+        self.quickGeometricProteinLigandAction = QAction('Protein-Ligand / Geometrical')
+        self.quickGeometricProteinLigandAction.setStatusTip(
+            'Change settings for geometrical protein-ligand binding free-energy calculations'
+        )
+        self.quickGeometricProteinLigandAction.triggered.connect(self._quickSetProteinLigandGeometric)
+
+        # alchemical protein ligand
+        self.quickAlchemicalProteinLigandAction = QAction('Protein-Ligand / Alchemical')
+        self.quickAlchemicalProteinLigandAction.setStatusTip(
+            'Change settings for alchemical protein-ligand binding free-energy calculations'
+        )
+        self.quickAlchemicalProteinLigandAction.triggered.connect(self._quickSetProteinLigandAlchemical)
+
+        # LDDM
+        self.quickLDDMProteinLigandAction = QAction('Protein-Ligand / LDDM')
+        self.quickLDDMProteinLigandAction.setStatusTip(
+            'Change settings for protein-ligand binding free-energy calculations using the LDDM strategy'
+        )
+        self.quickLDDMProteinLigandAction.triggered.connect(self._quickSetProteinLigandLDDM)
+
         # help
         self.helpAction = QAction('&Help', self)
         self.helpAction.setStatusTip('Open user manual')
@@ -601,6 +664,12 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.fileMenu.addAction(self.settingsAction)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAction)
+
+        self.quickSettingsMenu = menubar.addMenu('&Quick Settings')
+        self.quickSettingsMenu.addAction(self.quickGeometricProteinProteinAction)
+        self.quickSettingsMenu.addAction(self.quickGeometricProteinLigandAction)
+        self.quickSettingsMenu.addAction(self.quickAlchemicalProteinLigandAction)
+        self.quickSettingsMenu.addAction(self.quickLDDMProteinLigandAction)
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
@@ -868,6 +937,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
 
         self.postTreatmentMainTabs.addTab(self.geometricTab, 'Geometric')
         self.postTreatmentMainTabs.addTab(self.alchemicalTab, 'Alchemical')
+        self.postTreatmentMainTabs.addTab(self.LDDMTab, 'LDDM')
 
         self.postTreatmentMainLayout = QVBoxLayout()
         self.postTreatmentMainLayout.addWidget(self.postTreatmentMainTabs)
@@ -1174,6 +1244,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalPostTypeBox = QComboBox()
         self.alchemicalPostTypeBox.addItem('FEP')
         self.alchemicalPostTypeBox.addItem('BAR')
+        self.alchemicalPostTypeBox.setCurrentIndex(1)
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLineEdit)
@@ -1192,6 +1263,94 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalTabLayout.addWidget(self.alchemicalForceConstants)
         self.alchemicalTabLayout.addWidget(self.alchemicalRestraintCenters)
         self.alchemicalTab.setLayout(self.alchemicalTabLayout)
+
+    def _initLDDMTab(self):
+        """initialize LDDM tab of post-treatment
+        """
+
+        self.LDDMTab = QWidget()
+        self.LDDMTabLayout = QVBoxLayout()
+
+        
+        self.LDDMSimulationInputs = QGroupBox('Inputs for LDDM simulations:')
+        self.LDDMSimulationInputsLayout = QVBoxLayout()
+
+        # step 1
+        self.LDDMStep1Label = QLabel('Step 1:')
+        self.LDDMStep1Layout = QGridLayout()
+        
+        self.LDDMStep1ColvarsLabel = QLabel('colvars.in.tmp file:')
+        self.LDDMStep1ColvarsLineEdit = QLineEdit()
+        self.LDDMStep1ColvarsButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLabel, 0, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLineEdit, 0, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsButton, 0, 2)
+
+        self.LDDMStep1ColvarsTrajLabel = QLabel('colvars.traj file:')
+        self.LDDMStep1ColvarsTrajLineEdit = QLineEdit()
+        self.LDDMStep1ColvarsTrajButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLabel, 1, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLineEdit, 1, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajButton, 1, 2)
+
+        self.LDDMStep1FepoutLabel = QLabel('fepout file:')
+        self.LDDMStep1FepoutLineEdit = QLineEdit()
+        self.LDDMStep1FepoutButton = QPushButton('Browse')
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLabel, 2, 0)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLineEdit, 2, 1)
+        self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutButton, 2, 2)
+
+        self.LDDMStep3Label = QLabel('Step 3:')
+        self.LDDMStep3Layout = QGridLayout()
+        
+        self.LDDMStep3FepoutLabel = QLabel('fepout file:            ')
+        self.LDDMStep3FepoutLineEdit = QLineEdit()
+        self.LDDMStep3FepoutButton = QPushButton('Browse')
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLabel, 0, 0)
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLineEdit, 0, 1)
+        self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutButton, 0, 2)
+
+        self.LDDMSimulationInputsLayout.addWidget(self.LDDMStep1Label)
+        self.LDDMSimulationInputsLayout.addLayout(self.LDDMStep1Layout)
+        self.LDDMSimulationInputsLayout.addWidget(self.LDDMStep3Label)
+        self.LDDMSimulationInputsLayout.addLayout(self.LDDMStep3Layout)
+        self.LDDMSimulationInputs.setLayout(self.LDDMSimulationInputsLayout)
+
+        # other parameter
+        self.LDDMParameters = QGroupBox('Other parameters:')
+
+        # all widgets
+        self.LDDMParametersLayout = QGridLayout()
+        self.LDDMStep1StepsPerWindowLabel = QLabel('Steps per window (Step 1):')
+        self.LDDMStep1StepsPerWindowLineEdit = QLineEdit('500000')
+        self.LDDMStep1EquilStepsPerWindowLabel = QLabel('Equilbration per window (Step 1): ')
+        self.LDDMStep1EquilStepsPerWindowLineEdit = QLineEdit('100000')
+        self.LDDMStep1WindowsLabel = QLabel('Windows (Step 1):  ')
+        self.LDDMStep1WindowsLineEdit = QLineEdit('200')
+        self.LDDMPostTemperatureLabel = QLabel('temperature:')
+        self.LDDMPostTemperatureLineEdit = QLineEdit('300')
+        self.LDDMPostTypeLabel = QLabel('Post-treatment type:')
+        self.LDDMPostTypeBox = QComboBox()
+        self.LDDMPostTypeBox.addItem('FEP')
+        self.LDDMPostTypeBox.addItem('BAR')
+        self.LDDMPostTypeBox.setCurrentIndex(1)
+
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLabel, 0, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLineEdit, 0, 1)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLabel, 0, 2)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLineEdit, 0, 3)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLabel, 1, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLineEdit, 1, 1)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLabel, 1, 2)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLineEdit, 1, 3)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTypeLabel, 2, 0)
+        self.LDDMParametersLayout.addWidget(self.LDDMPostTypeBox, 2, 1)
+
+        self.LDDMParameters.setLayout(self.LDDMParametersLayout)
+
+        self.LDDMTabLayout.addWidget(self.LDDMSimulationInputs)
+        self.LDDMTabLayout.addWidget(self.LDDMParameters)
+        self.LDDMTab.setLayout(self.LDDMTabLayout)
 
     def _initQuickPlotTab(self):
         """initialize quick-plot tab
@@ -1407,11 +1566,12 @@ Please use the same or a later version of NAMD if you have any problem.\n'
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
                 <b>Reference:</b><br>
-                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123<br>
-                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802<br>
-                <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745<br>
-                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178<br>
-                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512–2519<br>
+                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
+                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
+                <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254-3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738-4745<br>
+                <b>GaWTM-eABF:</b> Chen et al. J. Chem. Theory Comput. 2021, 17, 3886-3894<br>
+                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
+                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
                 ''')
         return f
 
@@ -1588,6 +1748,84 @@ Standard Binding Free Energy:\n\
 ΔG(total)         = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n'
         )
 
+    def _showLDDMResults(self, unit):
+        """calculate binding from the LDDM route,
+            parameters in the LDDM tab will be read.
+            Show a QMessageBox for the result
+
+        Args:
+            unit (str): 'namd' or 'gromacs'
+        """
+        
+        pTreat = postTreatment.postTreatment(
+            float(self.LDDMPostTemperatureLineEdit.text()), unit, 'LDDM')
+        
+        # alchemical outputs  
+        try:
+            temperature = float(self.LDDMPostTemperatureLineEdit.text())
+        except:
+            QMessageBox.warning(self, 'Error', f'temperature input error!')
+            return
+        if self.LDDMPostTypeBox.currentText() == 'FEP':
+                jobType = 'fep'
+        elif self.LDDMPostTypeBox.currentText() == 'BAR':
+                jobType = 'bar'
+
+        # check inputs
+        rigid_ligand = False
+        for index, item in enumerate([
+                    self.LDDMStep1ColvarsLineEdit.text(), 
+                    self.LDDMStep1ColvarsTrajLineEdit.text(), 
+                    self.LDDMStep1FepoutLineEdit.text(), 
+                    self.LDDMStep3FepoutLineEdit.text()
+        ]):
+            if (not os.path.exists(item)) and (index != 3):
+                QMessageBox.warning(self, 'Error', f'{item} does not exist and is not empty!')
+                return
+        
+        try:
+            int(self.LDDMStep1StepsPerWindowLineEdit.text())
+            int(self.LDDMStep1EquilStepsPerWindowLineEdit.text())
+            int(self.LDDMStep1WindowsLineEdit.text())
+        except:
+            QMessageBox.warning(self, 'Error', f'Invalid value in LDDM parameters!')
+            return
+
+        # calculate free energies
+        try:
+            step1_result, step3_result = pTreat.LDDMBindingFreeEnergy(
+                self.LDDMStep1ColvarsLineEdit.text(),
+                self.LDDMStep1ColvarsTrajLineEdit.text(),
+                self.LDDMStep1FepoutLineEdit.text(),
+                int(self.LDDMStep1StepsPerWindowLineEdit.text()),
+                int(self.LDDMStep1EquilStepsPerWindowLineEdit.text()),
+                int(self.LDDMStep1WindowsLineEdit.text()) + 1,
+                self.LDDMStep3FepoutLineEdit.text(),
+                temperature = temperature, 
+                jobType = jobType
+            )
+        except Exception as e:
+            print(e)
+            QMessageBox.warning(
+                self, 
+                'Error', 
+                f'\
+LDDM result calculation failed! The error message is: \n\
+{e}\n'
+            )
+
+        QMessageBox.about(
+            self,
+            'Result',
+            f'\
+Results:\n\
+ΔG(Step 1)   = {step1_result[0]:.2f} ± {step1_result[1]:.2f} kcal/mol\n\
+ΔG(Step 3)  = {step3_result[0]:.2f} ± {step3_result[1]:.2f} kcal/mol\n\
+\n\
+Standard Binding Free Energy:\n\
+ΔG(total)         = {step1_result[0] + step3_result[0]:.2f} ± {np.sqrt(step1_result[1]**2 + step3_result[1]**2):.2f} kcal/mol\n'
+        )
+
     def _showFinalResults(self):
         """calculate binding free energy and show the final results
         
@@ -1605,11 +1843,15 @@ Standard Binding Free Energy:\n\
                 jobType = 'geometric'
             elif self.postTreatmentMainTabs.currentIndex() == 1:
                 jobType = 'alchemical'
+            elif self.postTreatmentMainTabs.currentIndex() == 2:
+                jobType = 'LDDM'
 
             if jobType == 'geometric':
                 self._showGeometricResults(unit)
             elif jobType == 'alchemical':
                 self._showAlchemicalResults(unit)
+            elif jobType == 'LDDM':
+                self._showLDDMResults(unit)
             
         return f
 
@@ -1829,7 +2071,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
                             float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
-                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.reEqCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
@@ -2068,7 +2311,71 @@ Unknown error!'
                 backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath))
             ploter.plotHysteresis(forwardProfile, backwardProfile)
         return f
+    
+    def _quickSetProteinProteinGeometric(self):
+        """quick setting for protein-protein binding free energy calculations through the geometrical route
+        """
 
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
+        self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(False)
+        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+        self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(True)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-protein binding free-energy calculations \
+                                                    through the geometrical route!')
+        
+    def _quickSetProteinLigandGeometric(self):
+        """quick setting for protein-ligand binding free energy calculations through the geometrical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.setText("3")
+        self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.setText("3")
+        self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
+        self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+        self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the geometrical route!')
+        
+    def _quickSetProteinLigandAlchemical(self):
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Alchemical")
+        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText("200")
+        self.alchemicalAdvancedSettings.boundRestraintsLineEdit.setText("200")
+        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText("100")
+        self.alchemicalAdvancedSettings.unboundRestraintsLineEdit.setText("100")
+        self.alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+        self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
+        self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the alchemical route!')
+    
+    def _quickSetProteinLigandLDDM(self):
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route
+        """
+
+        self.selectMDEngineCombobox.setCurrentText("NAMD")
+        self.selectStrategyCombobox.setCurrentText("Alchemical")
+        
+        self.alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)
+        self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
+
+        self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(True)
+
+        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText('200')
+        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText('100')
+
+        self.alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')
+        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
+                                                    through the LDDM!')
 
     def _initSingalsSlots(self):
         """initialize (connect) singals and slots
@@ -2116,6 +2423,12 @@ Unknown error!'
         self.alchemicalForwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalForwardLineEdit4))
         self.alchemicalBackwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalBackwardLineEdit4))
 
+        # LDDM tab
+        self.LDDMStep1ColvarsButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep1ColvarsLineEdit))
+        self.LDDMStep1ColvarsTrajButton.clicked.connect(commonSlots.openFileDialog('colvars.traj', self.LDDMStep1ColvarsTrajLineEdit))
+        self.LDDMStep1FepoutButton.clicked.connect(commonSlots.openFileDialog('fepout', self.LDDMStep1FepoutLineEdit))
+        self.LDDMStep3FepoutButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep3FepoutLineEdit))
+
         # generate input files
         self.generateInputButton.clicked.connect(self._generateInputFiles())
 
@@ -2134,3 +2447,4 @@ Unknown error!'
         self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))
         self.plotHysteresisBackwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisBackwardLineEdit))
         self.plotHysteresisPlotButton.clicked.connect(self._plotHysteresis())
+        

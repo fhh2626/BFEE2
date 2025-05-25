@@ -37,7 +37,8 @@ class configTemplate:
                             OPLSMixingRule = False,
                             GaWTM = False,
                             CUDASOAIntegrator = False,
-                            timestep = 2.0
+                            timestep = 2.0,
+                            LDDMStep1 = False
                             ):
         """the namd config file template
 
@@ -68,6 +69,7 @@ class configTemplate:
             GaWTM (bool, optional): Whether this is an GaWTM-eABF simulation. Default to False
             CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
             timestep (float, optional): timestep of the simulation. Default to 2.0
+            LDDMStep1 (bool, optional): whether this is the 1st step of a LDDM simulation. Default to False.
             
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
@@ -259,8 +261,13 @@ run norepeat   {numSteps}                              \n'
         else:
             # currently the alchemical route is somewhat hard-coded
             # this will be improved in the future
+            if LDDMStep1:
+                configString += f'\
+source ./fep_lddm.tcl                           \n'
+            else:
+                configString += f'\
+source ../fep.tcl                               \n'  
             configString += f'\
-source ../fep.tcl                                  \n\
 alch on                                         \n\
 alchType FEP                                    \n\
 alchFile {fepFile}                              \n\
@@ -269,7 +276,7 @@ alchOutFile {outputPrefix}.fepout               \n\
 alchOutFreq 50                                  \n\
 alchVdwLambdaEnd 0.7                            \n\
 alchElecLambdaStart 0.5                         \n\
-alchDecouple  off                               \n\
+alchDecouple   on                               \n\
 alchEquilSteps 100000                           \n'
 
             if fepForward:
@@ -567,7 +574,6 @@ colvar {{                              \n\
             indexGroup  ligand                 \n\
             centerReference    on              \n\
             rotateReference    on              \n\
-	        enableFitGradients no              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\
@@ -638,7 +644,6 @@ colvar {{                                   \n\
             indexGroup  reference           \n\
             centerReference    on           \n\
             rotateReference    on           \n\
-            enableFitGradients no           \n\
             fittingGroup {{                 \n\
                 indexGroup  protein         \n\
             }}                              \n\
@@ -648,7 +653,6 @@ colvar {{                                   \n\
             indexGroup  ligand              \n\
             centerReference    on           \n\
             rotateReference    on           \n\
-            enableFitGradients no           \n\
             fittingGroup {{                 \n\
                 indexGroup  protein         \n\
             }}                              \n\
@@ -708,7 +712,6 @@ colvar {{                              \n\
             centerReference    on              \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
-	        enableFitGradients on              \n\
             fittingGroup {{                    \n\
                 indexGroup  protein            \n\
             }}                                 \n\

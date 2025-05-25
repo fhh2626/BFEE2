@@ -8,11 +8,12 @@
 ###################################################
 
 import sys
-from PySide2.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QAction
 import BFEE2.gui as gui
         
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     ex = gui.mainUI()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
