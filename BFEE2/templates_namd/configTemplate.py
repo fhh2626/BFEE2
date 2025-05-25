@@ -110,9 +110,9 @@ pairlistdist         14.0               \n'
 exclude    scaled1-4                    \n\
 1-4scaling    0.83333333                \n\
 switching            on                 \n\
-switchdist           8.0                \n\
-cutoff               9.0                \n\
-pairlistdist         11.0               \n'
+switchdist           9.0                \n\
+cutoff               10.0               \n\
+pairlistdist         12.0               \n'
         else:
             # error
             return ''
