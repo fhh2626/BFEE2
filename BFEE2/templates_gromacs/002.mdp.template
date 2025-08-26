@@ -52,7 +52,6 @@ morse                   = no
 implicit-solvent    = no
 
 ;Pressure coupling
-;Pressure coupling
 pcoupl              = C-rescale
 pcoupltype          = Isotropic
 nstpcouple          = -1
@@ -68,3 +67,7 @@ ref_t               = $temperature
 
 ;Velocity generation
 gen-vel             = no
+
+;Colvars
+colvars-active = yes
+colvars-configfile = $colvarsFile

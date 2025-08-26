@@ -1,0 +1,14 @@
+colvarsTrajFrequency    500
+colvarsRestartFrequency 50000
+indexFile               colvars_ligand_only.ndx
+
+colvar {
+    name                    RMSD
+    rmsd {
+        atoms {
+            indexGroup $ligand_selection
+        }
+        refPositionsfile reference_ligand_only.xyz
+    }
+}
+

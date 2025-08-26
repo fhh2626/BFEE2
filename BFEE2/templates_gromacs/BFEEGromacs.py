@@ -17,7 +17,10 @@ except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
 
-from BFEE2 import templates_gromacs
+try:
+    from BFEE2 import templates_gromacs
+except ImportError:
+    templates_gromacs = __package__
 
 # an runtime error
 # selection corresponding to nothing
@@ -503,7 +506,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
+                    colvarsFile='000_colvars.dat')
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -565,7 +568,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
+                    colvarsFile='001_colvars.dat')
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -631,7 +634,7 @@ class BFEEGromacs:
                     temperature=self.temperature,
                     pressure=1.01325,
                     logger=self.logger,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
+                    colvarsFile='002_colvars.dat')
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -699,7 +702,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
+                    colvarsFile='003_colvars.dat',
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -769,7 +772,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
+                    colvarsFile='004_colvars.dat',
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -840,7 +843,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
+                    colvarsFile='005_colvars.dat',
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -922,7 +925,7 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
+                    colvarsFile='006_colvars.dat',
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -1019,7 +1022,7 @@ class BFEEGromacs:
                     numSteps=5000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename_eq + '.dat'),
+                    colvarsFile='007_eq_colvars.dat',
                     logger=self.logger)
         # equilibration
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
@@ -1028,7 +1031,7 @@ class BFEEGromacs:
                     numSteps=5000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename_eq + '.dat'),
+                    colvarsFile='007_eq_colvars.dat',
                     logger=self.logger)
         # free-energy calculation
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
@@ -1037,7 +1040,7 @@ class BFEEGromacs:
                     numSteps=80000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
+                    colvarsFile='007_colvars.dat',
                     logger=self.logger)
         # check if the ligand, protein and solvent is selected
         if not hasattr(self, 'ligand'):
@@ -1174,8 +1177,9 @@ class BFEEGromacs:
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
+        colvars_inputfile_basename_eq = posixpath.join(generate_basename, '008_eq_colvars')
         colvars_inputfile_basename = posixpath.join(generate_basename, '008_colvars')
-        # generate the MDP file for equlibration (Colvars is actually disabled in the MDP template)
+        # generate the MDP file for equlibration
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_Equilibration'),
                     logger=self.logger,
@@ -1183,7 +1187,7 @@ class BFEEGromacs:
                     numSteps=1000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
+                    colvarsFile='008_eq_colvars.dat')
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_PMF'),
@@ -1192,10 +1196,15 @@ class BFEEGromacs:
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
+                    colvarsFile='008_colvars.dat')
         # generate the index file
         if hasattr(self, 'ligandOnly'):
             self.ligandOnly.write(posixpath.join(generate_basename, 'colvars_ligand_only.ndx'), name='BFEE_Ligand_Only')
+        # colvars file for equilibration
+        generateColvars(pkg_resources.read_text(templates_gromacs, '008_eq.colvars.template'),
+                        colvars_inputfile_basename_eq,
+                        ligand_selection='BFEE_Ligand_Only',
+                        logger=self.logger)
         # generate the colvars configuration
         generateColvars(pkg_resources.read_text(templates_gromacs, '008.colvars.template'),
                         colvars_inputfile_basename,

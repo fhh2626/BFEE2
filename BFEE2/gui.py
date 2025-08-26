@@ -2190,7 +2190,7 @@ Unknown error!'
                     QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')
                     return
 
-            QMessageBox.information(self, 'Input generation', f'Input files have been generated successfully!')
+            QMessageBox.information(self, 'Input generation', f'Input files have been generated successfully! A GROMACS version later than 2024 is required to run the simulation.')
             
             del iGenerator
 
