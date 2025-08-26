@@ -130,7 +130,7 @@ def get_cell(atom_positions):
                      cell_basis_vector3])
 
 
-def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, logger=None):
+def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pressure, colvarsFile, logger=None):
     """generate a GROMACS mdp file from a template
 
     Args:
@@ -160,7 +160,8 @@ def generateMDP(MDPTemplate, outputPrefix, timeStep, numSteps, temperature, pres
     MDP_content = MDP_content.safe_substitute(dt=timeStep,
                                               nsteps=numSteps,
                                               temperature=temperature,
-                                              pressure=pressure)
+                                              pressure=pressure,
+                                              colvarsFile=colvarsFile)
     with open(outputPrefix + '.mdp', 'w', newline='\n') as foutput:
         foutput.write(MDP_content)
 
@@ -494,13 +495,15 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '000_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '000.mdp.template'),
                     posixpath.join(generate_basename, '000_eq'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
-                    pressure=1.01325)
+                    pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -515,7 +518,6 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '000_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '000.colvars.template'),
                         colvars_inputfile_basename,
                         protein_selection='BFEE_Protein',
@@ -555,13 +557,15 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '001_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '001.mdp.template'),
                     posixpath.join(generate_basename, '001_PMF'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
-                    pressure=1.01325)
+                    pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -576,7 +580,6 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '001_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '001.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
@@ -620,13 +623,15 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '002.mdp.template'),
                     posixpath.join(generate_basename, '002_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
-                    logger=self.logger)
+                    logger=self.logger,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
             raise RuntimeError('The atoms of the ligand have not been selected.')
@@ -641,7 +646,6 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '002_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '002.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -688,12 +692,14 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '003_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '003.mdp.template'),
                     posixpath.join(generate_basename, '003_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -709,7 +715,6 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '003_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '003.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -757,12 +762,14 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '004_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '004.mdp.template'),
                     posixpath.join(generate_basename, '004_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -778,7 +785,6 @@ class BFEEGromacs:
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '004_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '004.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -827,12 +833,14 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '005_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '005.mdp.template'),
                     posixpath.join(generate_basename, '005_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -847,18 +855,17 @@ class BFEEGromacs:
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
-        # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '005_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
-        ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
+        # ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
         polar_theta, polar_phi = mearsurePolarAngles(protein_center, ligand_center)
         polar_theta_center = np.around(polar_theta, 1)
         self.logger.info(f'Measured polar angles: theta = {polar_theta:12.5f} ; phi = {polar_phi:12.5f}')
         polar_theta_width = 1
         polar_theta_lower = polar_theta_center - polar_theta_width * np.ceil(10 / polar_theta_width)
         polar_theta_upper = polar_theta_center + polar_theta_width * np.ceil(10 / polar_theta_width)
+        # generate the colvars configuration
         generateColvars(pkg_resources.read_text(templates_gromacs, '005.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -908,12 +915,14 @@ class BFEEGromacs:
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
         # generate the MDP file
+        colvars_inputfile_basename = posixpath.join(generate_basename, '006_colvars')
         generateMDP(pkg_resources.read_text(templates_gromacs, '006.mdp.template'),
                     posixpath.join(generate_basename, '006_PMF'),
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
                     logger=self.logger)
         # check if the ligand and protein is selected
         if not hasattr(self, 'ligand'):
@@ -928,18 +937,17 @@ class BFEEGromacs:
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
-        # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '006_colvars')
         # measure the current polar theta angles
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
-        ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
+        # ligand_center_str = f'({ligand_center[0]}, {ligand_center[1]}, {ligand_center[2]})'
         polar_theta, polar_phi = mearsurePolarAngles(protein_center, ligand_center)
         polar_phi_center = np.around(polar_phi, 1)
         self.logger.info(f'Measured polar angles: theta = {polar_theta:12.5f} ; phi = {polar_phi:12.5f}')
         polar_phi_width = 1
         polar_phi_lower = polar_phi_center - polar_phi_width * np.ceil(10 / polar_phi_width)
         polar_phi_upper = polar_phi_center + polar_phi_width * np.ceil(10 / polar_phi_width)
+        # generate the colvars configuration
         generateColvars(pkg_resources.read_text(templates_gromacs, '006.colvars.template'),
                         colvars_inputfile_basename,
                         logger=self.logger,
@@ -998,16 +1006,20 @@ class BFEEGromacs:
             if dest_dirname:
                 # if dest_dirname is not empty
                 if not posixpath.exists(posixpath.join(self.baseDirectory, generate_basename, dest_dirname)):
-                # if the destination directory does not exist
+                    # if the destination directory does not exist
                     os.makedirs(posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
             shutil.copy(includeFile, posixpath.join(self.baseDirectory, generate_basename, dest_dirname))
-        # generate the MDP file
+        # Colvars filenames
+        colvars_inputfile_basename_eq = posixpath.join(generate_basename, '007_eq_colvars')
+        colvars_inputfile_basename = posixpath.join(generate_basename, '007_colvars')
+        # generate the MDP file for minimization (Colvars is actually disabled in the MDP template)
         generateMDP(pkg_resources.read_text(templates_gromacs, '007_min.mdp.template'),
                     posixpath.join(generate_basename, '007_Minimize'),
                     timeStep=0.002,
                     numSteps=5000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename_eq + '.dat'),
                     logger=self.logger)
         # equilibration
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
@@ -1016,6 +1028,7 @@ class BFEEGromacs:
                     numSteps=5000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename_eq + '.dat'),
                     logger=self.logger)
         # free-energy calculation
         generateMDP(pkg_resources.read_text(templates_gromacs, '007.mdp.template'),
@@ -1024,6 +1037,7 @@ class BFEEGromacs:
                     numSteps=80000000,
                     temperature=self.temperature,
                     pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'),
                     logger=self.logger)
         # check if the ligand, protein and solvent is selected
         if not hasattr(self, 'ligand'):
@@ -1040,9 +1054,6 @@ class BFEEGromacs:
         self.logger.info('COM of the protein: ' + protein_center_str + '.')
         # generate the index file
         self.generateGromacsIndex(posixpath.join(generate_basename, 'colvars.ndx'))
-        # generate the colvars configuration
-        colvars_inputfile_basename_eq = posixpath.join(generate_basename, '007_eq_colvars')
-        colvars_inputfile_basename = posixpath.join(generate_basename, '007_colvars')
         # measure the current COM distance from the ligand to protein
         ligand_center = measure_center(self.ligand.positions)
         ligand_center = convert(ligand_center, "angstrom", "nm")
@@ -1064,6 +1075,7 @@ class BFEEGromacs:
         # also we will need r_upper_shift to enlarge the solvent box
         r_upper_shift = 2.1
         r_upper_boundary = r_center + r_upper_shift
+        # generate the colvars configuration
         # colvars file for equilibration
         generateColvars(pkg_resources.read_text(templates_gromacs, '007_eq.colvars.template'),
                         colvars_inputfile_basename_eq,
@@ -1151,7 +1163,7 @@ class BFEEGromacs:
         self.logger.info('=' * 80)
 
     def generate008(self):
-        """generate files for determining the PMF along the RMSD of the ligand  
+        """generate files for determining the PMF along the RMSD of the ligand
            with respect to its unbound state
         """
 
@@ -1162,14 +1174,16 @@ class BFEEGromacs:
         if not posixpath.exists(generate_basename):
             self.logger.info(f'Making directory {os.path.abspath(generate_basename)}...')
             os.makedirs(generate_basename)
-        # # generate the MDP file for equlibration
+        colvars_inputfile_basename = posixpath.join(generate_basename, '008_colvars')
+        # generate the MDP file for equlibration (Colvars is actually disabled in the MDP template)
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_Equilibration'),
                     logger=self.logger,
                     timeStep=0.002,
                     numSteps=1000000,
                     temperature=self.temperature,
-                    pressure=1.01325)
+                    pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
         # generate the MDP file
         generateMDP(pkg_resources.read_text(templates_gromacs, '008.mdp.template'),
                     posixpath.join(generate_basename, '008_PMF'),
@@ -1177,12 +1191,12 @@ class BFEEGromacs:
                     timeStep=0.002,
                     numSteps=4000000,
                     temperature=self.temperature,
-                    pressure=1.01325)
+                    pressure=1.01325,
+                    colvarsFile=os.path.abspath(colvars_inputfile_basename + '.dat'))
         # generate the index file
         if hasattr(self, 'ligandOnly'):
             self.ligandOnly.write(posixpath.join(generate_basename, 'colvars_ligand_only.ndx'), name='BFEE_Ligand_Only')
         # generate the colvars configuration
-        colvars_inputfile_basename = posixpath.join(generate_basename, '008_colvars')
         generateColvars(pkg_resources.read_text(templates_gromacs, '008.colvars.template'),
                         colvars_inputfile_basename,
                         rmsd_bin_width=0.005,
@@ -1226,6 +1240,7 @@ class BFEEGromacs:
             os.makedirs(posixpath.join(generate_basename, 'output'))
         self.logger.info(f"Generation of {generate_basename} done.")
         self.logger.info('=' * 80)
+
 
 if __name__ == "__main__":
     bfee = BFEEGromacs('p41-abl.pdb', 'p41-abl.top', 'ligand-only.pdb', 'ligand-only.top', 'p41-abl-test/abc/def')
