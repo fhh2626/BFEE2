@@ -1,5 +1,5 @@
 colvarsTrajFrequency    500
-#colvarsRestartFrequency 50000
+colvarsRestartFrequency 50000
 indexFile               colvars.ndx
 
 colvar {
