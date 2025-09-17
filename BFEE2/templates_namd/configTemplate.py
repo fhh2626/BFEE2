@@ -1028,12 +1028,13 @@ harmonic {{                          \n\
         string += '}\n'
         return string
 
-    def cvABFTemplate(self, cv, unit = 'namd'):
+    def cvABFTemplate(self, cv, unit='namd', czar=True):
         ''' template for WTM-eABF bias
         
         Args:
             cv (str): name of the colvars
             unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
+            czar (bool, optional): whether call the czar estimator. Default to True.
             
         Returns:
             str: string of the WTM-eABF definition '''
@@ -1042,13 +1043,15 @@ harmonic {{                          \n\
             scaleFactor = 1
         elif unit == 'gromacs':
             scaleFactor = 4.184
+
+        czar_line = '    writeCZARwindowFile           \n' if czar else ''
             
         string = f'\
 abf {{                            \n\
     colvars        {cv}           \n\
     FullSamples    10000          \n\
     historyfreq    50000          \n\
-    writeCZARwindowFile           \n\
+{czar_line}\
 }}                                \n\
 metadynamics {{                   \n\
     colvars           {cv}        \n\

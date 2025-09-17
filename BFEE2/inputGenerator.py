@@ -1394,7 +1394,7 @@ class inputGenerator():
                     self.cTemplate.cvLambdaTemplate(stratification[0])
                 )
                 colvarsConfig.write(
-                    self.cTemplate.cvABFTemplate('l', unit = 'namd')   # currently only NAMD supports WTM-lambdaABF
+                    self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
                 )
 
         # 002_RestraintBound
@@ -1563,7 +1563,7 @@ class inputGenerator():
                         self.cTemplate.cvLambdaTemplate(stratification[2])
                     )
                     colvarsConfig.write(
-                        self.cTemplate.cvABFTemplate('l', unit = 'namd')   # currently only NAMD supports WTM-lambdaABF
+                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
                     )
         else:
             if useLambdaABF:
@@ -1575,7 +1575,7 @@ class inputGenerator():
                         self.cTemplate.cvLambdaTemplate(stratification[2])
                     )
                     colvarsConfig.write(
-                        self.cTemplate.cvABFTemplate('l', unit = 'namd')   # currently only NAMD supports WTM-lambdaABF
+                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
                     )
 
             # 004_RestraintUnbound
