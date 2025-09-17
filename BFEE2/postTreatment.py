@@ -410,7 +410,7 @@ class postTreatment:
             backwardFilePath (str): path to the backward fepout file. Empty string
                                     corresponds to a double-wide simulation
             temperature (float): temperature of the simulation
-            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+            jobType (str, optional): Type of the post-treatment method. 'fep', 'bar' or 'pmf'. 
                                       Defaults to 'fep'.
         Returns:
             tuple[float, float]: free-energy change, error
@@ -427,6 +427,18 @@ class postTreatment:
         error = np.sqrt(np.sum(np.power(result[2], 2)))
         
         return freeEnergy, error
+    
+    def alchemicalFreeEnergyPMF(self, PMFfile):
+        """ parse a pmf file, and return the free energy change
+
+        Args:
+            PMFfile (str): path to the .pmf file
+
+        Returns:
+            tuple[float, float]: free-energy change, error
+        """
+        data = np.loadtxt(PMFfile)
+        return (data[-1][1] - data[0][1]), 99999     # fictitious error
 
     def alchemicalBindingFreeEnergy(self, filePathes, parameters, temperature = 300, jobType = 'fep', rigidLigand = False):
         """calculate binding free energy for alchemical route
@@ -436,7 +448,7 @@ class postTreatment:
                                              (step1-forward, step1-backward, step2-forward ...)
             parameters (np.array, floats, 9): (eulerTheta, polarTheta, r, forceConstant1, FC2, FC3, FC4, FC5, FC6)
             temperature (float): temperature of the simulation
-            jobType (str, optional): Type of the post-treatment method. 'fep' or 'bar'. 
+            jobType (str, optional): Type of the post-treatment method. 'fep', 'bar' or 'pmf'. 
                                       Defaults to 'fep'.
             rigidLigand (bool): whether dealing with a rigid ligand. Default to False.
 
@@ -469,8 +481,11 @@ class postTreatment:
 
         contributions = np.zeros(6)
         errors = np.zeros(6)
-        
-        contributions[0], errors[0] = self.alchemicalFreeEnergy(filePathes[0], filePathes[1], temperature, jobType)
+
+        if jobType == 'pmf':
+            contributions[0], errors[0] = self.alchemicalFreeEnergyPMF(filePathes[0])
+        else:
+            contributions[0], errors[0] = self.alchemicalFreeEnergy(filePathes[0], filePathes[1], temperature, jobType)
 
         if freeEnergies[3] is not None:
             contributions[1] = -(freeEnergies[2] + freeEnergies[3]) / 2
@@ -478,8 +493,11 @@ class postTreatment:
         else:
             contributions[1] = -freeEnergies[2]
             errors[1] = 99999
-            
-        contributions[2], errors[2] = self.alchemicalFreeEnergy(filePathes[4], filePathes[5], temperature, jobType)
+        
+        if jobType == 'pmf':
+            contributions[2], errors[2] = self.alchemicalFreeEnergyPMF(filePathes[4])
+        else:
+            contributions[2], errors[2] = self.alchemicalFreeEnergy(filePathes[4], filePathes[5], temperature, jobType)
         contributions[2] = -contributions[2]
 
         if not rigid_ligand:

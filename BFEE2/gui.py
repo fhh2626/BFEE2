@@ -1411,11 +1411,11 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalTabLayout = QVBoxLayout()
 
         
-        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.log):')
+        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.pmf/.log):')
         self.restraintInputsLayout = QVBoxLayout()
 
         # bound state
-        self.alchemicalBoundStateLabel = QLabel('Atoms/Bound state (.fepout):')
+        self.alchemicalBoundStateLabel = QLabel('Atoms/Bound state (.fepout/.pmf):')
         self.alchemicalBoundStateLayout = QGridLayout()
         
         self.alchemicalForwardLabel1 = QLabel('Forward:')
@@ -1451,7 +1451,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
 
         # unbound state
 
-        self.alchemicalUnboundStateLabel = QLabel('Atoms/Unbound state (.fepout):')
+        self.alchemicalUnboundStateLabel = QLabel('Atoms/Unbound state (.fepout/.pmf):')
         self.alchemicalUnboundStateLayout = QGridLayout()
         
         self.alchemicalForwardLabel3 = QLabel('Forward:')
@@ -1545,6 +1545,7 @@ Please use the same or a later version of NAMD if you have any problem.\n'
         self.alchemicalPostTypeBox = QComboBox()
         self.alchemicalPostTypeBox.addItem('FEP')
         self.alchemicalPostTypeBox.addItem('BAR')
+        self.alchemicalPostTypeBox.addItem('PMF')
         self.alchemicalPostTypeBox.setCurrentIndex(1)
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
@@ -2005,18 +2006,21 @@ Standard Binding Free Energy:\n\
                 jobType = 'fep'
         elif self.alchemicalPostTypeBox.currentText() == 'BAR':
                 jobType = 'bar'
+        elif self.alchemicalPostTypeBox.currentText() == 'PMF':
+                jobType = 'pmf'
 
         # check inputs
         rigid_ligand = False
-        for index, item in enumerate([
-                    self.alchemicalBackwardLineEdit1.text(), 
-                    self.alchemicalBackwardLineEdit2.text(), 
-                    self.alchemicalBackwardLineEdit3.text(), 
-                    self.alchemicalBackwardLineEdit4.text()
-        ]):
-            if (not os.path.exists(item)) and (index != 3):
-                QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
-                return
+        if jobType != 'pmf':
+            for index, item in enumerate([
+                        self.alchemicalBackwardLineEdit1.text(), 
+                        self.alchemicalBackwardLineEdit2.text(), 
+                        self.alchemicalBackwardLineEdit3.text(), 
+                        self.alchemicalBackwardLineEdit4.text()
+            ]):
+                if (not os.path.exists(item)) and (index != 3):
+                    QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
+                    return
 
         for index, item in enumerate([
                     self.alchemicalForwardLineEdit1.text(), 
