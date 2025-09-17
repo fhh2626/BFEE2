@@ -461,8 +461,7 @@ class alchemicalAdvancedSettings(QWidget):
 
         # strategy settings
         self.strategy = QGroupBox('Strategy settings')
-        self.strategyLayout = QVBoxLayout()
-        self.strategyLine1Layout = QHBoxLayout()
+        self.strategyLayout = QGridLayout()
 
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
@@ -473,11 +472,13 @@ class alchemicalAdvancedSettings(QWidget):
         self.LDDMCheckbox = QCheckBox('Use LDDM strategy')
         self.LDDMCheckbox.setChecked(False)
 
-        self.strategyLine1Layout.addWidget(self.considerRMSDCVCheckbox)
-        self.strategyLine1Layout.addWidget(self.reEqCheckbox)
+        self.useWTMLambdaABFCheckbox = QCheckBox('Use WTM-lambdaABF')
+        self.useWTMLambdaABFCheckbox.setChecked(False)
 
-        self.strategyLayout.addLayout(self.strategyLine1Layout)
-        self.strategyLayout.addWidget(self.LDDMCheckbox)
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox, 0, 0)
+        self.strategyLayout.addWidget(self.reEqCheckbox, 0, 1)
+        self.strategyLayout.addWidget(self.LDDMCheckbox, 1, 0)
+        self.strategyLayout.addWidget(self.useWTMLambdaABFCheckbox, 1, 1)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -535,6 +536,8 @@ class alchemicalAdvancedSettings(QWidget):
             self.doubleWideCheckbox.setEnabled(False)
             self.minBeforeSampleCheckbox.setChecked(False)
             self.minBeforeSampleCheckbox.setEnabled(False)
+            self.useWTMLambdaABFCheckbox.setChecked(False)
+            self.useWTMLambdaABFCheckbox.setEnabled(False)
         else:
             self.boundRestraintsLineEdit.setEnabled(True)
             self.unboundRestraintsLineEdit.setEnabled(True)
@@ -542,6 +545,7 @@ class alchemicalAdvancedSettings(QWidget):
             self.reEqCheckbox.setEnabled(True)
             self.doubleWideCheckbox.setEnabled(True)
             self.minBeforeSampleCheckbox.setEnabled(True)
+            self.useWTMLambdaABFCheckbox.setEnabled(True)
 
     def _initSingalsSlots(self):
         """initialize (connect) signals and slots for the alchemical advanced settings
@@ -2369,7 +2373,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
                             float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
                             self.alchemicalAdvancedSettings.reEqCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
@@ -2651,6 +2656,7 @@ Unknown error!'
         self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
+        self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)
         self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
                                                     through the alchemical route!')
