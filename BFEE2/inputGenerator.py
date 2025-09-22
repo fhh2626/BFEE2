@@ -1044,7 +1044,7 @@ class inputGenerator():
                 )
             
         # 003_MoleculeUnbound
-        if considerRMSDCV:
+        if considerRMSDCV or useLambdaABF:
             step3ColvarsConfig = 'colvars.in'
         else:
             step3ColvarsConfig = ''
@@ -1093,7 +1093,7 @@ class inputGenerator():
                         forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
                         f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
                         f'../000_eq/output/eq_ligandOnly.xsc', '',
-                        'output/lambdaABF', temperature, 100000000, 'colvars.in', '', '', '../fep_ligandOnly.pdb', 
+                        'output/lambdaABF', temperature, 100000000, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
                         stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule,
                         CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep, lambdaABF=useLambdaABF
                     )
@@ -1565,19 +1565,7 @@ class inputGenerator():
                     colvarsConfig.write(
                         self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
                     )
-        else:
-            if useLambdaABF:
-                with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
-                    colvarsConfig.write(
-                        self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
-                    )
-                    colvarsConfig.write(
-                        self.cTemplate.cvLambdaTemplate(stratification[2])
-                    )
-                    colvarsConfig.write(
-                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
-                    )
-
+            
             # 004_RestraintUnbound
             with open(f'{path}/BFEE/004_RestraintUnbound/colvars_forward.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
@@ -1605,6 +1593,19 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
                 )
+
+        else:
+            if useLambdaABF:
+                with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                    )
+                    colvarsConfig.write(
+                        self.cTemplate.cvLambdaTemplate(stratification[2])
+                    )
+                    colvarsConfig.write(
+                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
+                    )
 
     def _generateGeometricNAMDConfig(
         self,

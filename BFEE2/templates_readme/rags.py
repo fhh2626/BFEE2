@@ -59,6 +59,7 @@ Alchemical route options
 Most options mirror those of the geometrical route.
 Double-wide sampling: in each window at lambda, also evaluate energies for lambda - 1 and lambda + 1 to obtain forward and backward data from a single run; reduces cost and is recommended on.
 Re-equilibration after histogram: performs two equilibration runs—first to collect optimal CV values (Euler angles, spherical-coordinate angles, distance) and refine restraint centers; second to ensure starting structures match these values—accelerating convergence.
+Use WTM-λABF: uses WTM-λABF instead of FEP for enhancing sampling in alchemical space. Errors must be estimated via parallel runs.
 Minimize before sampling in each window: performs an energy minimization before each FEP window; not recommended.
 
 Running Simulations:
@@ -98,6 +99,7 @@ Alchemical Route (protein-ligand):
    1.3. (Optional, if 1.2 was done) Run `000_eq/000.1_eq2_re-eq.conf` for re-equilibration. Steps 1.2 and 1.3 accelerate convergence.
 2. Free Energy Calculations (these steps can be run in parallel):
    - Note: With double-wide sampling, run the single `*_doubleWide.conf` file instead of separate `_forward.conf` and `_backward.conf` files.
+   - Note: With WTM-λABF, run the single `*_lambdaABF.conf` file instead of separate `_forward.conf` and `_backward.conf` files.
    2.1. Decouple in bound state: e.g., run `001_MoleculeBound/001_fep_doubleWide.conf` (or 001_fep_forward.conf and 001_fep_backward.conf).
    2.2. Release restraints in bound state: e.g., run `002_RestraintBound/002.1_ti_backward.conf` and `002.2_ti_forward.conf`.
    2.3. Decouple in unbound state:
@@ -133,7 +135,7 @@ Alchemical:
 Inputs: Provide simulation outputs for each step: `Atoms/bound state` (fepout), `restraints/bound state` (log), `atoms/unbound state` (fepout), `restraints/unbound state` (log). Step 4 is optional (omitting implies rigid ligand). For `fepout` files, providing only the forward file assumes double-wide sampling was run. For `log` files, both forward and backward files are required.
 Force constants: Force constants for restraints on each CV (RMSD, Theta, Phi, Psi, theta, phi, r).
 Restraint centers: Restraint centers for Theta, theta, and r CVs.
-Temperature: Simulation temperature. Post-treatment type: Estimator to use (BAR/FEP); BAR is recommended.
+Temperature: Simulation temperature. Post-treatment type: Estimator to use (BAR/FEP/PMF); BAR is recommended. PMF should be used when using WTM-λABF for alchemical sampling.
 LDDM:
 Inputs: Provide `colvars.in.tmp`, `colvars.traj`, and `fepout` from step 1, and the `fepout` file from step 2. LDDM uses double-wide sampling by default, so only one `fepout` file is needed per step. Restraint free energy is automatically calculated from Colvars files.
 Other parameters: `Steps per window (Step1)`, `Windows (Step1)`, `Equilibration per window (Step1)` define simulation length for step 1. `Temperature`, `Post-treatment type`: Same as for the alchemical route.
@@ -150,7 +152,7 @@ For bidirectional alchemical simulations, plots forward and backward ΔG vs. λ 
 
 BFEEControl = """
 BFEE3 usage notes:
-- Ask the user: task (protein–protein; protein–ligand: geometrical/alchemical/LDDM), ligand rigidity (rigid/flexible), and whether HMR or OPLS is used.
+- Ask the user: task (protein–protein; protein–ligand: geometrical/alchemical/LDDM), ligand rigidity (rigid/flexible), the use of WTM-λABF, and whether HMR or OPLS is used.
 - Keep "Other recommended options" at defaults unless the user asks to change them.
 1. Features (callable functions):
 - Protein-protein binding free-energy via the geometrical route [_quickSetProteinProteinGeometric()].
@@ -160,19 +162,21 @@ BFEE3 usage notes:
 Note: LDDM is a major improvement over DDM and is strongly recommended. Its only current limitation is lack of support for highly flexible ligands. This is a comparison between alchemical methods; the choice between geometrical and alchemical routes is system-dependent.
 2. Ligand RMSD CV: Enable for flexible ligands to sample conformational changes (adds 2 steps to geometrical route, 1 to DDM). `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)]`. Disable for rigid ligands and all LDDM calculations. `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)]`.
 3. Hydrogen mass repartitioning (HMR): If HMR is used (hydrogen mass ~3 amu), set timestep to 4.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('4.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('4.0')]`. Otherwise, use 2.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('2.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')]`.
-4. OPLS force field: If using an OPLS force field, enable OPLS mixing rules `[geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True), alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True)]`.
+4. WTM-λABF: Recommended for the classical DDM route to enhance alchemical space sampling `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(True)]`. FEP is used by default for easier error analysis `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)]`. Not available for the geometrical route and LDDM.
+5. OPLS force field: If using an OPLS force field, enable OPLS mixing rules `[geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True), alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True)]`.
 Other recommended options:
-5. Pin down the protein: always enable `[geometricAdvancedSettings.pinDownProCheckbox.setChecked(True), alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)]`.
-6. Use CUDASOA integrator: always enable for NAMD >= 3.0 `[geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True), alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)]`.
-7. Quaternion-based CVs: not recommended `[geometricAdvancedSettings.useOldCvCheckbox.setChecked(False), alchemicalAdvancedSettings.useOldCvCheckbox.setChecked(False)]`.
-8. Membrane protein: enable for membrane systems `[geometricAdvancedSettings.memProCheckbox.setChecked(True), alchemicalAdvancedSettings.memProCheckbox.setChecked(True)]`.
-9. Double-wide sampling: recommended for the alchemical route to save cost `[alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)]`. Not available for the geometrical route.
-10. Re-equilibration after guessing the restraining center: recommended for the alchemical route to improve the initial structure `[alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)]`. Not available for the geometrical route.
-11. Minimize before sampling: not recommended `[alchemicalAdvancedSettings.minBeforeSampleCheckbox.setChecked(False)]`. Not available for the geometrical route.
+6. Pin down the protein: always enable `[geometricAdvancedSettings.pinDownProCheckbox.setChecked(True), alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)]`.
+7. Use CUDASOA integrator: always enable for NAMD >= 3.0 `[geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True), alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)]`.
+8. Quaternion-based CVs: not recommended `[geometricAdvancedSettings.useOldCvCheckbox.setChecked(False), alchemicalAdvancedSettings.useOldCvCheckbox.setChecked(False)]`.
+9. Membrane protein: enable for membrane systems `[geometricAdvancedSettings.memProCheckbox.setChecked(True), alchemicalAdvancedSettings.memProCheckbox.setChecked(True)]`.
+10. Double-wide sampling: recommended for the alchemical route to save cost `[alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)]`. Not available for the geometrical route.
+11. Re-equilibration after guessing the restraining center: recommended for the alchemical route to improve the initial structure `[alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)]`. Not available for the geometrical route.
+12. Minimize before sampling: not recommended `[alchemicalAdvancedSettings.minBeforeSampleCheckbox.setChecked(False)]`. Not available for the geometrical route.
+13. Set protein and ligand selections: `[selectProteinLineEdit.setText('protein'), selectLigandLineEdit.setText('resname LIG')]`. Replace with MDAnalysis selections [e.g. "protein", "segid XXX", "resname XXX", etc.]; if unsure, use 'protein' and request the ligand residue name (e.g., LIG, LIG1, MCL) to set 'resname NAME'. No need to set it if the user does not ask, they may have set it themselves.
 """
 
 outputPostFix = """
-End your output with the following block to automatically call functions. Do not change the sentences. The sentences must be in English. Example:
+End your output with the following block to automatically call functions. Do not change the sentences (Serious!). You can only change functions in the square brackets. The sentences must be in English. Example:
 ----------
 I will call the following functions:
 [_quickSetProteinProteinGeometric(), geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)]

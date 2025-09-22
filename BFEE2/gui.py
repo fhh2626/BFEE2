@@ -344,6 +344,19 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
+    # below are slow functions
+    def _toggleGaWTMBox(self, checked):
+        """when enable GaWTM, restraint simulations and considering RMSD are not needed, and 
+           re-equilbration and double-wide simulations are necessary.
+        """
+
+        if checked:
+            self.useCUDASOAIntegrator.setEnabled(False)
+            self.useCUDASOAIntegrator.setChecked(False)
+        else:
+            self.useCUDASOAIntegrator.setEnabled(True)
+            self.useCUDASOAIntegrator.setChecked(True)
+
     def _initSingalsSlots(self):
         """initialize (connect) signial and slots for geometric advanced settings
         """
@@ -361,6 +374,7 @@ class geometricAdvancedSettings(QWidget):
             )
         )
         self.geometricAdvancedSettingsOKButton.clicked.connect(self.close)
+        self.useGaWTMCheckbox.toggled.connect(self._toggleGaWTMBox)
 
 
 class alchemicalAdvancedSettings(QWidget):
