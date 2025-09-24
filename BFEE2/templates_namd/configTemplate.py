@@ -696,7 +696,7 @@ colvar {{                                   \n\
             centerReference    on           \n\
             rotateReference    on           \n\
             fittingGroup {{                 \n\
-                indexGroup  protein         \n\
+                indexGroup  reference       \n\
             }}                              \n\
             refpositionsfile  {refFile}     \n\
         }}                                  \n\
@@ -705,7 +705,7 @@ colvar {{                                   \n\
             centerReference    on           \n\
             rotateReference    on           \n\
             fittingGroup {{                 \n\
-                indexGroup  protein         \n\
+                indexGroup  reference       \n\
             }}                              \n\
             refpositionsfile  {refFile}     \n\
         }}                                  \n\
@@ -835,7 +835,7 @@ colvar {{                                   \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
             fittingGroup {{                    \n\
-                indexGroup  protein            \n\
+                indexGroup  reference          \n\
             }}                                 \n\
             refpositionsfile  {refFile}        \n\
          }}                                    \n\
@@ -848,7 +848,7 @@ colvar {{                                   \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
             fittingGroup {{                    \n\
-                indexGroup  protein            \n\
+                indexGroup  reference          \n\
             }}                                 \n\
             refpositionsfile  {refFile}        \n\
          }}                                    \n\
