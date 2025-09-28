@@ -1754,6 +1754,11 @@ Please use the same or a later version of NAMD if you have any problem.\n'
 
         self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
+
+        self.isRigidLigandCheckbox = QCheckBox('Rigid ligand (ligand RMSD restraints):')
+        self.isRigidLigandCheckbox.setChecked(False)
+
+        self.plotHysteresisLayout.addWidget(self.isRigidLigandCheckbox)
         self.plotHysteresisLayout.addWidget(self.plotHysteresisPlotButton)
 
         self.plotHysteresis.setLayout(self.plotHysteresisLayout)
@@ -2627,8 +2632,8 @@ Unknown error!'
                 backwardProfile = np.transpose(pTreat._fepoutFile(backwardFilePath))
                 backwardProfile[:,1] *= -1
             elif forwardPostfix == '.log':
-                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath))
-                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath))
+                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
             ploter.plotHysteresis(forwardProfile, backwardProfile)
         return f
     
