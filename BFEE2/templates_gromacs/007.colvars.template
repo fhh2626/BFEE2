@@ -1,5 +1,5 @@
 colvarsTrajFrequency    500
-colvarsRestartFrequency 50000
+colvarsRestartFrequency 5000000
 indexFile               colvars.ndx
 
 colvar {
@@ -127,7 +127,7 @@ harmonicWalls {
 abf {
     colvars             r
     FullSamples         10000
-    historyfreq         50000
+    historyfreq         5000000
     writeCZARwindowFile
 }
 

@@ -36,6 +36,7 @@ from BFEE2 import doc
 
 __PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
 __NAMD_VERSION__ = f'v{BFEE2.version.__NAMD_VERSION__}'
+__GMX_VERSION__ = f'{BFEE2.version.__GMX_VERSION__}'
 
 class mainSettings(QWidget):
     """settings in the menubar
@@ -888,15 +889,15 @@ class mainUI(QMainWindow):
         self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
 
-        self._showNAMDVersionWarning()
+        self._showMDEngineVersionWarning()
 
-    def _showNAMDVersionWarning(self):
+    def _showMDEngineVersionWarning(self):
         ''' show a message box ask for the latest NAMD version '''
         QMessageBox.warning(self, 
                             'Warning', 
                             f'\
-{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__}. \n\
-Please use the same or a later version of NAMD if you have any problem.\n'
+{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__} or GROMACS {__GMX_VERSION__}. \n\
+Please use the same or a later version of NAMD or GROMACS if you have any problem.\n'
                         )
 
     def _initActions(self):

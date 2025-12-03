@@ -35,6 +35,7 @@ conda create --name bfee   (optional)
 conda activate bfee        (optional)
 conda install -c conda-forge BFEE2
 ```
+**IMPORTANT: Please force numpy<2.3 when install BFEE because a recent update of numpy has broken parmed(https://github.com/ParmEd/ParmEd/issues/1406).**
 
 ## Usage
 Simply run BFEE2Gui.py in terminal or PowerShell. One may need to use the absolute path on MS Windows.<br>
