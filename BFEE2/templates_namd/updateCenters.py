@@ -246,6 +246,7 @@ def updateAlchemicalFiles():
         confFiles = [
             '../001_MoleculeBound/001.1_fep_backward.conf',
             '../001_MoleculeBound/001_fep_doubleWide.conf',
+            '../001_MoleculeBound/001_lambdaABF.conf',
             '../002_RestraintBound/002.1_ti_backward.conf',
         ]
         for confFile in confFiles:

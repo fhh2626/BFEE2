@@ -65,7 +65,8 @@ class inputGenerator():
         CUDASOAIntegrator = False,
         timestep = 2.0,
         reEq = False,
-        useLDDM = False
+        useLDDM = False,
+        useLambdaABF = False
     ):
         """generate all the input files for NAMD alchemical simulation
 
@@ -98,6 +99,7 @@ class inputGenerator():
             timestep (float, optional): timestep of the simulation. Default to 2.0
             reEq (bool, optional): re-equilibration after histogram. Default to False.
             useLDDM (bool, optional): whether the LDDM strategy is used. Default to False.
+            useLambdaABF (bool, optional): whether use WTM-lambdaABF instead of FEP. Default to False.
         """
 
         assert(len(stratification) == 4)
@@ -124,11 +126,11 @@ class inputGenerator():
         self._generateAlchemicalNAMDConfig(
             path, forceFieldType, relativeFFPath, temperature, stratification, doubleWide, minBeforeSample,
             membraneProtein, OPLSMixingRule=OPLSMixingRule, considerRMSDCV=considerRMSDCV,
-            CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep, reEq=reEq, useLDDM=useLDDM
+            CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep, reEq=reEq, useLDDM=useLDDM, useLambdaABF=useLambdaABF
         )
         self._generateAlchemicalColvarsConfig(
             path, topType, 'pdb', selectionPro, selectionLig, selectionPro, stratification, pinDownPro, useOldCv,
-            considerRMSDCV=considerRMSDCV, reEq=reEq, useLDDM=useLDDM
+            considerRMSDCV=considerRMSDCV, reEq=reEq, useLDDM=useLDDM, useLambdaABF=useLambdaABF
         )
 
     def generateNAMDGeometricFiles(
@@ -887,7 +889,8 @@ class inputGenerator():
         CUDASOAIntegrator = False,
         timestep = 2.0,
         reEq = False,
-        useLDDM = False
+        useLDDM = False,
+        useLambdaABF = False
     ):
         """generate NAMD config fils for the alchemical route
 
@@ -910,6 +913,7 @@ class inputGenerator():
             timestep (float, optional): timestep of the simulation. Default to 2.0.
             reEq (bool, optional): re-equilibration after histogram. Default to False.
             useLDDM (bool, optional): whether the LDDM strategy is used. Default to False.
+            useLambdaABF (bool, optional): whether the WTM-LambdaABF method is used instead of FEP. Default to False.
         """
 
         if forceFieldType == 'charmm':
@@ -930,7 +934,6 @@ class inputGenerator():
             pbcLig = fParserLig.measurePBC()
         else:
             pbcLig = pbc
-
 
         # 000_eq
         with open(f'{path}/BFEE/000_eq/000.1_eq.conf', 'w') as namdConfig:
@@ -966,7 +969,7 @@ class inputGenerator():
             )
 
         # 001_MoleculeBound
-        if not useLDDM:
+        if (not useLDDM) and (not useLambdaABF):
             with open(f'{path}/BFEE/001_MoleculeBound/001.2_fep_forward.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
@@ -990,7 +993,7 @@ class inputGenerator():
                     )
                 )
         
-        if doubleWide:
+        if doubleWide and (not useLambdaABF):
             with open(f'{path}/BFEE/001_MoleculeBound/001_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
@@ -1002,6 +1005,20 @@ class inputGenerator():
                         timestep=timestep, LDDMStep1=useLDDM
                     )
                 )
+        
+        if useLambdaABF:
+            with open(f'{path}/BFEE/001_MoleculeBound/001_lambdaABF.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../complex.{topType}', f'../complex.pdb',
+                        f'../000_eq/output/eq.coor', f'../000_eq/output/eq.vel', f'../000_eq/output/eq.xsc', '',
+                        'output/lambdaABF', temperature, 100000000, 'colvars.in', '', '', '../fep.pdb', 
+                        stratification[0], False, False, minBeforeSample, membraneProtein=membraneProtein,
+                        OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator,
+                        timestep=timestep, lambdaABF=useLambdaABF
+                    )
+                )
+
 
         # 002_RestraintBound
         if not useLDDM:
@@ -1027,12 +1044,12 @@ class inputGenerator():
                 )
             
         # 003_MoleculeUnbound
-        if considerRMSDCV:
+        if considerRMSDCV or useLambdaABF:
             step3ColvarsConfig = 'colvars.in'
         else:
             step3ColvarsConfig = ''
         
-        if not useLDDM:
+        if not useLDDM and (not useLambdaABF):
             with open(f'{path}/BFEE/003_MoleculeUnbound/003.2_fep_forward.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
@@ -1056,7 +1073,7 @@ class inputGenerator():
                     )
                 )
 
-        if doubleWide:
+        if doubleWide and (not useLambdaABF):
             with open(f'{path}/BFEE/003_MoleculeUnbound/003_fep_doubleWide.conf', 'w') as namdConfig:
                 namdConfig.write(
                     self.cTemplate.namdConfigTemplate(
@@ -1066,6 +1083,19 @@ class inputGenerator():
                         'output/fep_doubleWide', temperature, 0, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
                         stratification[2], False, True, OPLSMixingRule=OPLSMixingRule, CUDASOAIntegrator=CUDASOAIntegrator,
                         timestep=timestep
+                    )
+                )
+
+        if useLambdaABF:
+            with open(f'{path}/BFEE/003_MoleculeUnbound/003_lambdaABF.conf', 'w') as namdConfig:
+                namdConfig.write(
+                    self.cTemplate.namdConfigTemplate(
+                        forceFieldType, forceFields, f'../ligandOnly.{topType}', f'../ligandOnly.pdb',
+                        f'../000_eq/output/eq_ligandOnly.coor', f'../000_eq/output/eq_ligandOnly.vel', 
+                        f'../000_eq/output/eq_ligandOnly.xsc', '',
+                        'output/lambdaABF', temperature, 100000000, step3ColvarsConfig, '', '', '../fep_ligandOnly.pdb', 
+                        stratification[2], False, False, minBeforeSample, OPLSMixingRule=OPLSMixingRule,
+                        CUDASOAIntegrator=CUDASOAIntegrator, timestep=timestep, lambdaABF=useLambdaABF
                     )
                 )
 
@@ -1096,7 +1126,7 @@ class inputGenerator():
     def _generateAlchemicalColvarsConfig(
         self, path, topType, coorType, selectionPro, selectionLig, selectionRef, 
         stratification=[1,1,1,1], pinDownPro=True, useOldCv=True, considerRMSDCV=True,
-        reEq = False, useLDDM = False
+        reEq = False, useLDDM = False, useLambdaABF = False
     ):
         """generate Colvars config fils for geometric route
 
@@ -1114,6 +1144,7 @@ class inputGenerator():
             considerRMSDCV (bool, optional): Whethre consider the RMSD CV. Default to True.
             reEq (bool, optional): re-equilibration after histogram. Default to False.
             useLDDM (bool, optional): whether the LDDM strategy is used. Default to False.
+            useLambdaABF (bool, optional): whether the WTM-LambdaABF method is used instead of FEP. Default to False.
         """
 
         assert(len(stratification) == 4)
@@ -1197,7 +1228,6 @@ class inputGenerator():
             )
 
         if reEq:
-            # 001_MoleculeBound
             with open(f'{path}/BFEE/000_eq/colvars2.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
                     self.cTemplate.cvHeadTemplate('../complex.ndx')
@@ -1358,6 +1388,13 @@ class inputGenerator():
             if pinDownPro:
                 colvarsConfig.write(
                     self.cTemplate.cvProteinTemplate(center, '../complex.xyz')
+                )
+            if useLambdaABF:
+                colvarsConfig.write(
+                    self.cTemplate.cvLambdaTemplate(stratification[0])
+                )
+                colvarsConfig.write(
+                    self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
                 )
 
         # 002_RestraintBound
@@ -1521,7 +1558,14 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 10, 0)
                 )
-
+                if useLambdaABF:
+                    colvarsConfig.write(
+                        self.cTemplate.cvLambdaTemplate(stratification[2])
+                    )
+                    colvarsConfig.write(
+                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
+                    )
+            
             # 004_RestraintUnbound
             with open(f'{path}/BFEE/004_RestraintUnbound/colvars_forward.in', 'w') as colvarsConfig:
                 colvarsConfig.write(
@@ -1549,6 +1593,19 @@ class inputGenerator():
                 colvarsConfig.write(
                     self.cTemplate.cvHarmonicTemplate('RMSD', 0, 0, stratification[3], False, 10)
                 )
+
+        else:
+            if useLambdaABF:
+                with open(f'{path}/BFEE/003_MoleculeUnbound/colvars.in', 'w') as colvarsConfig:
+                    colvarsConfig.write(
+                        self.cTemplate.cvHeadTemplate('../ligandOnly.ndx')
+                    )
+                    colvarsConfig.write(
+                        self.cTemplate.cvLambdaTemplate(stratification[2])
+                    )
+                    colvarsConfig.write(
+                        self.cTemplate.cvABFTemplate('l', unit = 'namd', czar = False)   # currently only NAMD supports WTM-lambdaABF
+                    )
 
     def _generateGeometricNAMDConfig(
         self,

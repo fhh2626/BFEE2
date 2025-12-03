@@ -38,7 +38,8 @@ class configTemplate:
                             GaWTM = False,
                             CUDASOAIntegrator = False,
                             timestep = 2.0,
-                            LDDMStep1 = False
+                            LDDMStep1 = False,
+                            lambdaABF = False
                             ):
         """the namd config file template
 
@@ -70,12 +71,15 @@ class configTemplate:
             CUDASOAIntegrator (bool, optional): Whether CUDASOA integrator is used. Default to False
             timestep (float, optional): timestep of the simulation. Default to 2.0
             LDDMStep1 (bool, optional): whether this is the 1st step of a LDDM simulation. Default to False.
-            
+            lambdaABF (bool, optional): whether use WTM-lambdaABF. This option is incompatible with FEP. Default to False.
+
         Returns:
             str: a NAMD config string if succeed, and empty string otherwise
         """
 
         assert(forceFieldType == 'charmm' or forceFieldType == 'amber')
+        assert(not lambdaABF or cvFile != '')
+        assert(not lambdaABF or fepFile != '')
 
         configString = f'\
 coordinates    {coorFile}                   \n'
@@ -110,9 +114,9 @@ pairlistdist         14.0               \n'
 exclude    scaled1-4                    \n\
 1-4scaling    0.83333333                \n\
 switching            on                 \n\
-switchdist           8.0                \n\
-cutoff               9.0                \n\
-pairlistdist         11.0               \n'
+switchdist           9.0                \n\
+cutoff               10.0               \n\
+pairlistdist         12.0               \n'
         else:
             # error
             return ''
@@ -139,6 +143,10 @@ ExtendedSystem    {NAMDRestartXsc}                           \n'
         else:
             # error
             return ''
+        
+        if lambdaABF:
+            configString += f'\
+computeEnergies      1                          \n'   # required by WTM-lambda ABF
 
         # other parameters
         configString += f'\
@@ -212,7 +220,7 @@ colvarsInput     {CVRestartFile}                \n'
 source     {cvDefinitionFile}                   \n'
 
         # fep
-        if fepFile == '':
+        if fepFile == '' and (not lambdaABF):
             if NAMDRestartCoor == '' and NAMDRestartVel == '' and NAMDRestartXsc == '':
                 configString += f'\
 minimize    500                                 \n\
@@ -258,7 +266,7 @@ colvarsConfig                   {cvFile + ".amd"}      \n\
 colvarsInput                    {CVRestartFile}        \n\
 run norepeat   {numSteps}                              \n'
 
-        else:
+        elif fepFile != '' and (not lambdaABF):
             # currently the alchemical route is somewhat hard-coded
             # this will be improved in the future
             if LDDMStep1:
@@ -309,6 +317,21 @@ runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000\n'
                     # double wide simulation
                     configString += f'\
 runFEP 1.0 0.0 {-1.0/fepWindowNum} 500000 true\n'
+        
+        else:
+            # lambda ABF instead of FEP
+            configString += f'\
+alch on                                         \n\
+alchType TI                                     \n\
+alchFile {fepFile}                              \n\
+alchCol B                                       \n\
+alchOutFile {outputPrefix}.fepout               \n\
+alchOutFreq 5000                                \n\
+alchVdwLambdaEnd 0.7                            \n\
+alchElecLambdaStart 0.5                         \n\
+alchDecouple   on                               \n\
+alchlambda     0                                \n\
+run    {numSteps}                               \n'
 
         return configString
     
@@ -413,7 +436,35 @@ gen_temp                = {temperature}          \n\
 gen_seed                = -1                     \n'
 
         return configString
+    
+    def cvLambdaTemplate(self, bins):
+        """lambda CV template for WTM-lambdaABF
 
+        Args:
+            bins (int): number of bins for the CV
+
+        Returns:
+            str: string of lambda definition
+        """
+        string = f'\
+colvar {{                                \n\
+    name l                               \n\
+    extendedLagrangian on                \n\
+    extendedMass 150000                  \n\
+    extendedLangevinDamping 1000         \n\
+    lowerBoundary 0                      \n\
+    upperBoundary 1                      \n\
+    reflectingLowerBoundary              \n\
+    reflectingUpperBoundary              \n\
+    width {1/float(bins)}                \n\
+    subtractAppliedForce                 \n\
+    expandboundaries                     \n\
+    alchLambda {{                        \n\
+    }}                                   \n\
+    outputTotalForce                     \n\
+    outputAppliedforce                   \n\
+}}                                       \n'
+        return string
 
     def cvRMSDTemplate(
             self, setBoundary, lowerBoundary, upperBoundary, refFile, 
@@ -645,7 +696,7 @@ colvar {{                                   \n\
             centerReference    on           \n\
             rotateReference    on           \n\
             fittingGroup {{                 \n\
-                indexGroup  protein         \n\
+                indexGroup  reference       \n\
             }}                              \n\
             refpositionsfile  {refFile}     \n\
         }}                                  \n\
@@ -654,7 +705,7 @@ colvar {{                                   \n\
             centerReference    on           \n\
             rotateReference    on           \n\
             fittingGroup {{                 \n\
-                indexGroup  protein         \n\
+                indexGroup  reference       \n\
             }}                              \n\
             refpositionsfile  {refFile}     \n\
         }}                                  \n\
@@ -784,7 +835,7 @@ colvar {{                                   \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
             fittingGroup {{                    \n\
-                indexGroup  protein            \n\
+                indexGroup  reference          \n\
             }}                                 \n\
             refpositionsfile  {refFile}        \n\
          }}                                    \n\
@@ -797,7 +848,7 @@ colvar {{                                   \n\
             rotateReference    on              \n\
             centerToOrigin     on              \n\
             fittingGroup {{                    \n\
-                indexGroup  protein            \n\
+                indexGroup  reference          \n\
             }}                                 \n\
             refpositionsfile  {refFile}        \n\
          }}                                    \n\
@@ -977,12 +1028,13 @@ harmonic {{                          \n\
         string += '}\n'
         return string
 
-    def cvABFTemplate(self, cv, unit = 'namd'):
+    def cvABFTemplate(self, cv, unit='namd', czar=True):
         ''' template for WTM-eABF bias
         
         Args:
             cv (str): name of the colvars
             unit (str, optional): unit, 'namd' or 'gromacs'. Default to namd.
+            czar (bool, optional): whether call the czar estimator. Default to True.
             
         Returns:
             str: string of the WTM-eABF definition '''
@@ -991,13 +1043,15 @@ harmonic {{                          \n\
             scaleFactor = 1
         elif unit == 'gromacs':
             scaleFactor = 4.184
+
+        czar_line = '    writeCZARwindowFile           \n' if czar else ''
             
         string = f'\
 abf {{                            \n\
     colvars        {cv}           \n\
     FullSamples    10000          \n\
     historyfreq    50000          \n\
-    writeCZARwindowFile           \n\
+{czar_line}\
 }}                                \n\
 metadynamics {{                   \n\
     colvars           {cv}        \n\

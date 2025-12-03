@@ -4,6 +4,8 @@ import os
 import shutil
 import sys
 import webbrowser
+import requests
+import re
 
 import numpy as np
 # use appdirs to manage persistent configuration
@@ -15,12 +17,13 @@ from PySide6.QtWidgets import ( QApplication, QCheckBox, QComboBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton,
                                QSplitter, QTabWidget, QToolBar, QVBoxLayout,
-                               QWidget, QSpacerItem)
+                               QWidget, QSpacerItem, QProgressDialog)
 
 import BFEE2.inputGenerator as inputGenerator
 import BFEE2.postTreatment as postTreatment
 import BFEE2.templates_gromacs.BFEEGromacs as BFEEGromacs
 from BFEE2.commonTools import commonSlots, fileParser, ploter
+from BFEE2.templates_readme import rags
 
 try:
     import importlib.resources as pkg_resources
@@ -60,51 +63,52 @@ class mainSettings(QWidget):
 
         self.mainLayout = QVBoxLayout()
 
-        self.thirdPartySoftware = QGroupBox('Third party software:')
-        self.thirdPartySoftwareLayout = QVBoxLayout()
-
-        # settings grid
-        self.settingsGridLayout = QGridLayout()
+        # third party softward
+        self.thirdPartySoftware = QGroupBox('Third party software:')      
+        self.thirdPartySoftwareGridLayout = QGridLayout()
 
         # vmd
         self.vmdLabel = QLabel('VMD:')
         self.vmdLineEdit = QLineEdit()
         self.vmdButton = QPushButton('Browse')
-        self.settingsGridLayout.addWidget(self.vmdLabel, 0, 0)
-        self.settingsGridLayout.addWidget(self.vmdLineEdit, 0, 1)
-        self.settingsGridLayout.addWidget(self.vmdButton, 0, 2)
+        self.thirdPartySoftwareGridLayout.addWidget(self.vmdLabel, 0, 0)
+        self.thirdPartySoftwareGridLayout.addWidget(self.vmdLineEdit, 0, 1)
+        self.thirdPartySoftwareGridLayout.addWidget(self.vmdButton, 0, 2)
 
-        # gmx
-        #self.gromacsLayout = QHBoxLayout()
-        #self.gromacsLabel = QLabel('Gromacs:')
-        #self.gromacsLineEdit = QLineEdit()
-        #self.gromacsButton = QPushButton('Browse')
-        #self.settingsGridLayout.addWidget(self.gromacsLabel, 1, 0)
-        #self.settingsGridLayout.addWidget(self.gromacsLineEdit,1 ,1)
-        #self.settingsGridLayout.addWidget(self.gromacsButton, 1, 2)
+        # online AI assistant
+        self.onlineAIService = QGroupBox('Online AI Service:')
+        self.onlineAIServiceGridLayout = QGridLayout()
 
-        # tleap
-        #self.tleapLayout = QHBoxLayout()
-        #self.tleapLabel = QLabel('tleap:')
-        #self.tleapLineEdit = QLineEdit()
-        #self.tleapButton = QPushButton('Browse')
-        #self.settingsGridLayout.addWidget(self.tleapLabel, 2, 0)
-        #self.settingsGridLayout.addWidget(self.tleapLineEdit, 2, 1)
-        #self.settingsGridLayout.addWidget(self.tleapButton, 2, 2)
+        # OpenRouter
+        self.openRouterAPILabel = QLabel('OpenRouter API:')
+        self.openRouterAPILineEdit = QLineEdit('')
+        self.openRouterModelLabel = QLabel('OpenRouter Model:')
+        self.openRouterModelLineEdit = QLineEdit('')
+        self.openRouterTemperatureLabel = QLabel('Temperature:')
+        self.openRouterTemperatureLineEdit = QLineEdit('')
+        self.openRouterTopPLabel = QLabel('Top P:')
+        self.openRouterTopPLineEdit = QLineEdit('')
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILabel, 0, 0)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILineEdit, 0, 1)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLabel, 1, 0)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLineEdit, 1, 1)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterTemperatureLabel, 2, 0)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterTemperatureLineEdit, 2, 1)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLabel, 3, 0)
+        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLineEdit, 3, 1)
 
         # OK and Cancel
         self.settingsButtonLayout = QHBoxLayout()
         self.settingsOKButton = QPushButton('OK')
-        #self.settingsCancelButton = QPushButton('Cancel')
         self.settingsButtonLayout.addWidget(QSplitter())
         self.settingsButtonLayout.addWidget(self.settingsOKButton)
-        #self.settingsButtonLayout.addWidget(self.settingsCancelButton)
 
-        self.thirdPartySoftwareLayout.addLayout(self.settingsGridLayout)
-        self.thirdPartySoftwareLayout.addLayout(self.settingsButtonLayout)
+        self.thirdPartySoftware.setLayout(self.thirdPartySoftwareGridLayout)
+        self.onlineAIService.setLayout(self.onlineAIServiceGridLayout)
 
-        self.thirdPartySoftware.setLayout(self.thirdPartySoftwareLayout)
         self.mainLayout.addWidget(self.thirdPartySoftware)
+        self.mainLayout.addWidget(self.onlineAIService)
+        self.mainLayout.addLayout(self.settingsButtonLayout)
         self.setLayout(self.mainLayout)
 
     def _initSingalsSlots(self):
@@ -122,12 +126,11 @@ class mainSettings(QWidget):
             return
 
         with open(f'{self.config_dir}/3rdSoft.ini', 'r') as cFile:
-            line = cFile.readline()
-            self.vmdLineEdit.setText(line.strip())
-            #line = cFile.readline()
-            #self.gromacsLineEdit.setText(line.strip())
-            #line = cFile.readline()
-            #self.tleapLineEdit.setText(line.strip())
+            self.vmdLineEdit.setText(cFile.readline().strip())
+            self.openRouterAPILineEdit.setText(cFile.readline().strip())
+            self.openRouterModelLineEdit.setText(cFile.readline().strip())
+            self.openRouterTemperatureLineEdit.setText(cFile.readline().strip())
+            self.openRouterTopPLineEdit.setText(cFile.readline().strip())
 
     def _writeConfig(self):
         """write the config saving paths for third-party softwares
@@ -135,8 +138,10 @@ class mainSettings(QWidget):
 
         with open(f'{self.config_dir}/3rdSoft.ini', 'w') as cFile:
             cFile.write(self.vmdLineEdit.text() + '\n')
-            #cFile.write(self.gromacsLineEdit.text() + '\n')
-            #cFile.write(self.tleapLineEdit.text() + '\n')
+            cFile.write(self.openRouterAPILineEdit.text() + '\n')
+            cFile.write(self.openRouterModelLineEdit.text() + '\n')
+            cFile.write(self.openRouterTemperatureLineEdit.text() + '\n')
+            cFile.write(self.openRouterTopPLineEdit.text() + '\n')
 
     def _OKSlot(self):
         """the slot corresponding the OK button
@@ -250,7 +255,7 @@ class geometricAdvancedSettings(QWidget):
         self.reflectingBoundaryCheckbox.setChecked(True)
 
         self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
-        self.useCUDASOAIntegrator.setChecked(False)
+        self.useCUDASOAIntegrator.setChecked(True)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
@@ -340,6 +345,19 @@ class geometricAdvancedSettings(QWidget):
         self.mainLayout.addLayout(self.geometricAdvancedSettingsButtonLayout)
         self.setLayout(self.mainLayout)
 
+    # below are slow functions
+    def _toggleGaWTMBox(self, checked):
+        """when enable GaWTM, restraint simulations and considering RMSD are not needed, and 
+           re-equilbration and double-wide simulations are necessary.
+        """
+
+        if checked:
+            self.useCUDASOAIntegrator.setEnabled(False)
+            self.useCUDASOAIntegrator.setChecked(False)
+        else:
+            self.useCUDASOAIntegrator.setEnabled(True)
+            self.useCUDASOAIntegrator.setChecked(True)
+
     def _initSingalsSlots(self):
         """initialize (connect) signial and slots for geometric advanced settings
         """
@@ -357,6 +375,7 @@ class geometricAdvancedSettings(QWidget):
             )
         )
         self.geometricAdvancedSettingsOKButton.clicked.connect(self.close)
+        self.useGaWTMCheckbox.toggled.connect(self._toggleGaWTMBox)
 
 
 class alchemicalAdvancedSettings(QWidget):
@@ -407,7 +426,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.doubleWideLayout = QGridLayout()
 
         self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide sampling')
-        self.doubleWideCheckbox.setChecked(False)
+        self.doubleWideCheckbox.setChecked(True)
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
@@ -431,7 +450,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.useOldCvCheckbox.setChecked(False)
 
         self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
-        self.useCUDASOAIntegrator.setChecked(False)
+        self.useCUDASOAIntegrator.setChecked(True)
         
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
@@ -457,23 +476,24 @@ class alchemicalAdvancedSettings(QWidget):
 
         # strategy settings
         self.strategy = QGroupBox('Strategy settings')
-        self.strategyLayout = QVBoxLayout()
-        self.strategyLine1Layout = QHBoxLayout()
+        self.strategyLayout = QGridLayout()
 
         self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
         self.considerRMSDCVCheckbox.setChecked(True)
 
         self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
-        self.reEqCheckbox.setChecked(False)
+        self.reEqCheckbox.setChecked(True)
 
         self.LDDMCheckbox = QCheckBox('Use LDDM strategy')
         self.LDDMCheckbox.setChecked(False)
 
-        self.strategyLine1Layout.addWidget(self.considerRMSDCVCheckbox)
-        self.strategyLine1Layout.addWidget(self.reEqCheckbox)
+        self.useWTMLambdaABFCheckbox = QCheckBox('Use WTM-lambdaABF')
+        self.useWTMLambdaABFCheckbox.setChecked(False)
 
-        self.strategyLayout.addLayout(self.strategyLine1Layout)
-        self.strategyLayout.addWidget(self.LDDMCheckbox)
+        self.strategyLayout.addWidget(self.considerRMSDCVCheckbox, 0, 0)
+        self.strategyLayout.addWidget(self.reEqCheckbox, 0, 1)
+        self.strategyLayout.addWidget(self.LDDMCheckbox, 1, 0)
+        self.strategyLayout.addWidget(self.useWTMLambdaABFCheckbox, 1, 1)
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
@@ -531,6 +551,8 @@ class alchemicalAdvancedSettings(QWidget):
             self.doubleWideCheckbox.setEnabled(False)
             self.minBeforeSampleCheckbox.setChecked(False)
             self.minBeforeSampleCheckbox.setEnabled(False)
+            self.useWTMLambdaABFCheckbox.setChecked(False)
+            self.useWTMLambdaABFCheckbox.setEnabled(False)
         else:
             self.boundRestraintsLineEdit.setEnabled(True)
             self.unboundRestraintsLineEdit.setEnabled(True)
@@ -538,6 +560,7 @@ class alchemicalAdvancedSettings(QWidget):
             self.reEqCheckbox.setEnabled(True)
             self.doubleWideCheckbox.setEnabled(True)
             self.minBeforeSampleCheckbox.setEnabled(True)
+            self.useWTMLambdaABFCheckbox.setEnabled(True)
 
     def _initSingalsSlots(self):
         """initialize (connect) signals and slots for the alchemical advanced settings
@@ -545,6 +568,288 @@ class alchemicalAdvancedSettings(QWidget):
 
         self.LDDMCheckbox.toggled.connect(self._toggleLDDMBox)
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
+        
+class AIAssistantDialog(QWidget):  
+    """AI Assistant dialog for interactive help with OpenRouter API"""  
+      
+    def __init__(self, parent=None):  
+        super().__init__(parent)  
+        self.parent = parent  
+        self._initUI()  
+        self._initSignalsSlots()  
+        self.setWindowTitle('AI Assistant')  
+        self.setGeometry(100, 100, 800, 600)  
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.Dialog | QtCore.Qt.Tool)
+        self.messageHistory = ""
+          
+    def _initUI(self):  
+        """Initialize the UI for AI Assistant dialog"""  
+          
+        self.mainLayout = QVBoxLayout()  
+          
+        # Conversation display area  
+        self.conversationDisplay = QListWidget()  
+        self.conversationDisplay.setWordWrap(True)  
+        self.conversationDisplay.setAlternatingRowColors(True)  
+          
+        # Input area  
+        self.inputLayout = QHBoxLayout()  
+        self.inputLineEdit = QLineEdit()  
+        self.inputLineEdit.setPlaceholderText("Type your message here...")  
+        self.sendButton = QPushButton('Send')  
+          
+        self.inputLayout.addWidget(self.inputLineEdit)  
+        self.inputLayout.addWidget(self.sendButton)  
+          
+        # Clear conversation button  
+        self.clearButton = QPushButton('Clear Conversation')  
+          
+        # Layout assembly  
+        self.mainLayout.addWidget(QLabel('AI Assistant - Ask about and automate BFEE settings:'))  
+        self.mainLayout.addWidget(self.conversationDisplay)  
+        self.mainLayout.addLayout(self.inputLayout)  
+        self.mainLayout.addWidget(self.clearButton)  
+          
+        self.setLayout(self.mainLayout)  
+          
+    def _initSignalsSlots(self):  
+        """Initialize signals and slots"""  
+        self.sendButton.clicked.connect(self._sendMessage)  
+        self.inputLineEdit.returnPressed.connect(self._sendMessage)  
+        self.clearButton.clicked.connect(self._clearMessageHistory)  
+
+    def _sendMessage(self):  
+        """Send message to OpenRouter API and display response"""  
+          
+        user_message = self.inputLineEdit.text().strip()  
+        if not user_message:  
+            return  
+              
+        # Add user message to display  
+        self.conversationDisplay.addItem(f"You: {user_message}")  
+        self.messageHistory += f"You: {user_message}\n"
+        self.inputLineEdit.clear()  
+          
+        # Get API settings from parent's mainSettings  
+        if self.parent:  
+            api_key = self.parent.mainSettings.openRouterAPILineEdit.text()  
+            model = self.parent.mainSettings.openRouterModelLineEdit.text()
+            # optional parameters
+            temperature_text = self.parent.mainSettings.openRouterTemperatureLineEdit.text().strip()
+            top_p_text = self.parent.mainSettings.openRouterTopPLineEdit.text().strip()
+        else:  
+            self.conversationDisplay.addItem("AI: Error - Cannot access API settings")  
+            self.messageHistory += f"AI: Error - Cannot access API settings\n"
+            return  
+              
+        if not api_key or not model:  
+            self.conversationDisplay.addItem("AI: Please configure OpenRouter API and model in Settings first")  
+            self.messageHistory += f"AI: Please configure OpenRouter API and model in Settings first\n"
+            return
+            
+        # Show a modal waiting dialog in front of the AI window
+        wait_dlg = QProgressDialog("Receiving server response...", None, 0, 0, self)
+        wait_dlg.setWindowTitle("Please wait")
+        wait_dlg.setCancelButton(None)  # non-interactive
+        wait_dlg.setWindowModality(QtCore.Qt.WindowModal)  # block AI window
+        wait_dlg.setAutoClose(False)
+        wait_dlg.setAutoReset(False)
+        wait_dlg.setMinimumDuration(0)
+        
+        # Remove close/help buttons
+        wait_dlg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+        wait_dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
+        wait_dlg.show()
+        QApplication.processEvents()
+              
+        # Prepare API request  
+        try:  
+            headers = {  
+                "Authorization": f"Bearer {api_key}",  
+                "Content-Type": "application/json"  
+            }  
+              
+            data = {  
+                "model": model,  
+                "messages": [  
+                    {"role": "system", "content": rags.systemPrompt},  
+                    {"role": "user", "content": self.messageHistory}  
+                ]  
+            }
+            if temperature_text:
+                try:
+                    data["temperature"] = float(temperature_text)
+                except ValueError:
+                    pass
+            if top_p_text:
+                try:
+                    data["top_p"] = float(top_p_text)
+                except ValueError:
+                    pass
+              
+            response = requests.post(  
+                "https://openrouter.ai/api/v1/chat/completions",  
+                headers=headers,  
+                json=data,  
+                timeout=30  
+            )  
+              
+            if response.status_code == 200:  
+                result = response.json()  
+                ai_response = result['choices'][0]['message']['content']  
+                self.conversationDisplay.addItem(f"AI: {ai_response}")  
+                self.messageHistory += f"AI: {ai_response}\n"
+                self._execute_suggested_calls(ai_response)
+            else:  
+                self.conversationDisplay.addItem(f"AI: Error - API request failed: {response.status_code}")  
+                self.messageHistory += f"AI: Error - API request failed: {response.status_code}\n"
+
+        except Exception as e:  
+            self.conversationDisplay.addItem(f"AI: Error - {str(e)}")
+            self.messageHistory += f"AI: Error - {str(e)}\n"
+        finally:
+            wait_dlg.close()
+
+    def _clearMessageHistory(self):
+        """Clear the message history"""
+        self.conversationDisplay.clear()
+        self.messageHistory = ""
+        
+    def _execute_suggested_calls(self, ai_text: str):
+        """
+        Finds and executes function calls specified in the AI's output.
+        """
+        # 1. marker sentence
+        start_marker = "I will call the following functions:"
+        
+        # 2. find the marker in output
+        try:
+            # do not distinguish upper and lower letters
+            search_text = ai_text.casefold()
+            marker_pos = search_text.find(start_marker.casefold())
+            
+            if marker_pos == -1:
+                return
+        except AttributeError:
+            return
+        # 3. find '['
+        open_bracket_pos = ai_text.find('[', marker_pos)
+        if open_bracket_pos == -1:
+            return
+        # 4. find ']'
+        close_bracket_pos = ai_text.find(']', open_bracket_pos)
+        if close_bracket_pos == -1:
+            return
+        # 5. get things between "[]"
+        block = ai_text[open_bracket_pos + 1 : close_bracket_pos].strip()
+        
+        if not block:
+            return
+
+        calls = self._split_top_level_commas(block)
+        for call in calls:
+            call = call.strip()
+            if not call:
+                continue
+            m2 = re.match(
+                r'^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*\((.*)\)\s*$',
+                call
+            )
+            if not m2:
+                msg = f"Exec: skip unsupported expression: {call}"
+                self.conversationDisplay.addItem(msg)
+                self.messageHistory += msg + "\n"
+                continue
+            path = m2.group(1)
+            args_str = m2.group(2).strip()
+            try:
+                # assume it is of self.parent
+                target = self.parent
+                for part in path.split('.'):
+                    target = getattr(target, part)
+                # args
+                args = self._parse_args(args_str)
+                # execute
+                result = target(*args)
+                # report
+                args_repr = ", ".join(repr(a) for a in args)
+                msg = f"Exec: {path}({args_repr}) -> OK"
+                self.conversationDisplay.addItem(msg)
+                self.messageHistory += msg + "\n"
+            except Exception as e:
+                msg = f"Exec: {path} failed: {e}"
+                self.conversationDisplay.addItem(msg)
+                self.messageHistory += msg + "\n"
+                
+    def _split_top_level_commas(self, s: str):
+        """split using comma"""
+        parts = []
+        cur = []
+        level = 0
+        in_str = None
+        escape = False
+        for ch in s:
+            if in_str:
+                cur.append(ch)
+                if escape:
+                    escape = False
+                elif ch == '\\':
+                    escape = True
+                elif ch == in_str:
+                    in_str = None
+                continue
+            if ch in ("'", '"'):
+                in_str = ch
+                cur.append(ch)
+                continue
+            if ch == '(':
+                level += 1
+                cur.append(ch)
+            elif ch == ')':
+                level = max(0, level - 1)
+                cur.append(ch)
+            elif ch == ',' and level == 0:
+                part = ''.join(cur).strip()
+                if part:
+                    parts.append(part)
+                cur = []
+            else:
+                cur.append(ch)
+        if cur:
+            part = ''.join(cur).strip()
+            if part:
+                parts.append(part)
+        return parts
+        
+    def _parse_args(self, s: str):
+        """understand the type of args in AI-output calls"""
+        if s == '':
+            return []
+        items = self._split_top_level_commas(s)
+        args = []
+        for it in items:
+            t = it.strip()
+            if t == '':
+                continue
+            if t == 'True':
+                args.append(True)
+            elif t == 'False':
+                args.append(False)
+            elif t == 'None':
+                args.append(None)
+            elif (t.startswith("'") and t.endswith("'")) or (t.startswith('"') and t.endswith('"')):
+                args.append(t[1:-1])
+            else:
+                # try float or int
+                try:
+                    if any(c in t for c in ('.', 'e', 'E')):
+                        args.append(float(t))
+                    else:
+                        args.append(int(t, 0))
+                except Exception:
+                    # common string
+                    args.append(t)
+        return args
 
 class mainUI(QMainWindow):
     """the main window UI 
@@ -576,6 +881,8 @@ class mainUI(QMainWindow):
         self.mainSettings = mainSettings()
         self.alchemicalAdvancedSettings = alchemicalAdvancedSettings()
         self.geometricAdvancedSettings = geometricAdvancedSettings()
+        self.aiAssistantDialog = AIAssistantDialog(self)
+        self.aiAssistantDialog.hide()
 
         self.setGeometry(0,0,0,0)
         self.setWindowTitle(__PROGRAM_NAME__)    
@@ -598,7 +905,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         # settings
         self.settingsAction = QAction('&Settings', self)
-        self.settingsAction.setStatusTip('Set pathes for third-party softwares')
+        self.settingsAction.setStatusTip('Setting third-party service')
         self.settingsAction.triggered.connect(self._mainSettings())
 
         # exit
@@ -635,8 +942,15 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         )
         self.quickLDDMProteinLigandAction.triggered.connect(self._quickSetProteinLigandLDDM)
 
+        # LDDM
+        self.quickAISettingAction = QAction('AI-Assisted Setting')
+        self.quickAISettingAction.setStatusTip(
+            'Set up simulations using AI assistance'
+        )
+        self.quickAISettingAction.triggered.connect(self._quickSetAI)
+
         # help
-        self.helpAction = QAction('&Help', self)
+        self.helpAction = QAction('&Help (Deprecated)', self)
         self.helpAction.setStatusTip('Open user manual')
         self.helpAction.triggered.connect(self._openDocFile)
 
@@ -671,6 +985,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickSettingsMenu.addAction(self.quickGeometricProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickAlchemicalProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickLDDMProteinLigandAction)
+        self.quickSettingsMenu.addAction(self.quickAISettingAction)
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(self.helpAction)
@@ -1111,11 +1426,11 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.alchemicalTabLayout = QVBoxLayout()
 
         
-        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.log):')
+        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.pmf/.log):')
         self.restraintInputsLayout = QVBoxLayout()
 
         # bound state
-        self.alchemicalBoundStateLabel = QLabel('Atoms/Bound state (.fepout):')
+        self.alchemicalBoundStateLabel = QLabel('Atoms/Bound state (.fepout/.pmf):')
         self.alchemicalBoundStateLayout = QGridLayout()
         
         self.alchemicalForwardLabel1 = QLabel('Forward:')
@@ -1151,7 +1466,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         # unbound state
 
-        self.alchemicalUnboundStateLabel = QLabel('Atoms/Unbound state (.fepout):')
+        self.alchemicalUnboundStateLabel = QLabel('Atoms/Unbound state (.fepout/.pmf):')
         self.alchemicalUnboundStateLayout = QGridLayout()
         
         self.alchemicalForwardLabel3 = QLabel('Forward:')
@@ -1245,6 +1560,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.alchemicalPostTypeBox = QComboBox()
         self.alchemicalPostTypeBox.addItem('FEP')
         self.alchemicalPostTypeBox.addItem('BAR')
+        self.alchemicalPostTypeBox.addItem('PMF')
         self.alchemicalPostTypeBox.setCurrentIndex(1)
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
@@ -1439,6 +1755,11 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
+
+        self.isRigidLigandCheckbox = QCheckBox('Rigid ligand (ligand RMSD restraints):')
+        self.isRigidLigandCheckbox.setChecked(False)
+
+        self.plotHysteresisLayout.addWidget(self.isRigidLigandCheckbox)
         self.plotHysteresisLayout.addWidget(self.plotHysteresisPlotButton)
 
         self.plotHysteresis.setLayout(self.plotHysteresisLayout)
@@ -1705,18 +2026,21 @@ Standard Binding Free Energy:\n\
                 jobType = 'fep'
         elif self.alchemicalPostTypeBox.currentText() == 'BAR':
                 jobType = 'bar'
+        elif self.alchemicalPostTypeBox.currentText() == 'PMF':
+                jobType = 'pmf'
 
         # check inputs
         rigid_ligand = False
-        for index, item in enumerate([
-                    self.alchemicalBackwardLineEdit1.text(), 
-                    self.alchemicalBackwardLineEdit2.text(), 
-                    self.alchemicalBackwardLineEdit3.text(), 
-                    self.alchemicalBackwardLineEdit4.text()
-        ]):
-            if (not os.path.exists(item)) and (index != 3):
-                QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
-                return
+        if jobType != 'pmf':
+            for index, item in enumerate([
+                        self.alchemicalBackwardLineEdit1.text(), 
+                        self.alchemicalBackwardLineEdit2.text(), 
+                        self.alchemicalBackwardLineEdit3.text(), 
+                        self.alchemicalBackwardLineEdit4.text()
+            ]):
+                if (not os.path.exists(item)) and (index != 3):
+                    QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
+                    return
 
         for index, item in enumerate([
                     self.alchemicalForwardLineEdit1.text(), 
@@ -2073,7 +2397,8 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
                             float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
                             self.alchemicalAdvancedSettings.reEqCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked(),
+                            self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.isChecked()
                         )
                     except PermissionError:
                         QMessageBox.warning(
@@ -2308,8 +2633,8 @@ Unknown error!'
                 backwardProfile = np.transpose(pTreat._fepoutFile(backwardFilePath))
                 backwardProfile[:,1] *= -1
             elif forwardPostfix == '.log':
-                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath))
-                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath))
+                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
             ploter.plotHysteresis(forwardProfile, backwardProfile)
         return f
     
@@ -2355,6 +2680,7 @@ Unknown error!'
         self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
+        self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)
         self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
                                                     through the alchemical route!')
@@ -2377,6 +2703,14 @@ Unknown error!'
         self.alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
                                                     through the LDDM!')
+        
+    def _quickSetAI(self):
+        """AI-assisted setting for binding free energy calculations
+        """
+        if self.mainSettings.openRouterAPILineEdit.text() == '' or self.mainSettings.openRouterModelLineEdit.text() == '':
+            QMessageBox.warning(self, 'Warning', 'Please set both the OpenRouter API and model paths before using the AI assistance.')
+            return
+        self.aiAssistantDialog.show()
 
     def _initSingalsSlots(self):
         """initialize (connect) singals and slots

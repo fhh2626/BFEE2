@@ -1,3 +1,4 @@
-__VERSION__ = '3.0.0'
-__NAMD_VERSION__ = '3.0'
+__VERSION__ = '3.1.0'
+__NAMD_VERSION__ = '3.0.1'
 __GMX_VERSION__ = '2024'
+
