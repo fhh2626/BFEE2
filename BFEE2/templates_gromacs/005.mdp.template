@@ -68,3 +68,7 @@ ref_t               = $temperature
 
 ;Velocity generation
 gen-vel             = no
+
+;Colvars
+colvars-active = yes
+colvars-configfile = $colvarsFile

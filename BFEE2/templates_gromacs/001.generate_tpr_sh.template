@@ -28,4 +28,4 @@ mkdir -p output
 DEFAULT_OUTPUT_FILENAME="output/$OUTPUT_BASENAME.out"
 # $GMX_BIN mdrun -ntmpi 1 -ntomp 4 -nb gpu -pme gpu -gpu_id 0 -s $TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME -colvars colvar.dat
 echo "You can now run gromacs by the following example:"
-echo "$GMX_BIN mdrun -ntmpi 1 -ntomp 4 -nb gpu -pme gpu -gpu_id 0 -s $TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME -colvars $COLVARS_INPUT_TEMPLATE"
+echo "$GMX_BIN mdrun -ntmpi 1 -ntomp 4 -nb gpu -pme gpu -gpu_id 0 -s $TPR_FILE -deffnm $DEFAULT_OUTPUT_FILENAME"

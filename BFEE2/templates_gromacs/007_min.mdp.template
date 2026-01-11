@@ -56,3 +56,7 @@ pcoupl              = no
 
 ;Velocity generation
 gen-vel             = yes
+
+;Colvars
+;colvars-active = no
+;colvars-configfile = $colvarsFile
