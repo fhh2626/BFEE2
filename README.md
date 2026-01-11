@@ -23,7 +23,7 @@ Support both rigid (exclude RMSD CV) and flexible (include RMSD CV) ligands and 
 ...<br>
 
 ## Requirements
-Python 3.6+, PySide 2, numpy, scipy, matplotlib, parmed and MDAnalysis.<br>
+Python 3.6+, PySide 6, numpy, scipy, matplotlib, parmed and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [GROMACS 2024 or later](https://manual.gromacs.org/).<br>
 **Note: Since both NAMD and Gromacs have incorporated Colvars in their latest binaries. Each release of BFEE3 corresponds to a version of NAMD/Gromacs. Please always use
 the corresponding or later versions of the MD engines for free-energy calculations!**
@@ -49,11 +49,15 @@ When possible, please consider mentioning [Fu et al. Nat. Protoc. 2022, doi:10.1
 
 
 Additional references:<br>
+WTM-λABF: [Zhou et al. J. Phys. Chem. Lett. 2025, 16, 4419–4427](https://pubs.acs.org/doi/abs/10.1021/acs.jpclett.5c00525) and [Zhou et al. Acc. Chem. Res. 2026, 59, 90–102](https://pubs.acs.org/doi/abs/10.1021/acs.accounts.5c00666)<br>
+The "LDDM" route [Bian et al. Nat. Comput. Sci., 2025, 5, 621–626](https://www.nature.com/articles/s43588-025-00821-w)<br>
 BFEE2: [Fu et al. J. Chem. Inf. Model. 2021, 61, 2116–2123](https://pubs.acs.org/doi/abs/10.1021/acs.jcim.1c00269)<br>
 BFEE2 for protein-protein binding free energy calculations [Fu et al. J. Chem. Inf. Model. 2023, 63, 2512–2519](https://pubs.acs.org/doi/full/10.1021/acs.jcim.3c00487)<br>
 Alchemical and geometric routes [Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794–802](https://pubs.acs.org/doi/abs/10.1021/ct3008099)<br>
 WTM-eABF: [Fu et al. Acc. Chem. Res. 2019, 52, 3254–3264](https://pubs.acs.org/doi/abs/10.1021/acs.accounts.9b00473) and [Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738–4745](https://pubs.acs.org/doi/abs/10.1021/acs.jpclett.8b01994)<br>
-Collective variables: [Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791)<br>
+NAMD3: [Phillips et al. J. Chem. Phys. 2020, 153, 044130](https://pubs.aip.org/aip/jcp/article-abstract/153/4/044130/1064953/Scalable-molecular-dynamics-on-CPU-and-GPU?redirectedFrom=fulltext)<br>
+Gromacs: [Abraham et al. SoftwareX, 2015, 1, 19-25](https://www.sciencedirect.com/science/article/pii/S2352711015000059)<br>
+Collective variables for restraints: [Fu et al. J. Chem. Theory Comput. 2017, 13, 5173–5178](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.7b00791)<br>
 Colvars module: [Fiorin et al. Mol. Phys. 2013 111, 3345-3362](https://www.tandfonline.com/doi/full/10.1080/00268976.2013.813594)<br>
 "Mother" of all restraint-based binding free-energy calculations: [Hermans et al. Isr. J. Chem. 1986, 27, 225–227](https://onlinelibrary.wiley.com/doi/abs/10.1002/ijch.198600032)<br>
 
