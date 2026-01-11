@@ -1677,24 +1677,26 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickPlot = QWidget()
         self.quickPlotLayout = QVBoxLayout()
 
-        # plot a (stratified) pmf
-        self.plotPmf = QGroupBox('Plot (stratified) PMFs:')
-        self.plotPmfLayout = QVBoxLayout()
+        # merge/plot a (stratified) pmf
+        self.mergePmf = QGroupBox('Merge (stratified) PMFs:')
+        self.mergePmfLayout = QVBoxLayout()
 
-        self.plotPmfLabel = QLabel('PMF files:')
-        self.plotPmfBox = QListWidget()
-        self.plotPmfChildLayout = QHBoxLayout()
-        self.plotPmfAddButton = QPushButton('Add')
-        self.plotPmfClearButton = QPushButton('Clear')
-        self.plotPmfPlotButton = QPushButton('Plot')
-        self.plotPmfChildLayout.addWidget(self.plotPmfAddButton)
-        self.plotPmfChildLayout.addWidget(self.plotPmfClearButton)
-        self.plotPmfChildLayout.addWidget(self.plotPmfPlotButton)
+        self.mergePmfLabel = QLabel('PMF files:')
+        self.mergePmfBox = QListWidget()
+        self.mergePmfChildLayout = QHBoxLayout()
+        self.mergePmfAddButton = QPushButton('Add')
+        self.mergePmfClearButton = QPushButton('Clear')
+        self.mergePmfPlotButton = QPushButton('Plot')
+        self.mergePmfSaveButton = QPushButton('Save')
+        self.mergePmfChildLayout.addWidget(self.mergePmfAddButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfClearButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfPlotButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfSaveButton)
 
-        self.plotPmfLayout.addWidget(self.plotPmfLabel)
-        self.plotPmfLayout.addWidget(self.plotPmfBox)
-        self.plotPmfLayout.addLayout(self.plotPmfChildLayout)
-        self.plotPmf.setLayout(self.plotPmfLayout)
+        self.mergePmfLayout.addWidget(self.mergePmfLabel)
+        self.mergePmfLayout.addWidget(self.mergePmfBox)
+        self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
+        self.mergePmf.setLayout(self.mergePmfLayout)
 
         # calculate pmf RMSD convergence
         self.plotPmfConvergence = QGroupBox('Calculate PMF RMSD convergence:')
@@ -1712,25 +1714,6 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotPmfConvergenceLayout.addWidget(self.plotPmfConvergenceBox)
         self.plotPmfConvergenceLayout.addLayout(self.plotPmfConvergenceChildLayout)
         self.plotPmfConvergence.setLayout(self.plotPmfConvergenceLayout)
-
-        # merge a (stratified) pmf
-        self.mergePmf = QGroupBox('Merge (stratified) PMFs:')
-        self.mergePmfLayout = QVBoxLayout()
-
-        self.mergePmfLabel = QLabel('PMF files:')
-        self.mergePmfBox = QListWidget()
-        self.mergePmfChildLayout = QHBoxLayout()
-        self.mergePmfAddButton = QPushButton('Add')
-        self.mergePmfClearButton = QPushButton('Clear')
-        self.mergePmfmergeButton = QPushButton('Merge')
-        self.mergePmfChildLayout.addWidget(self.mergePmfAddButton)
-        self.mergePmfChildLayout.addWidget(self.mergePmfClearButton)
-        self.mergePmfChildLayout.addWidget(self.mergePmfmergeButton)
-
-        self.mergePmfLayout.addWidget(self.mergePmfLabel)
-        self.mergePmfLayout.addWidget(self.mergePmfBox)
-        self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
-        self.mergePmf.setLayout(self.mergePmfLayout)
 
         # plot hysteresis between forward and backward simulations
         self.plotHysteresis = QGroupBox('Plot hysteresis between bidirectional simulations:')
@@ -1765,7 +1748,6 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         self.plotHysteresis.setLayout(self.plotHysteresisLayout)
 
-        self.quickPlotLayout.addWidget(self.plotPmf)
         self.quickPlotLayout.addWidget(self.mergePmf)
         self.quickPlotLayout.addWidget(self.plotPmfConvergence)
         self.quickPlotLayout.addWidget(self.plotHysteresis)
@@ -2523,62 +2505,62 @@ Unknown error!'
 
         return f 
 
-    def _mergePMFs(self):
-        """merge a series of overlapped pmfs
+    def _getMergedPMF(self):
+        """Read PMF files from mergePmfBox and return the merged PMF.
         
         Returns:
-            function obj: a slot function that merges a series of overlapped pmfs
+            numpy.ndarray or None: The merged PMF array, or None if an error occurred.
+        """
+        if self.mergePmfBox.count() == 0:
+            QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
+            return None
+
+        pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+
+        if not ploter.isGaWTM(pmfFiles):
+            pmfs = [ploter.readPMF(item) for item in pmfFiles]
+        else:
+            pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+            try:
+                pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
+            except ploter.NoCorrectionFileError:
+                QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                return None
+
+        return ploter.mergePMF(pmfs)
+
+    def _savePMFs(self):
+        """Save merged PMFs to a file.
+        
+        Returns:
+            function obj: a slot function that saves the merged PMFs
         """
         
         def f():
-            if self.mergePmfBox.count() == 0:
-                QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
+            mergedPMF = self._getMergedPMF()
+            if mergedPMF is None:
                 return
-
+            
             path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
-
-            pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
-
-            if not ploter.isGaWTM(pmfFiles):
-                pmfs = [ploter.readPMF(item) for item in pmfFiles]
-            else:
-                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
-                try:
-                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
-                except ploter.NoCorrectionFileError:
-                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
-                    return
-
-            mergedPMF = ploter.mergePMF(pmfs)
+            if not path:
+                return
+                
             ploter.writePMF(path, mergedPMF)
-            QMessageBox.information(self, 'Merge PMFs', f'PMF merged successfully!')
+            QMessageBox.information(self, 'Save PMFs', f'PMF saved successfully!')
         return f
 
     def _plotPMFs(self):
-        """plot a series of overlapped pmfs
+        """Plot merged PMFs.
         
         Returns:
-            function obj: a slot function that plots a series of overlapped pmfs
+            function obj: a slot function that plots the merged PMFs
         """
         
         def f():
-            if self.plotPmfBox.count() == 0:
-                QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
+            mergedPMF = self._getMergedPMF()
+            if mergedPMF is None:
                 return
-
-            pmfFiles = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
-
-            if not ploter.isGaWTM(pmfFiles):
-                pmfs = [ploter.readPMF(item) for item in pmfFiles]
-            else:
-                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
-                try:
-                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
-                except ploter.NoCorrectionFileError:
-                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
-                    return
             
-            mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
         return f
 
@@ -2843,12 +2825,10 @@ Unknown error!'
         self.calculateButton.clicked.connect(self._showFinalResults())
 
         # quick-plot tab
-        self.plotPmfAddButton.clicked.connect(commonSlots.openFilesDialog('pmf', self.plotPmfBox))
-        self.plotPmfClearButton.clicked.connect(self.plotPmfBox.clear)
-        self.plotPmfPlotButton.clicked.connect(self._plotPMFs())
         self.mergePmfAddButton.clicked.connect(commonSlots.openFilesDialog('pmf', self.mergePmfBox))
         self.mergePmfClearButton.clicked.connect(self.mergePmfBox.clear)
-        self.mergePmfmergeButton.clicked.connect(self._mergePMFs())
+        self.mergePmfPlotButton.clicked.connect(self._plotPMFs())
+        self.mergePmfSaveButton.clicked.connect(self._savePMFs())
         self.plotPmfConvergenceBrowseButton.clicked.connect(commonSlots.openFileDialog('pmf', self.plotPmfConvergenceBox))
         self.plotPmfConvergencePlotButton.clicked.connect(self._plotRMSDConvergence())
         self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))

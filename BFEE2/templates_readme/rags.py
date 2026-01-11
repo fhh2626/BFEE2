@@ -140,10 +140,8 @@ LDDM:
 Inputs: Provide `colvars.in.tmp`, `colvars.traj`, and `fepout` from step 1, and the `fepout` file from step 2. LDDM uses double-wide sampling by default, so only one `fepout` file is needed per step. Restraint free energy is automatically calculated from Colvars files.
 Other parameters: `Steps per window (Step1)`, `Windows (Step1)`, `Equilibration per window (Step1)` define simulation length for step 1. `Temperature`, `Post-treatment type`: Same as for the alchemical route.
 Quick-plot:
-Plot (stratified) PMFs:
-Plots PMF curves from geometrical route calculations for quick inspection. If stratification was used, inputting PMF files from consecutive windows will automatically merge them for plotting.
 Merge (stratified) PMFs:
-Same as above, but outputs a single merged `.pmf` file for the main post-treatment analysis.
+Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them. Use "Add" to add PMF files, "Clear" to clear the list, "Plot" to visualize the merged PMF, and "Save" to output a single merged `.pmf` file for the main post-treatment analysis.
 Calculate PMF RMSD convergence:
 Takes a `.hist.pmf` file as input and plots the PMF's root-mean-square deviation (vs. zero vector) over time. A plateau indicates convergence.
 Plot hysteresis between bidirectional simulations:
