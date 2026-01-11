@@ -1707,8 +1707,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotPmfConvergenceChildLayout = QHBoxLayout()
         self.plotPmfConvergenceBrowseButton = QPushButton('Browse')
         self.plotPmfConvergencePlotButton = QPushButton('Plot')
+        self.plotPmfConvergenceSaveButton = QPushButton('Save')
         self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergenceBrowseButton)
         self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergencePlotButton)
+        self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergenceSaveButton)
 
         self.plotPmfConvergenceLayout.addWidget(self.plotPmfConvergenceLabel)
         self.plotPmfConvergenceLayout.addWidget(self.plotPmfConvergenceBox)
@@ -1735,7 +1737,11 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLineEdit)
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardButton)
 
+        self.plotHysteresisButtonLayout = QHBoxLayout()
         self.plotHysteresisPlotButton = QPushButton('Plot')
+        self.plotHysteresisSaveButton = QPushButton('Save')
+        self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisPlotButton)
+        self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisSaveButton)
 
         self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
@@ -1744,7 +1750,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.isRigidLigandCheckbox.setChecked(False)
 
         self.plotHysteresisLayout.addWidget(self.isRigidLigandCheckbox)
-        self.plotHysteresisLayout.addWidget(self.plotHysteresisPlotButton)
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisButtonLayout)
 
         self.plotHysteresis.setLayout(self.plotHysteresisLayout)
 
@@ -2541,7 +2547,12 @@ Unknown error!'
             if mergedPMF is None:
                 return
             
-            path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
+            path, _ = QFileDialog.getSaveFileName(
+                None, 
+                'Set the name of merged PMF',
+                '',
+                'PMF files (*.pmf);;All Files (*)'
+            )
             if not path:
                 return
                 
@@ -2580,7 +2591,137 @@ Unknown error!'
             rmsds = ploter.parseHistFile(path)
             ploter.plotConvergence(rmsds)
         return f
+
+    def _saveRMSDConvergence(self):
+        """save PMF RMSD convergence data to a file
+        
+        Returns:
+            function obj: a slot function that saves PMF RMSD convergence data to a file
+        """
+        
+        def f():
+            path = self.plotPmfConvergenceBox.text()
+            if not os.path.exists(path):
+                QMessageBox.warning(self, 'Error', f'file {path} does not exist!')
+                return
+            
+            savePath, _ = QFileDialog.getSaveFileName(
+                None, 
+                'Save PMF RMSD convergence data',
+                '',
+                'Data files (*.dat *.txt);;All Files (*)'
+            )
+            if not savePath:
+                return
+                
+            rmsds = ploter.parseHistFile(path)
+            ploter.saveConvergence(rmsds, savePath)
+            QMessageBox.information(self, 'Save', f'Data saved successfully!')
+        return f
     
+    def _getHysteresisProfiles(self):
+        """Parse input files and return forward and backward hysteresis profiles.
+        
+        Returns:
+            tuple: (forwardProfile, backwardProfile) as np.arrays, or (None, None) on error
+        """
+        forwardFilePath = self.plotHysteresisForwardLineEdit.text()
+        backwardFilePath = self.plotHysteresisBackwardLineEdit.text()
+        
+        # Check forward file exists
+        if not os.path.exists(forwardFilePath):
+            QMessageBox.warning(self, 'Error', f'file {forwardFilePath} does not exist!')
+            return None, None
+        
+        forwardPostfix = os.path.splitext(forwardFilePath)[-1]
+        
+        # Validate file type
+        if forwardPostfix not in ['.fepout', '.log']:
+            QMessageBox.warning(self, 'Error', 'File type not correct! Only .fepout and .log files are supported.')
+            return None, None
+        
+        # Check backward file if provided
+        hasBackwardFile = backwardFilePath.strip() != '' and os.path.exists(backwardFilePath)
+        if backwardFilePath.strip() != '' and not hasBackwardFile:
+            QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
+            return None, None
+        
+        if hasBackwardFile:
+            backwardPostfix = os.path.splitext(backwardFilePath)[-1]
+            if forwardPostfix != backwardPostfix:
+                QMessageBox.warning(self, 'Error', 'File types of forward and backward simulations are not the same!')
+                return None, None
+        
+        try:
+            if forwardPostfix == '.fepout':
+                # Use py_bar.NAMDParser to handle both double-wide and separate files
+                backward = backwardFilePath if hasBackwardFile else ''
+                try:
+                    parser = py_bar.NAMDParser(forwardFilePath, backward)
+                    windows, deltaU_data = parser.get_data()
+                except RuntimeError as e:
+                    if 'Forward and backward data do not match' in str(e):
+                        QMessageBox.warning(
+                            self, 'Error', 
+                            'Cannot parse fepout file!\n\n'
+                            'If you only provide one file, please make sure it is a double-wide format.\n'
+                            'Otherwise, please provide both forward and backward files.'
+                        )
+                        return None, None
+                    raise
+                
+                # Get temperature for free energy calculation
+                try:
+                    temperature = float(self.alchemicalPostTemperatureLineEdit.text())
+                except ValueError:
+                    temperature = 300.0
+                
+                # Calculate free energy profiles using FEPAnalyzer
+                analyzer = py_bar.FEPAnalyzer(windows, deltaU_data, temperature)
+                window_boundaries, free_energies, errors = analyzer.FEP_free_energy()
+                
+                # Build forward and backward profiles from bidirectional FEP data
+                # Extract lambda values and cumulative free energies
+                lambdas = [w[0] for w in window_boundaries]
+                lambdas.append(window_boundaries[-1][1])  # Add final lambda
+                
+                # Calculate forward cumulative sum
+                forward_cumsum = [0.0]
+                backward_cumsum = [0.0]
+                
+                for i, (dU_forward, dU_backward) in enumerate(deltaU_data):
+                    # Forward: exponential average of forward deltaU
+                    beta = 1.0 / (py_bar.BOLTZMANN * temperature)
+                    dG_forward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_forward * beta)))
+                    dG_backward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_backward * beta)))
+                    
+                    forward_cumsum.append(forward_cumsum[-1] + dG_forward)
+                    backward_cumsum.append(backward_cumsum[-1] - dG_backward)
+                
+                forwardProfile = np.column_stack([lambdas, forward_cumsum])
+                backwardProfile = np.column_stack([lambdas, backward_cumsum])
+                
+            elif forwardPostfix == '.log':
+                # For .log files, require both forward and backward files
+                if not hasBackwardFile:
+                    QMessageBox.warning(
+                        self, 'Error', 
+                            'For .log files, both forward and backward files are required.'
+                    )
+                    return None, None
+                
+                pTreat = postTreatment.postTreatment(
+                    float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical'
+                )
+                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+            
+            return forwardProfile, backwardProfile
+            
+        except Exception as e:
+            QMessageBox.warning(self, 'Error', f'Failed to parse hysteresis data:\n{str(e)}')
+            return None, None
+
     def _plotHysteresis(self):
         """plot hysteresis between forward and backward alchemical transformations
         
@@ -2593,102 +2734,37 @@ Unknown error!'
         """
         
         def f():
-            forwardFilePath = self.plotHysteresisForwardLineEdit.text()
-            backwardFilePath = self.plotHysteresisBackwardLineEdit.text()
-            
-            # Check forward file exists
-            if not os.path.exists(forwardFilePath):
-                QMessageBox.warning(self, 'Error', f'file {forwardFilePath} does not exist!')
+            forwardProfile, backwardProfile = self._getHysteresisProfiles()
+            if forwardProfile is None:
                 return
             
-            forwardPostfix = os.path.splitext(forwardFilePath)[-1]
-            
-            # Validate file type
-            if forwardPostfix not in ['.fepout', '.log']:
-                QMessageBox.warning(self, 'Error', 'File type not correct! Only .fepout and .log files are supported.')
-                return
-            
-            # Check backward file if provided
-            hasBackwardFile = backwardFilePath.strip() != '' and os.path.exists(backwardFilePath)
-            if backwardFilePath.strip() != '' and not hasBackwardFile:
-                QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
-                return
-            
-            if hasBackwardFile:
-                backwardPostfix = os.path.splitext(backwardFilePath)[-1]
-                if forwardPostfix != backwardPostfix:
-                    QMessageBox.warning(self, 'Error', 'File types of forward and backward simulations are not the same!')
-                    return
-            
-            try:
-                if forwardPostfix == '.fepout':
-                    # Use py_bar.NAMDParser to handle both double-wide and separate files
-                    backward = backwardFilePath if hasBackwardFile else ''
-                    try:
-                        parser = py_bar.NAMDParser(forwardFilePath, backward)
-                        windows, deltaU_data = parser.get_data()
-                    except RuntimeError as e:
-                        if 'Forward and backward data do not match' in str(e):
-                            QMessageBox.warning(
-                                self, 'Error', 
-                                'Cannot parse fepout file!\n\n'
-                                'If you only provide one file, please make sure it is a double-wide format.\n'
-                                'Otherwise, please provide both forward and backward files.'
-                            )
-                            return
-                        raise
-                    
-                    # Get temperature for free energy calculation
-                    try:
-                        temperature = float(self.alchemicalPostTemperatureLineEdit.text())
-                    except ValueError:
-                        temperature = 300.0
-                    
-                    # Calculate free energy profiles using FEPAnalyzer
-                    analyzer = py_bar.FEPAnalyzer(windows, deltaU_data, temperature)
-                    window_boundaries, free_energies, errors = analyzer.FEP_free_energy()
-                    
-                    # Build forward and backward profiles from bidirectional FEP data
-                    # Extract lambda values and cumulative free energies
-                    lambdas = [w[0] for w in window_boundaries]
-                    lambdas.append(window_boundaries[-1][1])  # Add final lambda
-                    
-                    # Calculate forward cumulative sum
-                    forward_cumsum = [0.0]
-                    backward_cumsum = [0.0]
-                    
-                    for i, (dU_forward, dU_backward) in enumerate(deltaU_data):
-                        # Forward: exponential average of forward deltaU
-                        beta = 1.0 / (py_bar.BOLTZMANN * temperature)
-                        dG_forward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_forward * beta)))
-                        dG_backward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_backward * beta)))
-                        
-                        forward_cumsum.append(forward_cumsum[-1] + dG_forward)
-                        backward_cumsum.append(backward_cumsum[-1] - dG_backward)
-                    
-                    forwardProfile = np.column_stack([lambdas, forward_cumsum])
-                    backwardProfile = np.column_stack([lambdas, backward_cumsum])
-                    
-                elif forwardPostfix == '.log':
-                    # For .log files, require both forward and backward files
-                    if not hasBackwardFile:
-                        QMessageBox.warning(
-                            self, 'Error', 
-                                'For .log files, both forward and backward files are required.'
-                        )
-                        return
-                    
-                    pTreat = postTreatment.postTreatment(
-                        float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical'
-                    )
-                    forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
-                    backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+            ploter.plotHysteresis(forwardProfile, backwardProfile)
                 
-                ploter.plotHysteresis(forwardProfile, backwardProfile)
-                
-            except Exception as e:
-                QMessageBox.warning(self, 'Error', f'Failed to plot hysteresis:\n{str(e)}')
+        return f
+
+    def _saveHysteresis(self):
+        """save hysteresis data to a file
+        
+        Returns:
+            function obj: a slot function that saves hysteresis data to a file
+        """
+        
+        def f():
+            forwardProfile, backwardProfile = self._getHysteresisProfiles()
+            if forwardProfile is None:
                 return
+            
+            savePath, _ = QFileDialog.getSaveFileName(
+                None, 
+                'Save hysteresis data',
+                '',
+                'Data files (*.dat *.txt);;All Files (*)'
+            )
+            if not savePath:
+                return
+                
+            ploter.saveHysteresis(forwardProfile, backwardProfile, savePath)
+            QMessageBox.information(self, 'Save', f'Data saved successfully!')
                 
         return f
     
@@ -2831,7 +2907,9 @@ Unknown error!'
         self.mergePmfSaveButton.clicked.connect(self._savePMFs())
         self.plotPmfConvergenceBrowseButton.clicked.connect(commonSlots.openFileDialog('pmf', self.plotPmfConvergenceBox))
         self.plotPmfConvergencePlotButton.clicked.connect(self._plotRMSDConvergence())
+        self.plotPmfConvergenceSaveButton.clicked.connect(self._saveRMSDConvergence())
         self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))
         self.plotHysteresisBackwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisBackwardLineEdit))
         self.plotHysteresisPlotButton.clicked.connect(self._plotHysteresis())
+        self.plotHysteresisSaveButton.clicked.connect(self._saveHysteresis())
         

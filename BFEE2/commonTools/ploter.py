@@ -139,6 +139,25 @@ def plotHysteresis(forwardProfile, backwardProfile):
     plt.legend()
     plt.show()
 
+def saveHysteresis(forwardProfile, backwardProfile, filePath):
+    """save the hysteresis data to a text file
+
+    Args:
+        forwardProfile (np.array, N*2): forward free-energy profile data
+        backwardProfile (np.array, N*2): backward free-energy profile data
+        filePath (str): path to save the data file
+    """
+    
+    # Combine forward and backward data into a single array
+    # Format: Lambda, Forward_dG, Backward_dG
+    combined_data = np.column_stack([
+        forwardProfile[:,0], 
+        forwardProfile[:,1], 
+        backwardProfile[:,1]
+    ])
+    header = 'Lambda\tForward_dG(kcal/mol)\tBackward_dG(kcal/mol)'
+    np.savetxt(filePath, combined_data, fmt='%g', header=header, delimiter='\t')
+
 def calcRMSD(inputArray):
     """calculate RMSD of a np.array with respect to (0,0,0,...0)
 
@@ -216,3 +235,16 @@ def plotConvergence(rmsdList):
     plt.xlabel('Frame')
     plt.ylabel('RMSD (Colvars Unit)')
     plt.show()
+
+def saveConvergence(rmsdList, filePath):
+    """save the PMF RMSD convergence data to a text file
+
+    Args:
+        rmsdList (list or 1D np.array, float): time evolution of RMSD with respect to zero array
+        filePath (str): path to save the data file
+    """    
+
+    frames = np.arange(1, len(rmsdList) + 1)
+    data = np.column_stack([frames, rmsdList])
+    header = 'Frame\tRMSD(Colvars_Unit)'
+    np.savetxt(filePath, data, fmt='%g', header=header, delimiter='\t')
