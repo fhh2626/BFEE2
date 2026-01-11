@@ -1058,7 +1058,7 @@ metadynamics {{                   \n\
     hillWidth         3.0         \n\
     hillWeight        {0.05 * scaleFactor:.2f}        \n\
     wellTempered      on          \n\
-    biasTemperature   4000        \n\
+    biasTemperature   3000        \n\
 }}                                \n'
         return string
     

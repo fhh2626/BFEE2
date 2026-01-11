@@ -24,6 +24,7 @@ import BFEE2.postTreatment as postTreatment
 import BFEE2.templates_gromacs.BFEEGromacs as BFEEGromacs
 from BFEE2.commonTools import commonSlots, fileParser, ploter
 from BFEE2.templates_readme import rags
+from BFEE2.third_party import py_bar
 
 try:
     import importlib.resources as pkg_resources
@@ -2600,41 +2601,112 @@ Unknown error!'
     def _plotHysteresis(self):
         """plot hysteresis between forward and backward alchemical transformations
         
+        For .fepout files: uses py_bar.NAMDParser to handle both double-wide and 
+        separate forward/backward files.
+        For .log files: uses the original TI log parsing method.
+        
         Returns:
             function obj: a slot function that plot hysteresis between forward and backward alchemical transformations
         """
         
         def f():
             forwardFilePath = self.plotHysteresisForwardLineEdit.text()
-            backwardFilePath = self.plotHysteresisBackwardLineEdit.text() 
+            backwardFilePath = self.plotHysteresisBackwardLineEdit.text()
+            
+            # Check forward file exists
             if not os.path.exists(forwardFilePath):
                 QMessageBox.warning(self, 'Error', f'file {forwardFilePath} does not exist!')
                 return
-            if not os.path.exists(backwardFilePath):
-                QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
-                return
-
+            
             forwardPostfix = os.path.splitext(forwardFilePath)[-1]
-            backwardPostfix = os.path.splitext(backwardFilePath)[-1]
-
-            if forwardPostfix != '.fepout' and forwardPostfix != '.log' \
-                and backwardPostfix != '.fepout' and forwardPostfix != '.log':
-                QMessageBox.warning(self, 'Error', f'File type not correct!')
-                return
-
-            if forwardPostfix != backwardPostfix:
-                QMessageBox.warning(self, 'Error', f'File types of forward and backward simulations are not the same!')
+            
+            # Validate file type
+            if forwardPostfix not in ['.fepout', '.log']:
+                QMessageBox.warning(self, 'Error', 'File type not correct! Only .fepout and .log files are supported.')
                 return
             
-            pTreat = postTreatment.postTreatment(float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical')
-            if forwardPostfix == '.fepout':
-                forwardProfile = np.transpose(pTreat._fepoutFile(forwardFilePath))
-                backwardProfile = np.transpose(pTreat._fepoutFile(backwardFilePath))
-                backwardProfile[:,1] *= -1
-            elif forwardPostfix == '.log':
-                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
-                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
-            ploter.plotHysteresis(forwardProfile, backwardProfile)
+            # Check backward file if provided
+            hasBackwardFile = backwardFilePath.strip() != '' and os.path.exists(backwardFilePath)
+            if backwardFilePath.strip() != '' and not hasBackwardFile:
+                QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
+                return
+            
+            if hasBackwardFile:
+                backwardPostfix = os.path.splitext(backwardFilePath)[-1]
+                if forwardPostfix != backwardPostfix:
+                    QMessageBox.warning(self, 'Error', 'File types of forward and backward simulations are not the same!')
+                    return
+            
+            try:
+                if forwardPostfix == '.fepout':
+                    # Use py_bar.NAMDParser to handle both double-wide and separate files
+                    backward = backwardFilePath if hasBackwardFile else ''
+                    try:
+                        parser = py_bar.NAMDParser(forwardFilePath, backward)
+                        windows, deltaU_data = parser.get_data()
+                    except RuntimeError as e:
+                        if 'Forward and backward data do not match' in str(e):
+                            QMessageBox.warning(
+                                self, 'Error', 
+                                'Cannot parse fepout file!\n\n'
+                                'If you only provide one file, please make sure it is a double-wide format.\n'
+                                'Otherwise, please provide both forward and backward files.'
+                            )
+                            return
+                        raise
+                    
+                    # Get temperature for free energy calculation
+                    try:
+                        temperature = float(self.alchemicalPostTemperatureLineEdit.text())
+                    except ValueError:
+                        temperature = 300.0
+                    
+                    # Calculate free energy profiles using FEPAnalyzer
+                    analyzer = py_bar.FEPAnalyzer(windows, deltaU_data, temperature)
+                    window_boundaries, free_energies, errors = analyzer.FEP_free_energy()
+                    
+                    # Build forward and backward profiles from bidirectional FEP data
+                    # Extract lambda values and cumulative free energies
+                    lambdas = [w[0] for w in window_boundaries]
+                    lambdas.append(window_boundaries[-1][1])  # Add final lambda
+                    
+                    # Calculate forward cumulative sum
+                    forward_cumsum = [0.0]
+                    backward_cumsum = [0.0]
+                    
+                    for i, (dU_forward, dU_backward) in enumerate(deltaU_data):
+                        # Forward: exponential average of forward deltaU
+                        beta = 1.0 / (py_bar.BOLTZMANN * temperature)
+                        dG_forward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_forward * beta)))
+                        dG_backward = -py_bar.BOLTZMANN * temperature * np.log(np.mean(np.exp(-dU_backward * beta)))
+                        
+                        forward_cumsum.append(forward_cumsum[-1] + dG_forward)
+                        backward_cumsum.append(backward_cumsum[-1] - dG_backward)
+                    
+                    forwardProfile = np.column_stack([lambdas, forward_cumsum])
+                    backwardProfile = np.column_stack([lambdas, backward_cumsum])
+                    
+                elif forwardPostfix == '.log':
+                    # For .log files, require both forward and backward files
+                    if not hasBackwardFile:
+                        QMessageBox.warning(
+                            self, 'Error', 
+                                'For .log files, both forward and backward files are required.'
+                        )
+                        return
+                    
+                    pTreat = postTreatment.postTreatment(
+                        float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical'
+                    )
+                    forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+                    backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
+                
+                ploter.plotHysteresis(forwardProfile, backwardProfile)
+                
+            except Exception as e:
+                QMessageBox.warning(self, 'Error', f'Failed to plot hysteresis:\n{str(e)}')
+                return
+                
         return f
     
     def _quickSetProteinProteinGeometric(self):
