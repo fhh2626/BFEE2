@@ -1872,17 +1872,24 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
                 Haohao Fu (<a href="mailto:fhh2626@gmail.com">fhh2626@gmail.com</a>)<br>
                 Haochuan Chen (<a href="mailto:summersnow9403@gmail.com">summersnow9403@gmail.com</a>)<br>
                 <b>License:</b><br>
-                BFEE2 is free software: you can redistribute it and/or modify it
+                BFEE is free software: you can redistribute it and/or modify it
                 under the terms of the GNU General Public License as published by
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
-                <b>Reference:</b><br>
-                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
+                <b>References:</b><br>
+                When possible, please consider mentioning <b>Fu et al. Nat. Protoc. 2022, 17 (4), 1114–1141</b> when BFEE is used in your project.<br>
+                <b>Additional references:</b><br>
+                <b>WTM-λABF:</b> Zhou et al. J. Phys. Chem. Lett. 2025, 16, 4419-4427 and Zhou et al. Acc. Chem. Res. 2026, 59, 90-102<br>
+                <b>The "LDDM" route:</b> Bian et al. Nat. Comput. Sci. 2025, 5, 621-626<br>
+                <b>BFEE2:</b> Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
+                <b>BFEE2 for protein-protein binding:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
                 <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
                 <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254-3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738-4745<br>
-                <b>GaWTM-eABF:</b> Chen et al. J. Chem. Theory Comput. 2021, 17, 3886-3894<br>
-                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
-                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
+                <b>NAMD3:</b> Phillips et al. J. Chem. Phys. 2020, 153, 044130<br>
+                <b>Gromacs:</b> Abraham et al. SoftwareX 2015, 1, 19-25<br>
+                <b>Collective variables for restraints:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
+                <b>Colvars module:</b> Fiorin et al. Mol. Phys. 2013, 111, 3345-3362<br>
+                <b>"Mother" of all restraint-based binding free-energy calculations:</b> Hermans et al. Isr. J. Chem. 1986, 27, 225-227<br>
                 ''')
         return f
 
