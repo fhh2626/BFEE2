@@ -12,10 +12,10 @@ import numpy as np
 from appdirs import user_config_dir
 from PySide6 import QtCore
 from PySide6.QtGui import QFont, QIcon, QAction
-from PySide6.QtWidgets import ( QApplication, QCheckBox, QComboBox,
+from PySide6.QtWidgets import ( QApplication, QButtonGroup, QCheckBox, QComboBox,
                                QFileDialog, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                               QMainWindow, QMessageBox, QPushButton,
+                               QMainWindow, QMessageBox, QPushButton, QRadioButton,
                                QSplitter, QTabWidget, QToolBar, QVBoxLayout,
                                QWidget, QSpacerItem, QProgressDialog)
 
@@ -1722,8 +1722,26 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotHysteresis = QGroupBox('Plot hysteresis between bidirectional simulations:')
         self.plotHysteresisLayout = QVBoxLayout()
 
+        # Radio buttons for file type selection
+        self.plotHysteresisRadioLayout = QHBoxLayout()
+        self.plotHysteresisRadioBidirectionalFepout = QRadioButton('Bidirectional fepout')
+        self.plotHysteresisRadioBidirectionalLog = QRadioButton('Bidirectional log')
+        self.plotHysteresisRadioDoubleWideFepout = QRadioButton('Double-wide fepout')
+        self.plotHysteresisRadioBidirectionalFepout.setChecked(True)  # Default selection
+        self.plotHysteresisRadioButtonGroup = QButtonGroup(self)
+        self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioBidirectionalFepout)
+        self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioBidirectionalLog)
+        self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioDoubleWideFepout)
+        self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioBidirectionalFepout)
+        self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioBidirectionalLog)
+        self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioDoubleWideFepout)
+        # Connect radio buttons to state change handler
+        self.plotHysteresisRadioBidirectionalFepout.toggled.connect(self._changeHysteresisInputState)
+        self.plotHysteresisRadioBidirectionalLog.toggled.connect(self._changeHysteresisInputState)
+        self.plotHysteresisRadioDoubleWideFepout.toggled.connect(self._changeHysteresisInputState)
+
         self.plotHysteresisForwardLayout = QHBoxLayout()
-        self.plotHysteresisForwardLabel = QLabel('Forward (fepout/log): ')
+        self.plotHysteresisForwardLabel = QLabel('Forward (fepout):')
         self.plotHysteresisForwardLineEdit = QLineEdit()
         self.plotHysteresisForwardButton = QPushButton('Browse')
         self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardLabel)
@@ -1731,7 +1749,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardButton)
 
         self.plotHysteresisBackwardLayout = QHBoxLayout()
-        self.plotHysteresisBackwardLabel = QLabel('Backward (fepout/log):')
+        self.plotHysteresisBackwardLabel = QLabel('Backward (fepout):')
         self.plotHysteresisBackwardLineEdit = QLineEdit()
         self.plotHysteresisBackwardButton = QPushButton('Browse')
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLabel)
@@ -1744,11 +1762,13 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisPlotButton)
         self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisSaveButton)
 
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisRadioLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
 
         self.isRigidLigandCheckbox = QCheckBox('Rigid ligand (ligand RMSD restraints):')
         self.isRigidLigandCheckbox.setChecked(False)
+        self.isRigidLigandCheckbox.setEnabled(False)  # Disabled by default (Bidirectional fepout)
 
         self.plotHysteresisLayout.addWidget(self.isRigidLigandCheckbox)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisButtonLayout)
@@ -1840,6 +1860,38 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
             self.selectMDEngineCombobox.setEnabled(False)
             self.selectStrategyCombobox.setEnabled(False)
             self.selectStrategyAdvancedButton.setEnabled(False)
+
+    def _changeHysteresisInputState(self):
+        """enable/disable and update labels for hysteresis input fields based on radio button selection
+        """
+        
+        if self.plotHysteresisRadioBidirectionalFepout.isChecked():
+            # Bidirectional fepout: both rows enabled with fepout labels
+            self.plotHysteresisForwardLabel.setText('Forward (fepout):')
+            self.plotHysteresisBackwardLabel.setText('Backward (fepout):')
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(True)
+            self.plotHysteresisBackwardButton.setEnabled(True)
+            self.isRigidLigandCheckbox.setEnabled(False)
+        elif self.plotHysteresisRadioBidirectionalLog.isChecked():
+            # Bidirectional log: both rows enabled with log labels
+            self.plotHysteresisForwardLabel.setText('Forward (log):')
+            self.plotHysteresisBackwardLabel.setText('Backward (log):')
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(True)
+            self.plotHysteresisBackwardButton.setEnabled(True)
+            self.isRigidLigandCheckbox.setEnabled(True)
+        elif self.plotHysteresisRadioDoubleWideFepout.isChecked():
+            # Double-wide fepout: only first row enabled, second row disabled
+            self.plotHysteresisForwardLabel.setText('Double-wide (fepout):')
+            self.plotHysteresisBackwardLabel.setText('Backward (fepout):')
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(False)
+            self.plotHysteresisBackwardButton.setEnabled(False)
+            self.isRigidLigandCheckbox.setEnabled(False)
 
     def _openDocFile(self):
         """open Documentation file
