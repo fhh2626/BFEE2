@@ -668,7 +668,7 @@ colvar {{                                   \n\
             string += f'\
     customFunction atan2(i3, i1) * 180 / 3.1415926\n\
     period  360                             \n\
-    wrapAround 0.0                          \n'
+    wrapAround {int((lowerBoundary + upperBoundary) / 2)}                          \n'
 
         if setBoundary:
             string += f'\
@@ -806,7 +806,7 @@ colvar {{                                   \n\
             string += f'\
     customFunction atan2(cos(t / 180 * 3.1415926), cos(p / 180 * 3.1415926) * sin(t / 180 * 3.1415926)) * 180 / 3.1415926\n\
     period  360                             \n\
-    wrapAround 0.0                          \n'
+    wrapAround {int((lowerBoundary + upperBoundary) / 2)}                          \n'
 
         if setBoundary:
             string += f'\
