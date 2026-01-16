@@ -127,7 +127,7 @@ LDDM (protein-ligand):
 3. Post-treatment: Use BFEE3 for analysis.
 
 Post-treatment:
-Geometric:
+Geometrical:
 PMF inputs: Provide `.czar.pmf` files for each step: RMSD(bound), Theta, Phi, Psi, theta, phi, r, and RMSD(unbound), corresponding to steps 1-8. Steps 1 and 8 (RMSD) are optional; omitting them implies a rigid ligand.
 Force constants: Enter the numerical values of the force constants for restraints on each CV (RMSD, Theta, Phi, Psi, theta, phi). Units are automatically handled based on the selected MD engine.
 Temperature: Simulation temperature. R*: A constant, set to the maximum separation distance (from step 7) or a distance where the PMF curve has plateaued. Pmf type: NAMD or Gromacs.

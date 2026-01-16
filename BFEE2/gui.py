@@ -153,7 +153,7 @@ class mainSettings(QWidget):
         return f
 
 class geometricAdvancedSettings(QWidget):
-    """advanced settings for the geometric route
+    """advanced settings for the geometrical route
        set pulling direction, non-standard solvent
        and number of stratification windows
     """
@@ -162,12 +162,12 @@ class geometricAdvancedSettings(QWidget):
         super().__init__()
         self._initUI()
         self._initSingalsSlots()
-        self.setWindowTitle('Geometric advanced settings')
+        self.setWindowTitle('Advanced settings for the geometrical route')
         self.setGeometry(0,0,0,0)
         #self.show()
 
     def _initUI(self):
-        """initialize UI for the geometric advanced settings
+        """initialize UI for the geometrical advanced settings
         """
 
         self.mainLayout = QVBoxLayout()
@@ -360,7 +360,7 @@ class geometricAdvancedSettings(QWidget):
             self.useCUDASOAIntegrator.setChecked(True)
 
     def _initSingalsSlots(self):
-        """initialize (connect) signial and slots for geometric advanced settings
+        """initialize (connect) signial and slots for geometrical advanced settings
         """
 
         self.nonStandardSolventPsfButton.clicked.connect(
@@ -388,7 +388,7 @@ class alchemicalAdvancedSettings(QWidget):
         super().__init__()
         self._initUI()
         self._initSingalsSlots()
-        self.setWindowTitle('Alchemical advanced settings')
+        self.setWindowTitle('Advanced settings for the alchemical route')
         self.setGeometry(0,0,0,0)
         #self.show()
 
@@ -1071,7 +1071,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         
         self.selectStrategyLabel = QLabel('Select MD engine and strategy: ')
         self.selectStrategyCombobox = QComboBox()
-        self.selectStrategyCombobox.addItem('Geometric')
+        self.selectStrategyCombobox.addItem('Geometrical')
         self.selectStrategyCombobox.addItem('Alchemical')
         self.selectStrategyAdvancedButton = QPushButton('Advanced settings')
         
@@ -1250,10 +1250,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.postTreatmentTab = QWidget()
 
         # post-treatment tabs
-        # Geometric and alchemical
+        # Geometrical and alchemical
         self.postTreatmentMainTabs = QTabWidget()
 
-        self.postTreatmentMainTabs.addTab(self.geometricTab, 'Geometric')
+        self.postTreatmentMainTabs.addTab(self.geometricTab, 'Geometrical')
         self.postTreatmentMainTabs.addTab(self.alchemicalTab, 'Alchemical')
         self.postTreatmentMainTabs.addTab(self.LDDMTab, 'LDDM')
 
@@ -1266,7 +1266,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.postTreatmentTab.setLayout(self.postTreatmentMainLayout)
 
     def _initGeometricTab(self):
-        """initialize geometric tab of post-treatment
+        """initialize geometrical tab of post-treatment
         """
 
         self.geometricTab = QWidget()
@@ -1703,7 +1703,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotPmfConvergence = QGroupBox('Calculate PMF RMSD convergence:')
         self.plotPmfConvergenceLayout = QVBoxLayout()
 
-        self.plotPmfConvergenceLabel = QLabel('history file:')
+        self.plotPmfConvergenceLabel = QLabel('History file:')
         self.plotPmfConvergenceBox = QLineEdit()
         self.plotPmfConvergenceChildLayout = QHBoxLayout()
         self.plotPmfConvergenceBrowseButton = QPushButton('Browse')
@@ -1795,7 +1795,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         """
 
         def f():
-            if comboBox.currentText() == 'Geometric':
+            if comboBox.currentText() == 'Geometrical':
                 self.geometricAdvancedSettings.show()
             elif comboBox.currentText() == 'Alchemical':
                 self.alchemicalAdvancedSettings.show()
@@ -1826,7 +1826,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
             self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(True)
             
         elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
-            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            index = self.selectStrategyCombobox.findText('Geometrical', QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
             self.selectStrategyCombobox.setEnabled(False)
@@ -1853,7 +1853,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
             if index >= 0:
                 self.selectMDEngineCombobox.setCurrentIndex(index)
             
-            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+            index = self.selectStrategyCombobox.findText('Geometrical', QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
             
@@ -1919,7 +1919,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
                 f'<center><b>{__PROGRAM_NAME__}</b></center><br>'+r'''
                 Binding free energy estimator (BFEE) is a python-based software
                 that automates absolute binding free energy calculations through
-                either the alchemical or geometric route by molecular dynamics
+                either the alchemical or geometrical route by molecular dynamics
                 simulations.<br>
                 <b>Authors:</b><br>
                 Haohao Fu (<a href="mailto:fhh2626@gmail.com">fhh2626@gmail.com</a>)<br>
@@ -1936,7 +1936,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
                 <b>The "LDDM" route:</b> Bian et al. Nat. Comput. Sci. 2025, 5, 621-626<br>
                 <b>BFEE2:</b> Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
                 <b>BFEE2 for protein-protein binding:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
-                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
+                <b>Alchemical and geometrical routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
                 <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254-3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738-4745<br>
                 <b>NAMD3:</b> Phillips et al. J. Chem. Phys. 2020, 153, 044130<br>
                 <b>Gromacs:</b> Abraham et al. SoftwareX 2015, 1, 19-25<br>
@@ -1947,8 +1947,8 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         return f
 
     def _showGeometricResults(self, unit):
-        ''' calculate binding from the geometric route,
-            parameters in the Geometric tab will be read.
+        ''' calculate binding from the geometrical route,
+            parameters in the Geometrical tab will be read.
             Show a QMessageBox for the result
             Inputs:
                 unit (string): 'namd' or 'gromacs' '''
@@ -2305,7 +2305,7 @@ CHARMM force field files must be specified!'
                         )
                     return
                 
-                if self.selectStrategyCombobox.currentText() == 'Geometric':
+                if self.selectStrategyCombobox.currentText() == 'Geometrical':
                     
                     if self.selectMDEngineCombobox.currentText().lower() == 'gromacs':
                         QMessageBox.warning(
@@ -2519,7 +2519,7 @@ Unknown error! The error message is: \n\
                         QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                         return
 
-                if self.selectStrategyCombobox.currentText() == 'Geometric':
+                if self.selectStrategyCombobox.currentText() == 'Geometrical':
                     try:              
                         iGenerator.generateGromacsGeometricFiles(
                             path=path,
@@ -2833,7 +2833,7 @@ Unknown error!'
         """
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
-        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.selectStrategyCombobox.setCurrentText("Geometrical")
         self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
         self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(False)
         self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
@@ -2846,7 +2846,7 @@ Unknown error!'
         """
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
-        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.selectStrategyCombobox.setCurrentText("Geometrical")
         self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.setText("3")
         self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.setText("3")
         self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
