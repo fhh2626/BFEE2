@@ -1,6 +1,7 @@
 # the GUI of new BFEE
 
 import os
+import pathlib
 import shutil
 import sys
 import webbrowser
@@ -1293,7 +1294,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.geometricTabLayout.addLayout(self.ligandFlexibilityLayout)
 
         # pmf inputs
-        self.pmfInputs = QGroupBox('PMF inputs (.czar.pmf/.UI.pmf):')
+        self.pmfInputs = QGroupBox('Merged PMF inputs (.czar.pmf/.UI.pmf):')
         self.pmfInputsLayout = QVBoxLayout()
 
         # bound stats
@@ -1740,10 +1741,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickPlotLayout = QVBoxLayout()
 
         # merge/plot a (stratified) pmf
-        self.mergePmf = QGroupBox('Merge (stratified) PMFs:')
+        self.mergePmf = QGroupBox('Merge stratified PMFs:')
         self.mergePmfLayout = QVBoxLayout()
 
-        self.mergePmfLabel = QLabel('PMF files:')
+        self.mergePmfLabel = QLabel('PMF files (.czar.pmf, with optional GaWTM corrections):')
         self.mergePmfBox = QListWidget()
         self.mergePmfChildLayout = QHBoxLayout()
         self.mergePmfAddButton = QPushButton('Add')
@@ -2733,6 +2734,11 @@ Unknown error!'
     def _getMergedPMF(self):
         """Read PMF files from mergePmfBox and return the merged PMF.
         
+        For GaWTM simulations, the user should add both .czar.pmf files and their
+        corresponding .reweightamd1.cumulant.pmf correction files. The function will
+        automatically pair them by matching base names (e.g., 001.czar.pmf with
+        001.reweightamd1.cumulant.pmf).
+        
         Returns:
             numpy.ndarray or None: The merged PMF array, or None if an error occurred.
         """
@@ -2743,14 +2749,55 @@ Unknown error!'
         pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
 
         if not ploter.isGaWTM(pmfFiles):
+            # No GaWTM correction files found, read PMFs directly
             pmfs = [ploter.readPMF(item) for item in pmfFiles]
         else:
-            pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
-            try:
-                pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
-            except ploter.NoCorrectionFileError:
-                QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+            # GaWTM simulation: pair czar.pmf files with their corrections
+            paired, unpaired_czar, orphan_corrections, other_files = ploter.pairGaWTMFiles(pmfFiles)
+            
+            # Only show error if there's a mismatch (some czar.pmf missing correction or orphan corrections)
+            # Don't show error if:
+            # - No correction files at all (handled by isGaWTM returning False)
+            # - All czar.pmf files have corresponding corrections (perfect pairing)
+            has_mismatch = (unpaired_czar and paired) or orphan_corrections
+            
+            if has_mismatch:
+                error_messages = []
+                
+                # Error about unpaired czar.pmf files (missing correction)
+                if unpaired_czar:
+                    fileNames = [pathlib.Path(f).name for f in unpaired_czar]
+                    error_messages.append(
+                        f'The following .czar.pmf files do not have corresponding correction files:\n'
+                        f'{chr(10).join(fileNames)}'
+                    )
+                
+                # Error about orphan correction files (missing czar.pmf)
+                if orphan_corrections:
+                    fileNames = [pathlib.Path(f).name for f in orphan_corrections]
+                    error_messages.append(
+                        f'The following correction files do not have corresponding .czar.pmf files:\n'
+                        f'{chr(10).join(fileNames)}'
+                    )
+                
+                QMessageBox.warning(
+                    self, 'Error', 
+                    '\n\n'.join(error_messages) + '\n\nPlease add the missing files!'
+                )
                 return None
+            
+            pmfs = []
+            # Process paired files (with correction)
+            for pmfFile, correctionFile in paired:
+                try:
+                    pmfs.append(ploter.correctGaWTM(pmfFile, correctionFile))
+                except ploter.NoCorrectionFileError as e:
+                    QMessageBox.warning(self, 'Error', str(e))
+                    return None
+            
+            # Process other PMF files (non-GaWTM format)
+            for pmfFile in other_files:
+                pmfs.append(ploter.readPMF(pmfFile))
 
         return ploter.mergePMF(pmfs)
 

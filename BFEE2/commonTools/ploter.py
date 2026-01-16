@@ -31,23 +31,104 @@ def isGaWTM(pmfFiles):
             return True
     return False
 
-def correctGaWTM(pmfFile):
+def getGaWTMBaseName(filePath):
+    """Extract the base name from a GaWTM PMF file or its correction file.
+    
+    For example:
+        'path/to/001.czar.pmf' -> '001'
+        'path/to/001.reweightamd1.cumulant.pmf' -> '001'
+        'path/to/step1.czar.pmf' -> 'step1'
+    
+    Args:
+        filePath (str): path to the file
+    
+    Returns:
+        str: base name of the file (without extensions)
+    """
+    fileName = pathlib.Path(filePath).name
+    # Remove known GaWTM suffixes
+    if fileName.endswith('.reweightamd1.cumulant.pmf'):
+        return fileName[:-len('.reweightamd1.cumulant.pmf')]
+    elif fileName.endswith('.czar.pmf'):
+        return fileName[:-len('.czar.pmf')]
+    else:
+        # For other PMF files, just remove .pmf extension
+        return pathlib.Path(fileName).stem
+
+def pairGaWTMFiles(pmfFiles):
+    """Pair GaWTM PMF files with their corresponding correction files.
+    
+    This function looks for files with matching base names:
+    - xxx.czar.pmf paired with xxx.reweightamd1.cumulant.pmf
+    
+    Files without a corresponding correction file are returned as unpaired.
+    Orphan correction files (without matching czar.pmf) are also returned separately.
+    
+    Args:
+        pmfFiles (list[str]): list of all PMF file paths (including correction files)
+    
+    Returns:
+        tuple: (paired_list, unpaired_czar_list, orphan_correction_list)
+            paired_list: list of tuples (pmf_file_path, correction_file_path)
+            unpaired_czar_list: list of czar.pmf file paths without correction
+            orphan_correction_list: list of correction file paths without matching czar.pmf
+    """
+    # Separate czar.pmf files and correction files
+    czar_files = {}  # baseName -> filePath
+    correction_files = {}  # baseName -> filePath
+    other_files = []  # files that are neither
+    
+    for filePath in pmfFiles:
+        fileName = pathlib.Path(filePath).name
+        if fileName.endswith('.reweightamd1.cumulant.pmf'):
+            baseName = getGaWTMBaseName(filePath)
+            correction_files[baseName] = filePath
+        elif fileName.endswith('.czar.pmf'):
+            baseName = getGaWTMBaseName(filePath)
+            czar_files[baseName] = filePath
+        else:
+            other_files.append(filePath)
+    
+    # Pair files by base name
+    paired = []
+    unpaired_czar = []
+    
+    for baseName, czarPath in czar_files.items():
+        if baseName in correction_files:
+            paired.append((czarPath, correction_files[baseName]))
+        else:
+            unpaired_czar.append(czarPath)
+    
+    # Find orphan correction files (correction without czar.pmf)
+    orphan_corrections = []
+    for baseName, corrPath in correction_files.items():
+        if baseName not in czar_files:
+            orphan_corrections.append(corrPath)
+    
+    return paired, unpaired_czar, orphan_corrections, other_files
+
+def correctGaWTM(pmfFile, correctionFile=None):
     """read a 1D namd PMF file and correct it using cumulant.pmf file
 
     Args:
         pmfFile (str): path to the pmf File
+        correctionFile (str, optional): path to the correction file. 
+            If None, will try to find it in the same directory (legacy behavior).
     
     Returns:
         np.array (N*2): 1D PMF
     """
 
     pmf = np.loadtxt(pmfFile)
-    correction_pmfFile = pmfFile.replace('.czar.pmf', '') + '.reweightamd1.cumulant.pmf'
+    
+    # If correction file is not provided, try to find it (legacy behavior)
+    if correctionFile is None:
+        correctionFile = pmfFile.replace('.czar.pmf', '') + '.reweightamd1.cumulant.pmf'
 
-    if not os.path.exists(correction_pmfFile):
+    if not os.path.exists(correctionFile):
         raise NoCorrectionFileError(f'{pmfFile} does not have a corresponding correction!')
 
-    correction_data = np.loadtxt(correction_pmfFile)
+    correction_data = np.loadtxt(correctionFile)
     correction_interpolate = interpolate.interp1d(correction_data[:,0], correction_data[:,1], fill_value="extrapolate")
 
     pmf[:,1] += correction_interpolate(pmf[:,0])
