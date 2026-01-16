@@ -871,6 +871,7 @@ class mainUI(QMainWindow):
 
         self._initGeometricTab()
         self._initAlchemicalTab()
+        self._toggleAlchemicalMethod()  # Set initial state for alchemical method selection
         self._initLDDMTab()
         self._initPostTreatmentTab()
 
@@ -1272,6 +1273,25 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.geometricTab = QWidget()
         self.geometricTabLayout = QVBoxLayout()
 
+        # ligand flexibility
+        self.ligandFlexibilityLayout = QHBoxLayout()
+        self.geometricFlexibleLigandRadioButton = QRadioButton('Flexible ligand')
+        self.geometricRigidLigandRadioButton = QRadioButton('Rigid ligand/Protein-Protein')
+        self.geometricFlexibleLigandRadioButton.setChecked(True)
+        
+        self.ligandFlexibilityButtonGroup = QButtonGroup(self)
+        self.ligandFlexibilityButtonGroup.addButton(self.geometricFlexibleLigandRadioButton)
+        self.ligandFlexibilityButtonGroup.addButton(self.geometricRigidLigandRadioButton)
+
+        self.ligandFlexibilityLayout.addStretch(1)
+        self.ligandFlexibilityLayout.addWidget(self.geometricFlexibleLigandRadioButton)
+        self.ligandFlexibilityLayout.addWidget(self.geometricRigidLigandRadioButton)
+        self.ligandFlexibilityLayout.addStretch(1)
+
+        self.geometricFlexibleLigandRadioButton.toggled.connect(self._toggleGeometricLigandFlexibility)
+
+        self.geometricTabLayout.addLayout(self.ligandFlexibilityLayout)
+
         # pmf inputs
         self.pmfInputs = QGroupBox('PMF inputs (.czar.pmf/.UI.pmf):')
         self.pmfInputsLayout = QVBoxLayout()
@@ -1426,6 +1446,47 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         self.alchemicalTab = QWidget()
         self.alchemicalTabLayout = QVBoxLayout()
+
+        # FEP method and ligand flexibility radio buttons (all in one row)
+        self.alchemicalMethodLayout = QHBoxLayout()
+        
+        # FEP method selection
+        self.alchemicalBidirectionalFEPRadio = QRadioButton('Bidirectional FEP')
+        self.alchemicalDoubleWideFEPRadio = QRadioButton('Double-wide FEP')
+        self.alchemicalWTMABFRadio = QRadioButton('WTM-λABF')
+        self.alchemicalBidirectionalFEPRadio.setChecked(True)  # Default selection
+        
+        self.alchemicalMethodButtonGroup = QButtonGroup(self)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalBidirectionalFEPRadio)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalDoubleWideFEPRadio)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalWTMABFRadio)
+
+        # Ligand flexibility selection
+        self.alchemicalFlexibleLigandRadio = QRadioButton('Flexible ligand')
+        self.alchemicalRigidLigandRadio = QRadioButton('Rigid ligand')
+        self.alchemicalFlexibleLigandRadio.setChecked(True)  # Default selection
+        
+        self.alchemicalLigandFlexibilityButtonGroup = QButtonGroup(self)
+        self.alchemicalLigandFlexibilityButtonGroup.addButton(self.alchemicalFlexibleLigandRadio)
+        self.alchemicalLigandFlexibilityButtonGroup.addButton(self.alchemicalRigidLigandRadio)
+
+        # Add all to layout with separator
+        self.alchemicalMethodLayout.addStretch(1)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalBidirectionalFEPRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalDoubleWideFEPRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalWTMABFRadio)
+        self.alchemicalMethodLayout.addWidget(QLabel('  |  '))  # Separator
+        self.alchemicalMethodLayout.addWidget(self.alchemicalFlexibleLigandRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalRigidLigandRadio)
+        self.alchemicalMethodLayout.addStretch(1)
+
+        # Connect radio buttons to state change handlers
+        self.alchemicalBidirectionalFEPRadio.toggled.connect(self._toggleAlchemicalMethod)
+        self.alchemicalDoubleWideFEPRadio.toggled.connect(self._toggleAlchemicalMethod)
+        self.alchemicalWTMABFRadio.toggled.connect(self._toggleAlchemicalMethod)
+        self.alchemicalFlexibleLigandRadio.toggled.connect(self._toggleAlchemicalLigandFlexibility)
+
+        self.alchemicalTabLayout.addLayout(self.alchemicalMethodLayout)
 
         
         self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.pmf/.log):')
@@ -1892,6 +1953,104 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
             self.plotHysteresisBackwardLineEdit.setEnabled(False)
             self.plotHysteresisBackwardButton.setEnabled(False)
             self.isRigidLigandCheckbox.setEnabled(False)
+
+    def _toggleGeometricLigandFlexibility(self):
+        """enable/disable widgets based on ligand flexibility selection in geometric tab
+        """
+        
+        enable = self.geometricFlexibleLigandRadioButton.isChecked()
+        
+        # bound RMSD
+        self.rmsdBoundLineEdit.setEnabled(enable)
+        self.rmsdBoundButton.setEnabled(enable)
+        
+        # unbound RMSD
+        self.rmsdUnboundLineEdit.setEnabled(enable)
+        self.rmsdUnboundButton.setEnabled(enable)
+        
+        # force constant RMSD
+        self.fcRMSDLineEdit.setEnabled(enable)
+
+    def _toggleAlchemicalMethod(self):
+        """enable/disable widgets and update labels based on alchemical method selection
+        """
+        
+        if self.alchemicalBidirectionalFEPRadio.isChecked():
+            # Bidirectional FEP: all enabled, labels "Forward:", file extension ".fepout"
+            self.alchemicalBoundStateLabel.setText('Atom/Bound state (.fepout):')
+            self.alchemicalUnboundStateLabel.setText('Atom/Unbound state (.fepout):')
+            self.alchemicalForwardLabel1.setText('Forward:')
+            self.alchemicalForwardLabel3.setText('Forward:')
+            # Enable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(True)
+            self.alchemicalBackwardButton1.setEnabled(True)
+            self.alchemicalBackwardLineEdit3.setEnabled(True)
+            self.alchemicalBackwardButton3.setEnabled(True)
+            # Post-treatment type: disable PMF, default to BAR
+            self.alchemicalPostTypeBox.setCurrentText('BAR')
+            # Enable FEP and BAR, disable PMF
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == 'PMF':
+                    item.setEnabled(False)
+                else:
+                    item.setEnabled(True)
+                    
+        elif self.alchemicalDoubleWideFEPRadio.isChecked():
+            # Double-wide FEP: Forward label becomes "Double-wide:", backward disabled
+            self.alchemicalBoundStateLabel.setText('Atom/Bound state (.fepout):')
+            self.alchemicalUnboundStateLabel.setText('Atom/Unbound state (.fepout):')
+            self.alchemicalForwardLabel1.setText('Double-wide:')
+            self.alchemicalForwardLabel3.setText('Double-wide:')
+            # Disable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(False)
+            self.alchemicalBackwardButton1.setEnabled(False)
+            self.alchemicalBackwardLineEdit3.setEnabled(False)
+            self.alchemicalBackwardButton3.setEnabled(False)
+            # Post-treatment type: disable PMF, default to BAR
+            self.alchemicalPostTypeBox.setCurrentText('BAR')
+            # Enable FEP and BAR, disable PMF
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == 'PMF':
+                    item.setEnabled(False)
+                else:
+                    item.setEnabled(True)
+                    
+        elif self.alchemicalWTMABFRadio.isChecked():
+            # WTM-λABF: Forward label becomes "Full window:", file extension ".pmf", backward disabled
+            self.alchemicalBoundStateLabel.setText('Atom/Bound state (.pmf):')
+            self.alchemicalUnboundStateLabel.setText('Atom/Unbound state (.pmf):')
+            self.alchemicalForwardLabel1.setText('Full window:')
+            self.alchemicalForwardLabel3.setText('Full window:')
+            # Disable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(False)
+            self.alchemicalBackwardButton1.setEnabled(False)
+            self.alchemicalBackwardLineEdit3.setEnabled(False)
+            self.alchemicalBackwardButton3.setEnabled(False)
+            # Post-treatment type: disable FEP and BAR, default to PMF
+            self.alchemicalPostTypeBox.setCurrentText('PMF')
+            # Enable PMF, disable FEP and BAR
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == 'PMF':
+                    item.setEnabled(True)
+                else:
+                    item.setEnabled(False)
+
+    def _toggleAlchemicalLigandFlexibility(self):
+        """enable/disable Restraints/Unbound state (.log) inputs based on ligand flexibility selection
+        """
+        
+        enable = self.alchemicalFlexibleLigandRadio.isChecked()
+        
+        # Restraints/Unbound state (.log) - Forward row
+        self.alchemicalForwardLineEdit4.setEnabled(enable)
+        self.alchemicalForwardButton4.setEnabled(enable)
+        
+        # Restraints/Unbound state (.log) - Backward row
+        self.alchemicalBackwardLineEdit4.setEnabled(enable)
+        self.alchemicalBackwardButton4.setEnabled(enable)
 
     def _openDocFile(self):
         """open Documentation file
