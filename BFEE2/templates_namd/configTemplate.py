@@ -1092,7 +1092,8 @@ histogram {{                     \n\
         
         string = f'\
 reweightamd {{                  \n\
-  colvars  {cv}                 \n\
+  colvars        {cv}           \n\
+  historyfreq    50000          \n\
 }}                              \n'
         return string
 
