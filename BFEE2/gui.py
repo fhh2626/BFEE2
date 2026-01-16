@@ -989,9 +989,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickSettingsMenu.addAction(self.quickAISettingAction)
 
         self.helpMenu = menubar.addMenu('&Help')
-        self.helpMenu.addAction(self.helpAction)
-        self.helpMenu.addAction(self.pythonAPIAction)
-        self.helpMenu.addSeparator()
+        # Temporarily hidden - to be restored later
+        # self.helpMenu.addAction(self.helpAction)
+        # self.helpMenu.addAction(self.pythonAPIAction)
+        # self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
 
         # main layout
