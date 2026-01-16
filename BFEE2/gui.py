@@ -208,7 +208,7 @@ class geometricAdvancedSettings(QWidget):
         self.stratificationLayout = QGridLayout()
 
         self.stratificationRMSDBoundLabel = QLabel('RMSD(Bound):')
-        self.stratificationRMSDBoundLineEdit = QLineEdit('1')
+        self.stratificationRMSDBoundLineEdit = QLineEdit('3')
         self.stratificationTheta = QLabel('Theta:')
         self.stratificationThetaLineEdit = QLineEdit('1')
         self.stratificationPhiLabel = QLabel('Phi:')
@@ -220,9 +220,9 @@ class geometricAdvancedSettings(QWidget):
         self.stratificationphiLabel = QLabel('phi:')
         self.stratificationphiLineEdit = QLineEdit('1')
         self.stratificationRLabel = QLabel('r:')
-        self.stratificationRLineEdit = QLineEdit('1')
+        self.stratificationRLineEdit = QLineEdit('5')
         self.stratificationRMSDUnboundLabel = QLabel('RMSD(Unbound):')
-        self.stratificationRMSDUnboundLineEdit = QLineEdit('1')
+        self.stratificationRMSDUnboundLineEdit = QLineEdit('3')
 
         self.stratificationLayout.addWidget(self.stratificationRMSDBoundLabel, 0, 0)
         self.stratificationLayout.addWidget(self.stratificationRMSDBoundLineEdit, 0, 1)
@@ -360,6 +360,12 @@ class geometricAdvancedSettings(QWidget):
             self.useCUDASOAIntegrator.setEnabled(True)
             self.useCUDASOAIntegrator.setChecked(True)
 
+    def _toggleRMSDLineEdits(self, checked):
+        """Enable or disable RMSD(Bound) and RMSD(Unbound) LineEdits based on checkbox state.
+        """
+        self.stratificationRMSDBoundLineEdit.setEnabled(checked)
+        self.stratificationRMSDUnboundLineEdit.setEnabled(checked)
+
     def _initSingalsSlots(self):
         """initialize (connect) signial and slots for geometrical advanced settings
         """
@@ -378,6 +384,7 @@ class geometricAdvancedSettings(QWidget):
         )
         self.geometricAdvancedSettingsOKButton.clicked.connect(self.close)
         self.useGaWTMCheckbox.toggled.connect(self._toggleGaWTMBox)
+        self.considerRMSDCVCheckbox.toggled.connect(self._toggleRMSDLineEdits)
 
 
 class alchemicalAdvancedSettings(QWidget):
@@ -404,13 +411,13 @@ class alchemicalAdvancedSettings(QWidget):
         self.stratificationLayout = QGridLayout()
 
         self.boundLigandLabel = QLabel('Ligand/Bound state:')
-        self.boundLigandLineEdit = QLineEdit('50')
+        self.boundLigandLineEdit = QLineEdit('200')
         self.unboundLigandLabel = QLabel('Ligand/Unbound state:')
-        self.unboundLigandLineEdit = QLineEdit('20')
+        self.unboundLigandLineEdit = QLineEdit('100')
         self.boundRestraintsLabel = QLabel('Restraints/Bound state:')
-        self.boundRestraintsLineEdit = QLineEdit('50')
+        self.boundRestraintsLineEdit = QLineEdit('200')
         self.unboundRestraintsLabel = QLabel('Restraints/Unbound state:')
-        self.unboundRestraintsLineEdit = QLineEdit('20')
+        self.unboundRestraintsLineEdit = QLineEdit('100')
 
         self.stratificationLayout.addWidget(self.boundLigandLabel, 0, 0)
         self.stratificationLayout.addWidget(self.boundLigandLineEdit, 0, 1)
@@ -564,11 +571,17 @@ class alchemicalAdvancedSettings(QWidget):
             self.minBeforeSampleCheckbox.setEnabled(True)
             self.useWTMLambdaABFCheckbox.setEnabled(True)
 
+    def _toggleRMSDLineEdit(self, checked):
+        """Enable or disable Restraints/Unbound State LineEdit based on RMSD CV checkbox state.
+        """
+        self.unboundRestraintsLineEdit.setEnabled(checked)
+
     def _initSingalsSlots(self):
         """initialize (connect) signals and slots for the alchemical advanced settings
         """
 
         self.LDDMCheckbox.toggled.connect(self._toggleLDDMBox)
+        self.considerRMSDCVCheckbox.toggled.connect(self._toggleRMSDLineEdit)
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
         
 class AIAssistantDialog(QWidget):  
