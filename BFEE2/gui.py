@@ -1076,9 +1076,9 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         # select protein
         self.selectProteinLabel = QLabel('Select protein:   ')
-        self.selectProteineLineEdit = QLineEdit('segid SH3D')
+        self.selectProteinLineEdit = QLineEdit('segid SH3D')
         self.otherParametersChildLayout.addWidget(self.selectProteinLabel, 1, 0)
-        self.otherParametersChildLayout.addWidget(self.selectProteineLineEdit, 1, 1)
+        self.otherParametersChildLayout.addWidget(self.selectProteinLineEdit, 1, 1)
 
         # select ligand
         self.selectLigandLabel = QLabel('Select ligand:    ')
@@ -2629,7 +2629,7 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             forceFieldType,
                             forceFieldFiles,
                             float(self.temperatureLineEdit.text()),
-                            self.selectProteineLineEdit.text(),
+                            self.selectProteinLineEdit.text(),
                             self.selectLigandLineEdit.text(),
                             self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
                             self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
@@ -2707,7 +2707,7 @@ Unknown error! The error message is: \n\
                             forceFieldType,
                             forceFieldFiles,
                             float(self.temperatureLineEdit.text()),
-                            self.selectProteineLineEdit.text(),
+                            self.selectProteinLineEdit.text(),
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
@@ -2805,7 +2805,7 @@ Unknown error! The error message is: \n\
                             ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
                             ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
                             ligandOnlyPdbFileFormat=self.gromacsLigandOnlyStructureFileFormatCombobox.currentText(),
-                            selectionPro=self.selectProteineLineEdit.text(),
+                            selectionPro=self.selectProteinLineEdit.text(),
                             selectionLig=self.selectLigandLineEdit.text(),
                             temperature=float(self.temperatureLineEdit.text())
                         )

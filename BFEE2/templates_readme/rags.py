@@ -128,12 +128,18 @@ LDDM (protein-ligand):
 
 Post-treatment:
 Geometrical:
-PMF inputs: Provide `.czar.pmf` files for each step: RMSD(bound), Theta, Phi, Psi, theta, phi, r, and RMSD(unbound), corresponding to steps 1-8. Steps 1 and 8 (RMSD) are optional; omitting them implies a rigid ligand.
+Settings: Select "Flexible ligand" or "Rigid ligand/Protein-Protein". Select "Plain PMFs" or "History PMFs" (for error estimation).
+Merged PMF inputs: Provide `.czar.pmf` files for each step: RMSD(bound), Theta, Phi, Psi, theta, phi, r, and RMSD(unbound). If "Rigid ligand" is selected, RMSD inputs are disabled/ignored. If "History PMFs" is selected, provide `.hist.czar.pmf` or .hist.pmf` files.
 Force constants: Enter the numerical values of the force constants for restraints on each CV (RMSD, Theta, Phi, Psi, theta, phi). Units are automatically handled based on the selected MD engine.
-Temperature: Simulation temperature. R*: A constant, set to the maximum separation distance (from step 7) or a distance where the PMF curve has plateaued. Pmf type: NAMD or Gromacs.
+Temperature: Simulation temperature. r*: A constant, set to the maximum separation distance (from step 7) or a distance where the PMF curve has plateaued. Pmf type: NAMD or Gromacs.
 Alchemical:
-Inputs: Provide simulation outputs for each step: `Atoms/bound state` (fepout), `restraints/bound state` (log), `atoms/unbound state` (fepout), `restraints/unbound state` (log). Step 4 is optional (omitting implies rigid ligand). For `fepout` files, providing only the forward file assumes double-wide sampling was run. For `log` files, both forward and backward files are required.
-Force constants: Force constants for restraints on each CV (RMSD, Theta, Phi, Psi, theta, phi, r).
+Settings: Select Method ("Bidirectional FEP", "Double-wide FEP", or "WTM-λABF") and Ligand flexibility ("Flexible ligand" or "Rigid ligand").
+Inputs: Provide simulation outputs for each step based on settings.
+- Bidirectional FEP: Forward and Backward `fepout` files.
+- Double-wide FEP: Single Double-wide `fepout` file.
+- WTM-λABF: `.hist.pmf` file.
+- Restraints: Provide Forward and Backward `.log` files. Unbound state restraints are input only if "Flexible ligand" is selected.
+Force constants: Force constants for restraints on each CV (Theta, Phi, Psi, theta, phi, r).
 Restraint centers: Restraint centers for Theta, theta, and r CVs.
 Temperature: Simulation temperature. Post-treatment type: Estimator to use (BAR/FEP/PMF); BAR is recommended. PMF should be used when using WTM-λABF for alchemical sampling.
 LDDM:
@@ -141,11 +147,16 @@ Inputs: Provide `colvars.in.tmp`, `colvars.traj`, and `fepout` from step 1, and 
 Other parameters: `Steps per window (Step1)`, `Windows (Step1)`, `Equilibration per window (Step1)` define simulation length for step 1. `Temperature`, `Post-treatment type`: Same as for the alchemical route.
 Quick-plot:
 Merge (stratified) PMFs:
-Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them. Use "Add" to add PMF files, "Clear" to clear the list, "Plot" to visualize the merged PMF, and "Save" to output a single merged `.pmf` file for the main post-treatment analysis.
+Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them. 
+- Select "Plain PMFs" to merge and plot standard PMF files (`.czar.pmf` or `.UI.pmf`). GaMD corrections (`.reweightamd1.cumulant.pmf`) are automatically applied if present.
+- Select "History PMFs" to merge history PMF files (`.hist.czar.pmf`). Plotting is disabled in this mode (only "Save" is available). These are used for error estimation.GaMD corrections (`.reweightamd1.cumulant.pmf`) are automatically applied if present.
 Calculate PMF RMSD convergence:
 Takes a `.hist.pmf` file as input and plots the PMF's root-mean-square deviation (vs. zero vector) over time. A plateau indicates convergence.
 Plot hysteresis between bidirectional simulations:
-For bidirectional alchemical simulations, plots forward and backward ΔG vs. λ from fepout or log files. Non-overlapping curves indicate hysteresis.
+Plots forward and backward ΔG vs. λ. Non-overlapping curves indicate hysteresis. Select the input type:
+- "Bidirectional fepout": Provide forward and backward `fepout` files.
+- "Bidirectional log": Provide forward and backward `.log` files.
+- "Double-wide fepout": Provide a single double-wide `fepout` file.
 """
 
 BFEEControl = """
@@ -180,6 +191,7 @@ I will call the following functions:
 [_quickSetProteinProteinGeometric(), geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)]
 Please check the settings in the GUI and click "Generate Inputs"
 ----------
+Again, the aformentioned format is just an example. You should change the functions in the square brackets according to the user's request.
 """
 
 systemPrompt = selfIntro + BFEEIntro + BFEEControl + outputPostFix
