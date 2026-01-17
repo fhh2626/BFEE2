@@ -286,7 +286,7 @@ class geometricAdvancedSettings(QWidget):
         self.strategy = QGroupBox('Strategy settings')
         self.strategyLayout = QHBoxLayout()
 
-        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV (flexible ligand)')
         self.considerRMSDCVCheckbox.setChecked(True)
 
         self.useGaWTMCheckbox = QCheckBox('Use GaWTM-eABF')
@@ -487,7 +487,7 @@ class alchemicalAdvancedSettings(QWidget):
         self.strategy = QGroupBox('Strategy settings')
         self.strategyLayout = QGridLayout()
 
-        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV (flexible ligand)')
         self.considerRMSDCVCheckbox.setChecked(True)
 
         self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
