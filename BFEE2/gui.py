@@ -14,7 +14,7 @@ from appdirs import user_config_dir
 from PySide6 import QtCore
 from PySide6.QtGui import QFont, QIcon, QAction
 from PySide6.QtWidgets import ( QApplication, QButtonGroup, QCheckBox, QComboBox,
-                               QFileDialog, QGridLayout, QGroupBox,
+                               QDialog, QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QMainWindow, QMessageBox, QPushButton, QRadioButton,
                                QSplitter, QTabWidget, QToolBar, QVBoxLayout,
@@ -909,12 +909,17 @@ class mainUI(QMainWindow):
 
     def _showMDEngineVersionWarning(self):
         ''' show a message box ask for the latest NAMD version '''
-        QMessageBox.warning(self, 
-                            'Warning', 
-                            f'\
-{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__} or GROMACS {__GMX_VERSION__}. \n\
-Please use the same or a later version of NAMD or GROMACS if you have any problem.\n'
+        msgBox = QMessageBox(self)
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setWindowTitle('Warning')
+        msgBox.setTextFormat(QtCore.Qt.RichText)
+        msgBox.setText(f'\
+{__PROGRAM_NAME__} is fully compatible with <b>NAMD {__NAMD_VERSION__}</b> or <b>GROMACS {__GMX_VERSION__}</b>. <br>\
+Please use the same or a later version of NAMD or GROMACS if you have any problem.<br>\
+<br>\
+<b>We highly recommend you start from Quick Settings menu.</b><br>'
                         )
+        msgBox.exec_()
 
     def _initActions(self):
         ''' initialize actions for menubar '''
@@ -3236,6 +3241,43 @@ Unknown error!'
                 
         return f
     
+    def _showLigandTypeDialog(self):
+        """Show a dialog asking the user to select between Flexible ligand and Rigid ligand.
+        
+        Returns:
+            str or None: 'flexible', 'rigid', or None if cancelled
+        """
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Select Ligand Type')
+        layout = QVBoxLayout(dialog)
+        
+        # Add explanatory label
+        label = QLabel('Please select the ligand type:')
+        layout.addWidget(label)
+        
+        # Create radio buttons
+        flexibleRadio = QRadioButton('Flexible ligand')
+        rigidRadio = QRadioButton('Rigid ligand')
+        flexibleRadio.setChecked(True)  # Default to flexible
+        
+        # Add radio buttons to layout
+        layout.addWidget(flexibleRadio)
+        layout.addWidget(rigidRadio)
+        
+        # Add button box
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.rejected.connect(dialog.reject)
+        layout.addWidget(buttonBox)
+        
+        # Show dialog and get result
+        if dialog.exec() == QDialog.Accepted:
+            if flexibleRadio.isChecked():
+                return 'flexible'
+            else:
+                return 'rigid'
+        return None
+
     def _quickSetProteinProteinGeometric(self):
         """quick setting for protein-protein binding free energy calculations through the geometrical route
         """
@@ -3247,11 +3289,16 @@ Unknown error!'
         self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
         self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(True)
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-protein binding free-energy calculations \
-                                                    through the geometrical route!')
+through the geometrical route!')
         
     def _quickSetProteinLigandGeometric(self):
         """quick setting for protein-ligand binding free energy calculations through the geometrical route
         """
+        
+        # Ask user to select ligand type
+        ligandType = self._showLigandTypeDialog()
+        if ligandType is None:
+            return  # User cancelled
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
         self.selectStrategyCombobox.setCurrentText("Geometrical")
@@ -3259,14 +3306,28 @@ Unknown error!'
         self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.setText("3")
         self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
         self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
-        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
         self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the geometrical route!')
+        
+        # Set RMSD CV checkbox based on ligand type for both Advanced Settings
+        if ligandType == 'flexible':
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand (flexible) binding free-energy calculations \
+through the geometrical route!')
+        else:  # rigid
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand (rigid) binding free-energy calculations \
+through the geometrical route!')
         
     def _quickSetProteinLigandAlchemical(self):
         """quick setting for protein-ligand binding free energy calculations through the alchemical route
         """
+        
+        # Ask user to select ligand type
+        ligandType = self._showLigandTypeDialog()
+        if ligandType is None:
+            return  # User cancelled
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
         self.selectStrategyCombobox.setCurrentText("Alchemical")
@@ -3279,9 +3340,18 @@ Unknown error!'
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
         self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)
-        self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the alchemical route!')
+        
+        # Set RMSD CV checkbox based on ligand type for both Advanced Settings
+        if ligandType == 'flexible':
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand (flexible) binding free-energy calculations \
+through the alchemical route!')
+        else:  # rigid
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand (rigid) binding free-energy calculations \
+through the alchemical route!')
     
     def _quickSetProteinLigandLDDM(self):
         """quick setting for protein-ligand binding free energy calculations through the alchemical route
@@ -3300,7 +3370,7 @@ Unknown error!'
 
         self.alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')
         QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the LDDM!')
+through the LDDM!')
         
     def _quickSetAI(self):
         """AI-assisted setting for binding free energy calculations
