@@ -61,6 +61,69 @@ class postTreatment:
 
         return np.array((x, y))
 
+    def _readHistPMF(self, filePath):
+        """read a History PMF file and return the middle and last frames
+        
+        The hist.pmf file contains multiple PMF snapshots at different times,
+        separated by comment lines starting with '#'. Each snapshot has two columns:
+        x value and free energy.
+
+        Args:
+            filePath (str): the path of the History PMF file
+
+        Returns:
+            tuple: (pmf_half, pmf_last) where each is np.array (float, 2*N): ((x0,x1,...), (y0,y1,...))
+                   pmf_half is the middle frame (N//2), pmf_last is the last frame.
+                   If only one frame exists, pmf_half will be None.
+        """
+        # Read the file and parse multiple PMF blocks
+        pmf_blocks = []
+        current_block = []
+        
+        with open(filePath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines
+                if not line:
+                    continue
+                # Comment lines starting with '#' indicate a new block or metadata
+                if line.startswith('#'):
+                    # Save the previous block if it has data
+                    if current_block:
+                        pmf_blocks.append(np.array(current_block))
+                        current_block = []
+                    continue
+                # Parse data lines
+                try:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        x_val = float(parts[0])
+                        y_val = float(parts[1])
+                        current_block.append([x_val, y_val])
+                except ValueError:
+                    continue
+        
+        # Don't forget the last block
+        if current_block:
+            pmf_blocks.append(np.array(current_block))
+        
+        if len(pmf_blocks) == 0:
+            raise ValueError(f"No valid PMF data found in {filePath}")
+        
+        # Get the last PMF block
+        last_block = pmf_blocks[-1]
+        pmf_last = np.array((last_block[:, 0], last_block[:, 1]))
+        
+        # Get the middle PMF block if there are at least 2 frames
+        if len(pmf_blocks) >= 2:
+            mid_index = len(pmf_blocks) // 2
+            mid_block = pmf_blocks[mid_index]
+            pmf_half = np.array((mid_block[:, 0], mid_block[:, 1]))
+        else:
+            pmf_half = None
+        
+        return pmf_half, pmf_last
+
     def _geometricRestraintContribution(self, pmf, forceConstant, rmsd=False, unbound=False):
         """calculate the contribution of RMSD and angle restraints
 
@@ -264,6 +327,123 @@ class postTreatment:
         elif self.unit == 'gromacs':
             return contributions / 4.184
 
+    def geometricBindingFreeEnergyHistPMF(self, filePathes, parameters):
+        """calculate binding free energy and errors for geometric route using History PMFs
+
+        The free energy is calculated from the last frame of each History PMF.
+        The error for each step is estimated using: np.std([G_1/2, G_1 * 2 - G_1/2])
+        where G_1/2 is the result from the middle frame and G_1 is from the last frame.
+        The total error is computed using error propagation: sqrt(sum of squared errors).
+
+        Args:
+            filePathes (list of strings, 8): pathes of History PMF files for step1 - step8.
+                                             PMFs for steps 1 and 8 can be omitted, which 
+                                             indicates the investication of a rigid ligand.
+            parameters (np.array, floats, 8): (forceConstant1, FC2, FC3, FC4, FC5, FC6, r*, FC8)
+
+        Returns:
+            tuple:
+                np.array, float, 10: (contributions for step1, 2, 3, 4 ... 8, bulk restraining contribution, free energy)
+                np.array, float, 10: errors corresponding to each contribution
+        """
+
+        assert len(parameters) == 8
+        assert len(filePathes) == 8
+
+        # Parse History PMF files and extract middle and last frames
+        pmfs_half = []  # Middle frames (for error estimation)
+        pmfs_last = []  # Last frames (for final free energy)
+        rigid_ligand = False
+        
+        for index, path in enumerate(filePathes):
+            if (index == 0 or index == 7) and path == '':
+                rigid_ligand = True
+                pmfs_half.append(None)
+                pmfs_last.append(None)
+            else:
+                pmf_half, pmf_last = self._readHistPMF(path)
+                pmfs_half.append(pmf_half)
+                pmfs_last.append(pmf_last)
+        
+        # Apply Jacobian correction to step 7 (r) PMFs
+        self._geometricJacobianCorrection(pmfs_last[6])
+        if pmfs_half[6] is not None:
+            self._geometricJacobianCorrection(pmfs_half[6])
+
+        # Calculate contributions from last frames (final free energy)
+        contributions = np.zeros(10)
+        if not rigid_ligand:
+            contributions[0] = self._geometricRestraintContribution(pmfs_last[0], parameters[0], True, False)
+        else:
+            contributions[0] = 0.0
+        contributions[1] = self._geometricRestraintContribution(pmfs_last[1], parameters[1], False, False)
+        contributions[2] = self._geometricRestraintContribution(pmfs_last[2], parameters[2], False, False)
+        contributions[3] = self._geometricRestraintContribution(pmfs_last[3], parameters[3], False, False)
+        contributions[4] = self._geometricRestraintContribution(pmfs_last[4], parameters[4], False, False)
+        contributions[5] = self._geometricRestraintContribution(pmfs_last[5], parameters[5], False, False)
+        contributions[6] = self._geometricCalculateSI(
+            parameters[6], pmfs_last[6], pmfs_last[4][0][np.argmin(pmfs_last[4][1])], pmfs_last[5][0][np.argmin(pmfs_last[5][1])],
+            parameters[4], parameters[5]
+        )
+        if not rigid_ligand:
+            contributions[7] = self._geometricRestraintContribution(pmfs_last[7], parameters[7], True, True)
+        else:
+            contributions[7] = 0.0
+        contributions[8] = self._geometricRestraintContributionBulk(
+                pmfs_last[1][0][np.argmin(pmfs_last[1][1])], parameters[1], parameters[2], parameters[3]
+        )
+        contributions[9] = np.sum(contributions[:9])
+
+        # Calculate contributions from half frames (for error estimation)
+        # Only calculate if we have middle frames
+        contributions_half = np.zeros(10)
+        has_half_frames = all(pmf is not None for i, pmf in enumerate(pmfs_half) 
+                              if not ((i == 0 or i == 7) and rigid_ligand))
+        
+        if has_half_frames:
+            if not rigid_ligand:
+                contributions_half[0] = self._geometricRestraintContribution(pmfs_half[0], parameters[0], True, False)
+            else:
+                contributions_half[0] = 0.0
+            contributions_half[1] = self._geometricRestraintContribution(pmfs_half[1], parameters[1], False, False)
+            contributions_half[2] = self._geometricRestraintContribution(pmfs_half[2], parameters[2], False, False)
+            contributions_half[3] = self._geometricRestraintContribution(pmfs_half[3], parameters[3], False, False)
+            contributions_half[4] = self._geometricRestraintContribution(pmfs_half[4], parameters[4], False, False)
+            contributions_half[5] = self._geometricRestraintContribution(pmfs_half[5], parameters[5], False, False)
+            contributions_half[6] = self._geometricCalculateSI(
+                parameters[6], pmfs_half[6], pmfs_half[4][0][np.argmin(pmfs_half[4][1])], pmfs_half[5][0][np.argmin(pmfs_half[5][1])],
+                parameters[4], parameters[5]
+            )
+            if not rigid_ligand:
+                contributions_half[7] = self._geometricRestraintContribution(pmfs_half[7], parameters[7], True, True)
+            else:
+                contributions_half[7] = 0.0
+            contributions_half[8] = self._geometricRestraintContributionBulk(
+                    pmfs_half[1][0][np.argmin(pmfs_half[1][1])], parameters[1], parameters[2], parameters[3]
+            )
+            contributions_half[9] = np.sum(contributions_half[:9])
+
+        # Calculate errors using np.std([G_1/2, G_1 * 2 - G_1/2])
+        errors = np.zeros(10)
+        if has_half_frames:
+            for i in range(8):  # Steps 0-7 (8 steps)
+                G_half = contributions_half[i]
+                G_full = contributions[i]
+                errors[i] = np.std([G_half, G_full * 2 - G_half])
+            # Step 8 (bulk contribution) has no error - it's analytical
+            errors[8] = 0.0
+            # Total error using error propagation: sqrt(sum of squared errors)
+            errors[9] = math.sqrt(np.sum(errors[:8]**2))
+        else:
+            # Cannot estimate error without middle frames
+            errors[:] = 99999
+
+        if self.unit == 'namd':
+            return contributions, errors
+        elif self.unit == 'gromacs':
+            return contributions / 4.184, errors / 4.184
+
+
     def _alchemicalRestraintContributionBulk(
         self, eulerTheta, polarTheta, R, 
         forceConstantTheta=0.1, forceConstantPhi=0.1, forceConstantPsi=0.1,
@@ -429,16 +609,74 @@ class postTreatment:
         return freeEnergy, error
     
     def alchemicalFreeEnergyPMF(self, PMFfile):
-        """ parse a pmf file, and return the free energy change
+        """ parse a .hist.pmf file, and return the free energy change
+
+        The hist.pmf file contains multiple PMF snapshots at different times,
+        separated by comment lines starting with '#'. Each snapshot has two columns:
+        lambda value and free energy.
+
+        The free energy is calculated from the last snapshot (G_end = last_value - first_value).
+        The error is estimated using extrapolation from the middle snapshot:
+        error = std([G_1/2, 2*G_end - G_1/2])
 
         Args:
-            PMFfile (str): path to the .pmf file
+            PMFfile (str): path to the .hist.pmf file
 
         Returns:
             tuple[float, float]: free-energy change, error
         """
-        data = np.loadtxt(PMFfile)
-        return (data[-1][1] - data[0][1]), 99999     # fictitious error
+        # Read the file and parse multiple PMF blocks
+        pmf_blocks = []
+        current_block = []
+        
+        with open(PMFfile, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines
+                if not line:
+                    continue
+                # Comment lines starting with '#' indicate a new block or metadata
+                if line.startswith('#'):
+                    # Save the previous block if it has data
+                    if current_block:
+                        pmf_blocks.append(np.array(current_block))
+                        current_block = []
+                    continue
+                # Parse data lines
+                try:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        lambda_val = float(parts[0])
+                        free_energy = float(parts[1])
+                        current_block.append([lambda_val, free_energy])
+                except ValueError:
+                    continue
+        
+        # Don't forget the last block
+        if current_block:
+            pmf_blocks.append(np.array(current_block))
+        
+        if len(pmf_blocks) == 0:
+            raise ValueError(f"No valid PMF data found in {PMFfile}")
+        
+        # Get the last PMF block for the final free energy
+        last_block = pmf_blocks[-1]
+        G_end = last_block[-1, 1] - last_block[0, 1]
+        
+        # Calculate error using extrapolation from the middle time point
+        if len(pmf_blocks) >= 2:
+            # Find the middle block (half-time)
+            mid_index = len(pmf_blocks) // 2
+            mid_block = pmf_blocks[mid_index]
+            G_half = mid_block[-1, 1] - mid_block[0, 1]
+            
+            # Error estimation: std([G_1/2, 2*G_end - G_1/2])
+            error = np.std([G_half, 2 * G_end - G_half])
+        else:
+            # Only one block, cannot estimate error
+            error = 99999
+        
+        return G_end, error
 
     def alchemicalBindingFreeEnergy(self, filePathes, parameters, temperature = 300, jobType = 'fep', rigidLigand = False):
         """calculate binding free energy for alchemical route

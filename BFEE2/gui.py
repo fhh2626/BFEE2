@@ -1300,9 +1300,26 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.ligandFlexibilityLayout.addStretch(1)
         self.ligandFlexibilityLayout.addWidget(self.geometricFlexibleLigandRadioButton)
         self.ligandFlexibilityLayout.addWidget(self.geometricRigidLigandRadioButton)
+        
+        # separator
+        self.ligandFlexibilitySeparator = QLabel('|')
+        self.ligandFlexibilityLayout.addWidget(self.ligandFlexibilitySeparator)
+        
+        # PMF type radio buttons
+        self.geometricPlainPmfRadioButton = QRadioButton('Plain PMFs')
+        self.geometricHistoryPmfRadioButton = QRadioButton('History PMFs (error estimation)')
+        self.geometricPlainPmfRadioButton.setChecked(True)
+        
+        self.geometricPmfTypeButtonGroup = QButtonGroup(self)
+        self.geometricPmfTypeButtonGroup.addButton(self.geometricPlainPmfRadioButton)
+        self.geometricPmfTypeButtonGroup.addButton(self.geometricHistoryPmfRadioButton)
+        
+        self.ligandFlexibilityLayout.addWidget(self.geometricPlainPmfRadioButton)
+        self.ligandFlexibilityLayout.addWidget(self.geometricHistoryPmfRadioButton)
         self.ligandFlexibilityLayout.addStretch(1)
 
         self.geometricFlexibleLigandRadioButton.toggled.connect(self._toggleGeometricLigandFlexibility)
+        self.geometricPlainPmfRadioButton.toggled.connect(self._toggleGeometricPmfType)
 
         self.geometricTabLayout.addLayout(self.ligandFlexibilityLayout)
 
@@ -1503,7 +1520,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.alchemicalTabLayout.addLayout(self.alchemicalMethodLayout)
 
         
-        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.pmf/.log):')
+        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.hist.pmf/.log):')
         self.restraintInputsLayout = QVBoxLayout()
 
         # bound state
@@ -1754,10 +1771,26 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickPlotLayout = QVBoxLayout()
 
         # merge/plot a (stratified) pmf
-        self.mergePmf = QGroupBox('Merge stratified PMFs:')
+        self.mergePmf = QGroupBox('Merge stratified (WTM-eABF/GaWTM-eABF) PMFs:')
         self.mergePmfLayout = QVBoxLayout()
 
-        self.mergePmfLabel = QLabel('PMF files (.czar.pmf, with optional GaWTM corrections):')
+        # Radio buttons for PMF type selection
+        self.mergePmfRadioLayout = QHBoxLayout()
+        self.mergePmfPlainRadio = QRadioButton('Plain PMFs')
+        self.mergePmfHistoryRadio = QRadioButton('History PMFs')
+        self.mergePmfPlainRadio.setChecked(True)  # Default selection
+        self.mergePmfRadioButtonGroup = QButtonGroup(self)
+        self.mergePmfRadioButtonGroup.addButton(self.mergePmfPlainRadio)
+        self.mergePmfRadioButtonGroup.addButton(self.mergePmfHistoryRadio)
+        self.mergePmfRadioLayout.addStretch(1)
+        self.mergePmfRadioLayout.addWidget(self.mergePmfPlainRadio)
+        self.mergePmfRadioLayout.addWidget(self.mergePmfHistoryRadio)
+        self.mergePmfRadioLayout.addStretch(1)
+        # Connect radio buttons to state change handler
+        self.mergePmfPlainRadio.toggled.connect(self._changeMergePmfTypeState)
+        self.mergePmfHistoryRadio.toggled.connect(self._changeMergePmfTypeState)
+
+        self.mergePmfLabel = QLabel('PMF files (.czar.pmf, with optional .reweightamd1.cumulant.pmf):')
         self.mergePmfBox = QListWidget()
         self.mergePmfChildLayout = QHBoxLayout()
         self.mergePmfAddButton = QPushButton('Add')
@@ -1769,6 +1802,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.mergePmfChildLayout.addWidget(self.mergePmfPlotButton)
         self.mergePmfChildLayout.addWidget(self.mergePmfSaveButton)
 
+        self.mergePmfLayout.addLayout(self.mergePmfRadioLayout)
         self.mergePmfLayout.addWidget(self.mergePmfLabel)
         self.mergePmfLayout.addWidget(self.mergePmfBox)
         self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
@@ -1807,9 +1841,11 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioBidirectionalFepout)
         self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioBidirectionalLog)
         self.plotHysteresisRadioButtonGroup.addButton(self.plotHysteresisRadioDoubleWideFepout)
+        self.plotHysteresisRadioLayout.addStretch(1)
         self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioBidirectionalFepout)
         self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioBidirectionalLog)
         self.plotHysteresisRadioLayout.addWidget(self.plotHysteresisRadioDoubleWideFepout)
+        self.plotHysteresisRadioLayout.addStretch(1)
         # Connect radio buttons to state change handler
         self.plotHysteresisRadioBidirectionalFepout.toggled.connect(self._changeHysteresisInputState)
         self.plotHysteresisRadioBidirectionalLog.toggled.connect(self._changeHysteresisInputState)
@@ -1968,6 +2004,19 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
             self.plotHysteresisBackwardButton.setEnabled(False)
             self.isRigidLigandCheckbox.setEnabled(False)
 
+    def _changeMergePmfTypeState(self):
+        """enable/disable and update labels for merge PMF based on radio button selection
+        """
+        
+        if self.mergePmfPlainRadio.isChecked():
+            # Plain PMFs: Plot enabled, normal label
+            self.mergePmfLabel.setText('PMF files (.czar.pmf, with optional .reweightamd1.cumulant.pmf):')
+            self.mergePmfPlotButton.setEnabled(True)
+        elif self.mergePmfHistoryRadio.isChecked():
+            # History PMFs: Plot disabled, history label
+            self.mergePmfLabel.setText('History PMF files [.hist.czar.pmf, with optional .reweightamd1.cumulant(.hist).pmf]:')
+            self.mergePmfPlotButton.setEnabled(False)
+
     def _toggleGeometricLigandFlexibility(self):
         """enable/disable widgets based on ligand flexibility selection in geometric tab
         """
@@ -1975,15 +2024,30 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         enable = self.geometricFlexibleLigandRadioButton.isChecked()
         
         # bound RMSD
+        if not enable:
+            self.rmsdBoundLineEdit.clear()
         self.rmsdBoundLineEdit.setEnabled(enable)
         self.rmsdBoundButton.setEnabled(enable)
         
         # unbound RMSD
+        if not enable:
+            self.rmsdUnboundLineEdit.clear()
         self.rmsdUnboundLineEdit.setEnabled(enable)
         self.rmsdUnboundButton.setEnabled(enable)
         
         # force constant RMSD
         self.fcRMSDLineEdit.setEnabled(enable)
+
+    def _toggleGeometricPmfType(self):
+        """enable/disable and update labels for geometric PMF type based on radio button selection
+        """
+        
+        if self.geometricPlainPmfRadioButton.isChecked():
+            # Plain PMFs: normal label
+            self.pmfInputs.setTitle('Merged PMF inputs (.czar.pmf/.UI.pmf):')
+        elif self.geometricHistoryPmfRadioButton.isChecked():
+            # History PMFs: history label
+            self.pmfInputs.setTitle('Merged history PMFs (.hist.czar.pmf/.hist.pmf):')
 
     def _toggleAlchemicalMethod(self):
         """enable/disable widgets and update labels based on alchemical method selection
@@ -2033,8 +2097,8 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
                     
         elif self.alchemicalWTMABFRadio.isChecked():
             # WTM-λABF: Forward label becomes "Full window:", file extension ".pmf", backward disabled
-            self.alchemicalBoundStateLabel.setText('Atom/Bound state (.pmf):')
-            self.alchemicalUnboundStateLabel.setText('Atom/Unbound state (.pmf):')
+            self.alchemicalBoundStateLabel.setText('Atom/Bound state (.hist.pmf):')
+            self.alchemicalUnboundStateLabel.setText('Atom/Unbound state (.hist.pmf):')
             self.alchemicalForwardLabel1.setText('Full window:')
             self.alchemicalForwardLabel3.setText('Full window:')
             # Disable backward row
@@ -2059,10 +2123,14 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         enable = self.alchemicalFlexibleLigandRadio.isChecked()
         
         # Restraints/Unbound state (.log) - Forward row
+        if not enable:
+            self.alchemicalForwardLineEdit4.clear()
         self.alchemicalForwardLineEdit4.setEnabled(enable)
         self.alchemicalForwardButton4.setEnabled(enable)
         
         # Restraints/Unbound state (.log) - Backward row
+        if not enable:
+            self.alchemicalBackwardLineEdit4.clear()
         self.alchemicalBackwardLineEdit4.setEnabled(enable)
         self.alchemicalBackwardButton4.setEnabled(enable)
 
@@ -2161,11 +2229,18 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
             if (index == 7) and (not os.path.exists(item)):
-                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                #QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                pass
+
+        # Check if History PMFs mode is selected
+        use_history_pmf = self.geometricHistoryPmfRadioButton.isChecked()
 
         # calculate free energies
         try:
-            result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+            if use_history_pmf:
+                result, errors = pTreat.geometricBindingFreeEnergyHistPMF(pmfs, parameters)
+            else:
+                result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
         except postTreatment.RStarTooLargeError:
             QMessageBox.warning(
                 self, 
@@ -2185,10 +2260,32 @@ Unknown error! The error message is: \n\
             )
             return
 
-        QMessageBox.about(
-            self,
-            'Result',
-            f'\
+        if use_history_pmf:
+            # Display results with error bars
+            QMessageBox.about(
+                self,
+                'Result',
+                f'\
+Results:\n\
+ΔG(site,c)            = {result[0]:.2f} ± {errors[0]:.2f} kcal/mol\n\
+ΔG(site,eulerTheta)   = {result[1]:.2f} ± {errors[1]:.2f} kcal/mol\n\
+ΔG(site,eulerPhi)     = {result[2]:.2f} ± {errors[2]:.2f} kcal/mol\n\
+ΔG(site,eulerPsi)     = {result[3]:.2f} ± {errors[3]:.2f} kcal/mol\n\
+ΔG(site,polarTheta)   = {result[4]:.2f} ± {errors[4]:.2f} kcal/mol\n\
+ΔG(site,polarPhi)     = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n\
+(1/beta)*ln(S*I*C0)   = {result[6]:.2f} ± {errors[6]:.2f} kcal/mol\n\
+ΔG(bulk,c)            = {result[7]:.2f} ± {errors[7]:.2f} kcal/mol\n\
+ΔG(bulk,o)            = {result[8]:.2f} kcal/mol\n\
+\n\
+Standard Binding Free Energy:\n\
+ΔG(total)             = {result[9]:.2f} ± {errors[9]:.2f} kcal/mol\n'
+            )
+        else:
+            # Display results without error bars (original behavior)
+            QMessageBox.about(
+                self,
+                'Result',
+                f'\
 Results:\n\
 ΔG(site,c)            = {result[0]:.2f} kcal/mol\n\
 ΔG(site,eulerTheta)   = {result[1]:.2f} kcal/mol\n\
@@ -2202,7 +2299,8 @@ Results:\n\
 \n\
 Standard Binding Free Energy:\n\
 ΔG(total)             = {result[9]:.2f} kcal/mol\n'
-        )
+            )
+
 
     def _showAlchemicalResults(self, unit):
         """calculate binding from the alchemical route,
@@ -2274,7 +2372,7 @@ Standard Binding Free Energy:\n\
                 QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
                 return
             elif (not os.path.exists(item)) and (index == 3):
-                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                #QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
                 rigid_ligand = True
 
         # calculate free energies
@@ -2814,6 +2912,70 @@ Unknown error!'
 
         return ploter.mergePMF(pmfs)
 
+    def _getMergedHistPMF(self):
+        """Read History PMF files from mergePmfBox and return the merged History PMF.
+        
+        For GaWTM simulations, the user should add both .hist.czar.pmf files and their
+        corresponding correction files (.reweightamd1.cumulant.hist.pmf or 
+        .reweightamd1.cumulant.pmf). The function will automatically pair them.
+        
+        Returns:
+            list[np.array] or None: The merged History PMF (list of frames), or None if error.
+        """
+        if self.mergePmfBox.count() == 0:
+            QMessageBox.warning(self, 'Warning', f'Warning, no History PMF selected!')
+            return None
+
+        pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+
+        if not ploter.isGaWTMHist(pmfFiles):
+            # No GaWTM correction files found, read History PMFs directly
+            all_hist_pmfs = [ploter.readHistPMF(item) for item in pmfFiles]
+        else:
+            # GaWTM simulation: pair hist.czar.pmf files with their corrections
+            paired, unpaired_czar, orphan_corrections, other_files = ploter.pairGaWTMHistFiles(pmfFiles)
+            
+            # Only show error if there's a mismatch
+            has_mismatch = (unpaired_czar and paired) or orphan_corrections
+            
+            if has_mismatch:
+                error_messages = []
+                
+                if unpaired_czar:
+                    fileNames = [pathlib.Path(f).name for f in unpaired_czar]
+                    error_messages.append(
+                        f'The following .hist.czar.pmf files do not have corresponding correction files:\n'
+                        f'{chr(10).join(fileNames)}'
+                    )
+                
+                if orphan_corrections:
+                    fileNames = [pathlib.Path(f).name for f in orphan_corrections]
+                    error_messages.append(
+                        f'The following correction files do not have corresponding .hist.czar.pmf files:\n'
+                        f'{chr(10).join(fileNames)}'
+                    )
+                
+                QMessageBox.warning(
+                    self, 'Error', 
+                    '\n\n'.join(error_messages) + '\n\nPlease add the missing files!'
+                )
+                return None
+            
+            all_hist_pmfs = []
+            # Process paired files (with correction)
+            for pmfFile, correctionFile, is_hist_correction in paired:
+                try:
+                    all_hist_pmfs.append(ploter.correctGaWTMHist(pmfFile, correctionFile, is_hist_correction))
+                except ploter.NoCorrectionFileError as e:
+                    QMessageBox.warning(self, 'Error', str(e))
+                    return None
+            
+            # Process other History PMF files (non-GaWTM format)
+            for pmfFile in other_files:
+                all_hist_pmfs.append(ploter.readHistPMF(pmfFile))
+
+        return ploter.mergeHistPMF(all_hist_pmfs)
+
     def _savePMFs(self):
         """Save merged PMFs to a file.
         
@@ -2822,21 +2984,41 @@ Unknown error!'
         """
         
         def f():
-            mergedPMF = self._getMergedPMF()
-            if mergedPMF is None:
-                return
-            
-            path, _ = QFileDialog.getSaveFileName(
-                None, 
-                'Set the name of merged PMF',
-                '',
-                'PMF files (*.pmf);;All Files (*)'
-            )
-            if not path:
-                return
+            if self.mergePmfHistoryRadio.isChecked():
+                # History PMF mode
+                mergedHistPMF = self._getMergedHistPMF()
+                if mergedHistPMF is None:
+                    return
                 
-            ploter.writePMF(path, mergedPMF)
-            QMessageBox.information(self, 'Save PMFs', f'PMF saved successfully!')
+                path, _ = QFileDialog.getSaveFileName(
+                    None, 
+                    'Set the name of merged History PMF',
+                    '',
+                    'History PMF files (*.hist.pmf);;All Files (*)'
+                )
+                if not path:
+                    return
+                    
+                ploter.writeHistPMF(path, mergedHistPMF)
+                QMessageBox.information(self, 'Save History PMFs', 
+                    f'History PMF saved successfully!\n{len(mergedHistPMF)} frames written.')
+            else:
+                # Plain PMF mode
+                mergedPMF = self._getMergedPMF()
+                if mergedPMF is None:
+                    return
+                
+                path, _ = QFileDialog.getSaveFileName(
+                    None, 
+                    'Set the name of merged PMF',
+                    '',
+                    'PMF files (*.pmf);;All Files (*)'
+                )
+                if not path:
+                    return
+                    
+                ploter.writePMF(path, mergedPMF)
+                QMessageBox.information(self, 'Save PMFs', f'PMF saved successfully!')
         return f
 
     def _plotPMFs(self):
@@ -2847,6 +3029,13 @@ Unknown error!'
         """
         
         def f():
+            # History PMF mode does not support plotting (button should be disabled)
+            # but check anyway for safety
+            if self.mergePmfHistoryRadio.isChecked():
+                QMessageBox.warning(self, 'Warning', 
+                    'Plotting is not available for History PMFs. Please use Save instead.')
+                return
+            
             mergedPMF = self._getMergedPMF()
             if mergedPMF is None:
                 return
