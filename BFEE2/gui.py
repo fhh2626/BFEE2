@@ -56,6 +56,7 @@ class mainSettings(QWidget):
         self._initSingalsSlots()
         self.setWindowTitle('Settings')
         self.setWindowTitle('Settings')
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.currentTheme = 'dark' # Default theme
         self._readConfig()
         #self.setGeometry(0,0,0,0)
@@ -172,6 +173,7 @@ class geometricAdvancedSettings(QWidget):
         self._initUI()
         self._initSingalsSlots()
         self.setWindowTitle('Advanced settings for the geometrical route')
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.setGeometry(0,0,0,0)
         #self.show()
 
@@ -405,6 +407,7 @@ class alchemicalAdvancedSettings(QWidget):
         self._initUI()
         self._initSingalsSlots()
         self.setWindowTitle('Advanced settings for the alchemical route')
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.setGeometry(0,0,0,0)
         #self.show()
 
