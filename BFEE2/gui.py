@@ -12,7 +12,7 @@ import numpy as np
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide6 import QtCore
-from PySide6.QtGui import QFont, QIcon, QAction
+from PySide6.QtGui import QFont, QIcon, QAction, QActionGroup
 from PySide6.QtWidgets import ( QApplication, QButtonGroup, QCheckBox, QComboBox,
                                QDialog, QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
@@ -55,6 +55,8 @@ class mainSettings(QWidget):
         self._initUI()
         self._initSingalsSlots()
         self.setWindowTitle('Settings')
+        self.setWindowTitle('Settings')
+        self.currentTheme = 'dark' # Default theme
         self._readConfig()
         #self.setGeometry(0,0,0,0)
         #self.show()
@@ -133,6 +135,11 @@ class mainSettings(QWidget):
             self.openRouterModelLineEdit.setText(cFile.readline().strip())
             self.openRouterTemperatureLineEdit.setText(cFile.readline().strip())
             self.openRouterTopPLineEdit.setText(cFile.readline().strip())
+            
+            # Read theme
+            saved_theme = cFile.readline().strip()
+            if saved_theme:
+                self.currentTheme = saved_theme
 
     def _writeConfig(self):
         """write the config saving paths for third-party softwares
@@ -144,6 +151,7 @@ class mainSettings(QWidget):
             cFile.write(self.openRouterModelLineEdit.text() + '\n')
             cFile.write(self.openRouterTemperatureLineEdit.text() + '\n')
             cFile.write(self.openRouterTopPLineEdit.text() + '\n')
+            cFile.write(self.currentTheme + '\n')
 
     def _OKSlot(self):
         """the slot corresponding the OK button
@@ -900,12 +908,58 @@ class mainUI(QMainWindow):
         self.aiAssistantDialog = AIAssistantDialog(self)
         self.aiAssistantDialog.hide()
 
+        # Apply saved theme
+        self._applyTheme(self.mainSettings.currentTheme, save_config=False)
+
         self.setGeometry(0,0,0,0)
         self.setWindowTitle(__PROGRAM_NAME__)    
         self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
 
         self._showMDEngineVersionWarning()
+
+    def _applyTheme(self, theme_name, save_config=True):
+        """Apply the selected theme to the application."""
+        app = QApplication.instance()
+        style_file = ""
+        
+        # update state
+        if theme_name == 'dark':
+            self.modernDarkAction.setChecked(True)
+            style_file = 'modern_dark.qss'
+        elif theme_name == 'light':
+            self.modernLightAction.setChecked(True)
+            style_file = 'modern_light.qss'
+        elif theme_name == 'ocean':
+            self.oceanBlueAction.setChecked(True)
+            style_file = 'ocean_blue.qss'
+        elif theme_name == 'forest':
+            self.forestNightAction.setChecked(True)
+            style_file = 'forest_night.qss'
+        elif theme_name == 'candy':
+            self.candyPopAction.setChecked(True)
+            style_file = 'candy_pop.qss'
+        elif theme_name == 'system':
+             self.systemStyleAction.setChecked(True)
+             
+        # apply style
+        if style_file:
+            try:
+                style_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'styles', style_file)
+                if os.path.exists(style_path):
+                    with open(style_path, 'r') as f:
+                        app.setStyleSheet(f.read())
+                else:
+                    print(f"Style file not found: {style_path}")
+            except Exception as e:
+                print(f"Error loading style: {e}")
+        else:
+            app.setStyleSheet("")
+            
+        # save to config
+        if save_config:
+            self.mainSettings.currentTheme = theme_name
+            self.mainSettings._writeConfig()
 
     def _showMDEngineVersionWarning(self):
         ''' show a message box ask for the latest NAMD version '''
@@ -933,6 +987,40 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.exitAction = QAction('&Exit', self)        
         self.exitAction.setStatusTip('Exit application')
         self.exitAction.triggered.connect(QApplication.quit)
+
+        # theme
+        self.themeActionGroup = QActionGroup(self)
+        
+        self.systemStyleAction = QAction('System Style', self)
+        self.systemStyleAction.setCheckable(True)
+        self.systemStyleAction.triggered.connect(lambda: self._applyTheme('system'))
+        self.themeActionGroup.addAction(self.systemStyleAction)
+        
+        self.modernDarkAction = QAction('Modern Dark', self)
+        self.modernDarkAction.setCheckable(True)
+        # self.modernDarkAction.setChecked(True) # Handled by _applyTheme on init
+        self.modernDarkAction.triggered.connect(lambda: self._applyTheme('dark'))
+        self.themeActionGroup.addAction(self.modernDarkAction)
+
+        self.modernLightAction = QAction('Modern Light', self)
+        self.modernLightAction.setCheckable(True)
+        self.modernLightAction.triggered.connect(lambda: self._applyTheme('light'))
+        self.themeActionGroup.addAction(self.modernLightAction)
+
+        self.oceanBlueAction = QAction('Ocean Blue', self)
+        self.oceanBlueAction.setCheckable(True)
+        self.oceanBlueAction.triggered.connect(lambda: self._applyTheme('ocean'))
+        self.themeActionGroup.addAction(self.oceanBlueAction)
+
+        self.forestNightAction = QAction('Forest Night', self)
+        self.forestNightAction.setCheckable(True)
+        self.forestNightAction.triggered.connect(lambda: self._applyTheme('forest'))
+        self.themeActionGroup.addAction(self.forestNightAction)
+
+        self.candyPopAction = QAction('Candy Pop', self)
+        self.candyPopAction.setCheckable(True)
+        self.candyPopAction.triggered.connect(lambda: self._applyTheme('candy'))
+        self.themeActionGroup.addAction(self.candyPopAction)
 
         # quick settings
         # geometrical protein protein
@@ -998,6 +1086,15 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         menubar.setNativeMenuBar(False)
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(self.settingsAction)
+        
+        self.themeMenu = self.fileMenu.addMenu('Theme')
+        self.themeMenu.addAction(self.systemStyleAction)
+        self.themeMenu.addAction(self.modernDarkAction)
+        self.themeMenu.addAction(self.modernLightAction)
+        self.themeMenu.addAction(self.oceanBlueAction)
+        self.themeMenu.addAction(self.forestNightAction)
+        self.themeMenu.addAction(self.candyPopAction)
+
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAction)
 

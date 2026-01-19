@@ -1,0 +1,274 @@
+/* Global Styles - Forest Night (High Em) */
+/* Palette: Slate #282c34, Accent Mint #98c379 / #56b6c2, Text #abb2bf */
+
+QWidget {
+    background-color: #282c34;
+    color: #abb2bf;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Backgrounds */
+QMainWindow, QDialog {
+    background-color: #282c34;
+}
+
+QLabel, QCheckBox, QRadioButton, QSlider {
+    background-color: transparent;
+}
+
+/* GroupBox */
+QGroupBox {
+    background-color: transparent; 
+    border: 0.06em solid #3e4451; 
+    border-radius: 0.25em;        
+    margin-top: 0.6em;
+    padding-top: 0.5em;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 0 0.2em;             
+    color: #98c379;               /* Green Accent */
+    background-color: #282c34;
+}
+
+/* List Widgets */
+QListWidget, QListView, QTreeWidget, QTreeView {
+    background-color: #21252b;
+    border: 0.06em solid #3e4451;
+    border-radius: 0.2em;         
+    padding: 0.12em;              
+    color: #abb2bf;
+    outline: none; 
+}
+
+QListWidget::item, QTreeWidget::item {
+    padding: 0.1em 0.2em;
+    border: none;
+}
+
+QListWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #3e4451; 
+    color: #98c379; /* Green text on selection */
+    border-left: 0.2em solid #98c379;
+}
+
+QListWidget::item:hover, QTreeWidget::item:hover {
+    background-color: #2c313a;
+}
+
+QListWidget::item:selected:!active, QTreeWidget::item:selected:!active {
+    background-color: #21252b;
+    color: #abb2bf;
+    border: none;
+}
+
+/* Tabs */
+QTabWidget::pane {
+    border: 0.06em solid #3e4451;
+    background-color: #21252b;
+    border-radius: 0.25em;
+}
+
+QTabBar::tab {
+    background: #282c34;
+    border: 0.06em solid #3e4451;
+    padding: 0.25em 0.75em;
+    border-bottom: none;
+    border-top-left-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    color: #5c6370;
+}
+
+QTabBar::tab:selected {
+    background: #21252b;
+    color: #98c379;
+    border-bottom: 0.12em solid #98c379;
+}
+
+QTabBar::tab:hover {
+    background: #2c313a;
+    color: #abb2bf;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #353b45;
+    border: 0.06em solid #3e4451;
+    border-radius: 0.2em;
+    padding: 0.2em 0.6em;
+    color: #abb2bf;
+}
+
+QPushButton:hover {
+    background-color: #3e4451;
+    border-color: #98c379;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #21252b;
+    border-color: #56b6c2;
+}
+
+QPushButton:disabled {
+    background-color: #21252b;
+    color: #5c6370;
+    border-color: #3e4451;
+}
+
+/* Inputs */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #21252b;
+    border: 0.06em solid #3e4451;
+    border-radius: 0.2em;
+    padding: 0.15em;
+    color: #abb2bf;
+    selection-background-color: #3e4451;
+    selection-color: #98c379;
+}
+
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 0.06em solid #98c379;
+}
+
+QLineEdit:disabled {
+    background-color: #21252b;
+    color: #5c6370;
+}
+
+/* ComboBox */
+QComboBox {
+    background-color: #353b45;
+    border: 0.06em solid #3e4451;
+    border-radius: 0.2em;
+    padding: 0.15em 0.4em;
+}
+
+QComboBox:hover {
+    border: 0.06em solid #98c379;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 1.25em;
+    border-left-width: 0.06em;
+    border-left-color: #3e4451;
+    border-left-style: solid; 
+}
+
+QComboBox QAbstractItemView {
+    background-color: #21252b;
+    border: 0.06em solid #3e4451;
+    selection-background-color: #3e4451;
+    color: #98c379;
+}
+
+/* Check/Radio */
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 0.9em;
+    height: 0.9em;
+    background-color: #21252b;
+    border: 0.06em solid #5c6370;
+    border-radius: 0.15em;
+}
+
+QRadioButton::indicator {
+    border-radius: 0.45em;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #98c379;
+    border: 0.06em solid #98c379;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #98c379;
+    border: 0.06em solid #98c379;
+}
+
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border: 0.06em solid #98c379;
+}
+
+/* Menus */
+QMenuBar {
+    background-color: #282c34;
+    border-bottom: 0.06em solid #3e4451;
+}
+
+QMenuBar::item {
+    padding: 0.25em 0.5em;
+    background: transparent;
+}
+
+QMenuBar::item:selected {
+    background: #3e4451;
+}
+
+QMenu {
+    background-color: #21252b;
+    border: 0.06em solid #3e4451;
+}
+
+QMenu::item {
+    padding: 0.25em 1.25em;
+}
+
+QMenu::item:selected {
+    background-color: #3e4451;
+    color: #98c379;
+}
+
+/* ScrollBars */
+QScrollBar:vertical {
+    border: none;
+    background: #282c34;
+    width: 0.5em;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #4b5263;
+    min-height: 1.25em; 
+    border-radius: 0.25em;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #5c6370;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0em;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #282c34;
+    height: 0.5em;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: #4b5263;
+    min-width: 1.25em;
+    border-radius: 0.25em;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #5c6370;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0em;
+}
+
+QToolTip {
+    border: 0.06em solid #3e4451;
+    background-color: #21252b;
+    color: #abb2bf;
+    padding: 0.15em;
+}
