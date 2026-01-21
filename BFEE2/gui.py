@@ -2969,7 +2969,18 @@ Unknown error!'
             pmfs = [ploter.readPMF(item) for item in pmfFiles]
         else:
             # GaWTM simulation: pair czar.pmf files with their corrections
-            paired, unpaired_czar, orphan_corrections, other_files = ploter.pairGaWTMFiles(pmfFiles)
+            paired, unpaired_czar, orphan_corrections, other_files, wrong_correction_files = ploter.pairGaWTMFiles(pmfFiles)
+            
+            # Check for wrong correction file type first
+            if wrong_correction_files:
+                fileNames = [pathlib.Path(f).name for f in wrong_correction_files]
+                QMessageBox.warning(
+                    self, 'Error', 
+                    f'The following correction files are not precise enough:\n'
+                    f'{chr(10).join(fileNames)}\n\n'
+                    f'Please use *.reweightamd1.cumulant.pmf instead of *.reweightamd1.reweight.pmf!'
+                )
+                return None
             
             # Only show error if there's a mismatch (some czar.pmf missing correction or orphan corrections)
             # Don't show error if:
@@ -3038,7 +3049,18 @@ Unknown error!'
             all_hist_pmfs = [ploter.readHistPMF(item) for item in pmfFiles]
         else:
             # GaWTM simulation: pair hist.czar.pmf files with their corrections
-            paired, unpaired_czar, orphan_corrections, other_files = ploter.pairGaWTMHistFiles(pmfFiles)
+            paired, unpaired_czar, orphan_corrections, other_files, wrong_correction_files = ploter.pairGaWTMHistFiles(pmfFiles)
+            
+            # Check for wrong correction file type first
+            if wrong_correction_files:
+                fileNames = [pathlib.Path(f).name for f in wrong_correction_files]
+                QMessageBox.warning(
+                    self, 'Error', 
+                    f'The following files have wrong correction file type:\n'
+                    f'{chr(10).join(fileNames)}\n\n'
+                    f'Please use *.reweightamd1.cumulant.pmf instead of *.reweightamd1.reweight.pmf!'
+                )
+                return None
             
             # Only show error if there's a mismatch
             has_mismatch = (unpaired_czar and paired) or orphan_corrections

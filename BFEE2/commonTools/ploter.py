@@ -55,6 +55,36 @@ def getGaWTMBaseName(filePath):
         # For other PMF files, just remove .pmf extension
         return pathlib.Path(fileName).stem
 
+def getGaWTMBaseNames(filePath):
+    """Extract all possible base names from a GaWTM PMF file for flexible matching.
+    
+    This function returns a list of candidate base names to support flexible pairing.
+    For example:
+        'path/to/abf_1.abf1.czar.pmf' -> ['abf_1.abf1', 'abf_1']
+        'path/to/001.czar.pmf' -> ['001']
+        'path/to/step1.abf2.czar.pmf' -> ['step1.abf2', 'step1']
+    
+    Args:
+        filePath (str): path to the file
+    
+    Returns:
+        list[str]: list of possible base names (primary first, then alternatives)
+    """
+    primaryBaseName = getGaWTMBaseName(filePath)
+    candidates = [primaryBaseName]
+    
+    # Check if the base name contains patterns like .abf1, .abf2, etc.
+    # Find the last dot and check if it's followed by 'abf' + digits
+    dotIndex = primaryBaseName.rfind('.')
+    if dotIndex > 0:
+        suffix = primaryBaseName[dotIndex + 1:]
+        if suffix.startswith('abf') and suffix[3:].isdigit():
+            alternativeBaseName = primaryBaseName[:dotIndex]
+            if alternativeBaseName not in candidates:
+                candidates.append(alternativeBaseName)
+    
+    return candidates
+
 def pairGaWTMFiles(pmfFiles):
     """Pair GaWTM PMF files with their corresponding correction files.
     
@@ -63,49 +93,66 @@ def pairGaWTMFiles(pmfFiles):
     
     Files without a corresponding correction file are returned as unpaired.
     Orphan correction files (without matching czar.pmf) are also returned separately.
+    Wrong correction files (.reweightamd1.reweight.pmf instead of .cumulant.pmf) are also detected.
     
     Args:
         pmfFiles (list[str]): list of all PMF file paths (including correction files)
     
     Returns:
-        tuple: (paired_list, unpaired_czar_list, orphan_correction_list)
+        tuple: (paired_list, unpaired_czar_list, orphan_correction_list, other_files, wrong_correction_files)
             paired_list: list of tuples (pmf_file_path, correction_file_path)
             unpaired_czar_list: list of czar.pmf file paths without correction
             orphan_correction_list: list of correction file paths without matching czar.pmf
+            other_files: list of other PMF files
+            wrong_correction_files: list of .reweightamd1.reweight.pmf files (wrong type)
     """
     # Separate czar.pmf files and correction files
     czar_files = {}  # baseName -> filePath
+    czar_file_candidates = {}  # baseName -> list of candidate base names for matching
     correction_files = {}  # baseName -> filePath
     other_files = []  # files that are neither
+    wrong_correction_files = []  # .reweightamd1.reweight.pmf files (wrong type)
     
     for filePath in pmfFiles:
         fileName = pathlib.Path(filePath).name
         if fileName.endswith('.reweightamd1.cumulant.pmf'):
             baseName = getGaWTMBaseName(filePath)
             correction_files[baseName] = filePath
+        elif fileName.endswith('.reweightamd1.reweight.pmf'):
+            # Wrong correction file type
+            wrong_correction_files.append(filePath)
         elif fileName.endswith('.czar.pmf'):
             baseName = getGaWTMBaseName(filePath)
             czar_files[baseName] = filePath
+            czar_file_candidates[baseName] = getGaWTMBaseNames(filePath)
         else:
             other_files.append(filePath)
     
-    # Pair files by base name
+    # Pair files by base name (with flexible matching)
     paired = []
     unpaired_czar = []
+    matched_corrections = set()  # Track which correction files have been matched
     
     for baseName, czarPath in czar_files.items():
-        if baseName in correction_files:
-            paired.append((czarPath, correction_files[baseName]))
-        else:
+        # Try all candidate base names for this czar file
+        candidates = czar_file_candidates.get(baseName, [baseName])
+        matched = False
+        for candidate in candidates:
+            if candidate in correction_files:
+                paired.append((czarPath, correction_files[candidate]))
+                matched_corrections.add(candidate)
+                matched = True
+                break
+        if not matched:
             unpaired_czar.append(czarPath)
     
     # Find orphan correction files (correction without czar.pmf)
     orphan_corrections = []
     for baseName, corrPath in correction_files.items():
-        if baseName not in czar_files:
+        if baseName not in matched_corrections:
             orphan_corrections.append(corrPath)
     
-    return paired, unpaired_czar, orphan_corrections, other_files
+    return paired, unpaired_czar, orphan_corrections, other_files, wrong_correction_files
 
 def correctGaWTM(pmfFile, correctionFile=None):
     """read a 1D namd PMF file and correct it using cumulant.pmf file
@@ -240,6 +287,35 @@ def getGaWTMHistBaseName(filePath):
             return fileName[:-len('.hist.pmf')]
         return pathlib.Path(fileName).stem
 
+def getGaWTMHistBaseNames(filePath):
+    """Extract all possible base names from a GaWTM History PMF file for flexible matching.
+    
+    This function returns a list of candidate base names to support flexible pairing.
+    For example:
+        'path/to/abf_1.abf1.hist.czar.pmf' -> ['abf_1.abf1', 'abf_1']
+        'path/to/001.hist.czar.pmf' -> ['001']
+    
+    Args:
+        filePath (str): path to the file
+    
+    Returns:
+        list[str]: list of possible base names (primary first, then alternatives)
+    """
+    primaryBaseName = getGaWTMHistBaseName(filePath)
+    candidates = [primaryBaseName]
+    
+    # Check if the base name contains patterns like .abf1, .abf2, etc.
+    # Find the last dot and check if it's followed by 'abf' + digits
+    dotIndex = primaryBaseName.rfind('.')
+    if dotIndex > 0:
+        suffix = primaryBaseName[dotIndex + 1:]
+        if suffix.startswith('abf') and suffix[3:].isdigit():
+            alternativeBaseName = primaryBaseName[:dotIndex]
+            if alternativeBaseName not in candidates:
+                candidates.append(alternativeBaseName)
+    
+    return candidates
+
 def pairGaWTMHistFiles(pmfFiles):
     """Pair GaWTM History PMF files with their corresponding correction files.
     
@@ -248,21 +324,25 @@ def pairGaWTMHistFiles(pmfFiles):
     
     Files without a corresponding correction file are returned as unpaired.
     Orphan correction files (without matching hist.czar.pmf) are also returned separately.
+    Wrong correction files (.reweightamd1.reweight.pmf instead of .cumulant.pmf) are also detected.
     
     Args:
         pmfFiles (list[str]): list of all History PMF file paths (including correction files)
     
     Returns:
-        tuple: (paired_list, unpaired_czar_list, orphan_correction_list, other_files)
+        tuple: (paired_list, unpaired_czar_list, orphan_correction_list, other_files, wrong_correction_files)
             paired_list: list of tuples (pmf_file_path, correction_file_path, is_hist_correction)
                 is_hist_correction: True if correction is .hist.pmf, False if single-frame .pmf
             unpaired_czar_list: list of hist.czar.pmf file paths without correction
             orphan_correction_list: list of correction file paths without matching hist.czar.pmf
             other_files: list of other PMF files
+            wrong_correction_files: list of .reweightamd1.reweight.pmf files (wrong type)
     """
     czar_files = {}  # baseName -> filePath
+    czar_file_candidates = {}  # baseName -> list of candidate base names for matching
     correction_files = {}  # baseName -> (filePath, is_hist_correction)
     other_files = []
+    wrong_correction_files = []  # .reweightamd1.reweight.pmf files (wrong type)
     
     for filePath in pmfFiles:
         fileName = pathlib.Path(filePath).name
@@ -274,28 +354,42 @@ def pairGaWTMHistFiles(pmfFiles):
             # Only add if not already have a hist correction (prefer hist over single-frame)
             if baseName not in correction_files:
                 correction_files[baseName] = (filePath, False)
+        elif fileName.endswith('.reweightamd1.reweight.hist.pmf') or \
+             fileName.endswith('.reweightamd1.reweight.pmf'):
+            # Wrong correction file type
+            wrong_correction_files.append(filePath)
         elif fileName.endswith('.hist.czar.pmf'):
             baseName = getGaWTMHistBaseName(filePath)
             czar_files[baseName] = filePath
+            czar_file_candidates[baseName] = getGaWTMHistBaseNames(filePath)
         else:
             other_files.append(filePath)
     
+    # Pair files by base name (with flexible matching)
     paired = []
     unpaired_czar = []
+    matched_corrections = set()  # Track which correction files have been matched
     
     for baseName, czarPath in czar_files.items():
-        if baseName in correction_files:
-            corrPath, is_hist = correction_files[baseName]
-            paired.append((czarPath, corrPath, is_hist))
-        else:
+        # Try all candidate base names for this czar file
+        candidates = czar_file_candidates.get(baseName, [baseName])
+        matched = False
+        for candidate in candidates:
+            if candidate in correction_files:
+                corrPath, is_hist = correction_files[candidate]
+                paired.append((czarPath, corrPath, is_hist))
+                matched_corrections.add(candidate)
+                matched = True
+                break
+        if not matched:
             unpaired_czar.append(czarPath)
     
     orphan_corrections = []
     for baseName, (corrPath, _) in correction_files.items():
-        if baseName not in czar_files:
+        if baseName not in matched_corrections:
             orphan_corrections.append(corrPath)
     
-    return paired, unpaired_czar, orphan_corrections, other_files
+    return paired, unpaired_czar, orphan_corrections, other_files, wrong_correction_files
 
 def readHistPMF(histPmfFile):
     """Read a History PMF file and return a list of PMF frames.
