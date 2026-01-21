@@ -36,7 +36,7 @@ Provide coordinates (PDB/RST) and topology (PSF/PARM) in either CHARMM or Amber 
 CHARMM: also supply the parameter file (PRM).
 Amber: parameters are included in the PARM file; no separate force-field file is needed.
 Automatic box generation:
-CHARMM + VMD path set: BFEE calls VMD to build an enlarged water box (geometrical route, step 7), and create a protein-stripped box (alchemical route, steps 3 and 4/LDDM step 2; geometrical route, step 8).
+CHARMM + VMD path set: BFEE calls VMD to build an enlarged water box (geometrical route, step 7), and create a protein-stripped box (alchemical route, steps 3/LDDM step 2; geometrical route, step 8).
 CHARMM + no VMD path: BFEE generates Tcl scripts for you to run manually.
 Amber:
 Geometrical/Alchemical route: BFEE generates a script that calls AmberTools cpptraj to build the protein-stripped box automatically.
@@ -59,7 +59,8 @@ Alchemical route options
 Most options mirror those of the geometrical route.
 Double-wide sampling: in each window at lambda, also evaluate energies for lambda - 1 and lambda + 1 to obtain forward and backward data from a single run; reduces cost and is recommended on.
 Re-equilibration after histogram: performs two equilibration runs—first to collect optimal CV values (Euler angles, spherical-coordinate angles, distance) and refine restraint centers; second to ensure starting structures match these values—accelerating convergence.
-Use WTM-λABF: uses WTM-λABF instead of FEP for enhancing sampling in alchemical space. Errors must be estimated via parallel runs.
+Use WTM-λABF: uses WTM-λABF (WTM-lambdaABF) instead of FEP for enhancing sampling in alchemical space.
+Use LDDM: uses LDDM instead of DDM for free energy calculations.
 Minimize before sampling in each window: performs an energy minimization before each FEP window; not recommended.
 
 Running Simulations:
@@ -87,8 +88,8 @@ Geometrical Route (protein-protein and protein-ligand):
         - Run `007_r/007.2_abf_1.conf`.
    2.8. (Flexible ligands) Run unbound RMSD PMF:
         - Create protein-stripped system:
-          - CHARMM (if VMD not linked): Run `008_RMSDUnbound/008.0_removeProtein.tcl` with VMD.
-          - Amber: Run `008_RMSDUnbound/008.0_removeProtein.cpptraj` with cpptraj.
+          - CHARMM (if VMD not linked): Run `008_RMSDUnbound/008.0.1_removeProtein.tcl` and `008_RMSDUnbound/008.0.2_neutrilize.tcl` with VMD.
+          - Amber: Run `008_RMSDUnbound/008.0.1_removeProtein.cpptraj` with cpptraj.
         - Run `008_RMSDUnbound/008.1_eq.conf`.
         - Run `008_RMSDUnbound/008.2_abf_1.conf`.
 3. Post-treatment: Use BFEE3 to analyze results and calculate the final binding free energy.
@@ -104,8 +105,8 @@ Alchemical Route (protein-ligand):
    2.2. Release restraints in bound state: e.g., run `002_RestraintBound/002.1_ti_backward.conf` and `002.2_ti_forward.conf`.
    2.3. Decouple in unbound state:
         - Create protein-stripped system:
-          - CHARMM (if VMD not linked): Run `002.3_removeProtein.tcl` with VMD.
-          - Amber: Run `002.3_removeProtein.cpptraj` with cpptraj.
+          - CHARMM (if VMD not linked): Run `002.3.1_removeProtein.tcl` and `002.3.2_neutrilize.tcl` with VMD.
+          - Amber: Run `002.3.1_removeProtein.cpptraj` with cpptraj.
         - Equilibrate ligand-only system: `000_eq/000.2_eq_ligandOnly.conf`.
         - Run FEP: e.g., `003_MoleculeUnbound/003_fep_doubleWide.conf`.
    2.4. (Flexible ligands) Release restraints in unbound state: e.g., run `004_RestraintUnbound/004.1_ti_backward.conf` and `004.2_ti_forward.conf`.
@@ -121,15 +122,15 @@ LDDM (protein-ligand):
         - Run `001_MoleculeBound/001_fep_doubleWide.conf`.
    2.2. Decouple in unbound state:
         - Create protein-stripped system:
-          - CHARMM (if VMD not linked): Run `002.3_removeProtein.tcl` with VMD.
-          - Amber: Run `002.3_removeProtein.cpptraj` with cpptraj.
+          - CHARMM (if VMD not linked): Run `002.3.1_removeProtein.tcl` and `002.3.2_neutrilize.tcl` with VMD.
+          - Amber: Run `002.3.1_removeProtein.cpptraj` with cpptraj.
         - Run `003_MoleculeUnbound/003_fep_doubleWide.conf`.
 3. Post-treatment: Use BFEE3 for analysis.
 
 Post-treatment:
 Geometrical:
 Settings: Select "Flexible ligand" or "Rigid ligand/Protein-Protein". Select "Plain PMFs" or "History PMFs" (for error estimation).
-Merged PMF inputs: Provide `.czar.pmf` files for each step: RMSD(bound), Theta, Phi, Psi, theta, phi, r, and RMSD(unbound). If "Rigid ligand" is selected, RMSD inputs are disabled/ignored. If "History PMFs" is selected, provide `.hist.czar.pmf` or .hist.pmf` files.
+Merged PMF inputs: Provide `.czar.pmf` files for each step: RMSD(bound), Theta(eulerTheta), Phi(eulerPhi), Psi(eulerPsi), theta(polarTheta), phi(polarPhi), r(distance), and RMSD(unbound). If "Rigid ligand/Protein-Protein" is selected, RMSD inputs are disabled/ignored. If "History PMFs" is selected, provide `.hist.czar.pmf` or `.hist.pmf` files.
 Force constants: Enter the numerical values of the force constants for restraints on each CV (RMSD, Theta, Phi, Psi, theta, phi). Units are automatically handled based on the selected MD engine.
 Temperature: Simulation temperature. r*: A constant, set to the maximum separation distance (from step 7) or a distance where the PMF curve has plateaued. Pmf type: NAMD or Gromacs.
 Alchemical:
@@ -149,7 +150,7 @@ Quick-plot:
 Merge (stratified) PMFs:
 Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them. 
 - Select "Plain PMFs" to merge and plot standard PMF files (`.czar.pmf` or `.UI.pmf`). GaMD corrections (`.reweightamd1.cumulant.pmf`) are automatically applied if present.
-- Select "History PMFs" to merge history PMF files (`.hist.czar.pmf`). Plotting is disabled in this mode (only "Save" is available). These are used for error estimation.GaMD corrections (`.reweightamd1.cumulant.pmf`) are automatically applied if present.
+- Select "History PMFs" to merge history PMF files (`.hist.czar.pmf`). Plotting is disabled in this mode (only "Save" is available). These are used for error estimation.GaMD corrections [`.reweightamd1.cumulant(.hist).pmf`] are automatically applied if present.
 Calculate PMF RMSD convergence:
 Takes a `.hist.pmf` file as input and plots the PMF's root-mean-square deviation (vs. zero vector) over time. A plateau indicates convergence.
 Plot hysteresis between bidirectional simulations:
