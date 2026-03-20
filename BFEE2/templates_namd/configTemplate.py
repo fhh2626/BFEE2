@@ -284,7 +284,6 @@ alchOutFile {outputPrefix}.fepout               \n\
 alchOutFreq 50                                  \n\
 alchVdwLambdaEnd 0.7                            \n\
 alchElecLambdaStart 0.5                         \n\
-alchDecouple   on                               \n\
 alchEquilSteps 100000                           \n'
 
             if fepForward:
