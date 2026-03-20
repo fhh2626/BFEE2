@@ -28,8 +28,7 @@ def isGaWTM(pmfFiles):
 
     for file in pmfFiles:
         fileName = pathlib.Path(file).name
-        if fileName.endswith('.czar.pmf') or \
-           fileName.endswith('.reweightamd1.cumulant.pmf') or \
+        if fileName.endswith('.reweightamd1.cumulant.pmf') or \
            fileName.endswith('.reweightamd1.reweight.pmf'):
             return True
     return False
@@ -255,9 +254,8 @@ def isGaWTMHist(pmfFiles):
     """
     for file in pmfFiles:
         fileName = pathlib.Path(file).name
-        # Check for czar files, correction files (correct or wrong type)
-        if fileName.endswith('.hist.czar.pmf') or \
-           fileName.endswith('.reweightamd1.cumulant.hist.pmf') or \
+        # Check for correction files (correct or wrong type)
+        if fileName.endswith('.reweightamd1.cumulant.hist.pmf') or \
            fileName.endswith('.reweightamd1.cumulant.pmf') or \
            fileName.endswith('.reweightamd1.reweight.hist.pmf') or \
            fileName.endswith('.reweightamd1.reweight.pmf'):
