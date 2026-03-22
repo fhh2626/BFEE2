@@ -148,7 +148,7 @@ Inputs: Provide `colvars.in.tmp`, `colvars.traj`, and `fepout` from step 1, and 
 Other parameters: `Steps per window (Step1)`, `Windows (Step1)`, `Equilibration per window (Step1)` define simulation length for step 1. `Temperature`, `Post-treatment type`: Same as for the alchemical route.
 Quick-plot:
 Merge (stratified) PMFs:
-Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them. 
+Plots and/or saves merged PMF curves from geometrical route calculations. If stratification was used, inputting PMF files from consecutive windows will automatically merge them.
 - Select "Plain PMFs" to merge and plot standard PMF files (`.czar.pmf` or `.UI.pmf`). GaMD corrections (`.reweightamd1.cumulant.pmf`) are automatically applied if present.
 - Select "History PMFs" to merge history PMF files (`.hist.czar.pmf`). Plotting is disabled in this mode (only "Save" is available). These are used for error estimation.GaMD corrections [`.reweightamd1.cumulant(.hist).pmf`] are automatically applied if present.
 Calculate PMF RMSD convergence:
@@ -164,35 +164,72 @@ BFEEControl = """
 BFEE3 usage notes:
 - Ask the user: task (protein–protein; protein–ligand: geometrical/alchemical/LDDM), ligand rigidity (rigid/flexible), the use of WTM-λABF, and whether HMR or OPLS is used.
 - Keep "Other recommended options" at defaults unless the user asks to change them.
-1. Features (callable functions):
-- Protein-protein binding free-energy via the geometrical route [_quickSetProteinProteinGeometric()].
-- Protein-ligand binding free-energy via the geometrical route [_quickSetProteinLigandGeometric()].
-- Protein-ligand binding free-energy via the classical alchemical route (DDM) [_quickSetProteinLigandAlchemical()].
-- Protein-ligand binding free-energy via the lucid DDM (LDDM) route [_quickSetProteinLigandLDDM()].
+1. Features (available skills):
+- Protein-protein binding free-energy via the geometrical route ["protein_protein_geometric"].
+- Protein-ligand binding free-energy via the geometrical route ["protein_ligand_geometric" with {"ligand_type": "flexible"|"rigid"}].
+- Protein-ligand binding free-energy via the classical alchemical route (DDM) ["protein_ligand_alchemical" with {"ligand_type": "flexible"|"rigid"}].
+- Protein-ligand binding free-energy via the lucid DDM (LDDM) route ["protein_ligand_lddm"].
 Note: LDDM is a major improvement over DDM and is strongly recommended. Its only current limitation is lack of support for highly flexible ligands. This is a comparison between alchemical methods; the choice between geometrical and alchemical routes is system-dependent.
 2. Ligand RMSD CV: Enable for flexible ligands to sample conformational changes (adds 2 steps to geometrical route, 1 to DDM). `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)]`. Disable for rigid ligands and all LDDM calculations. `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)]`.
 3. Hydrogen mass repartitioning (HMR): If HMR is used (hydrogen mass ~3 amu), set timestep to 4.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('4.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('4.0')]`. Otherwise, use 2.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('2.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')]`.
 4. WTM-λABF: Recommended for the classical DDM route to enhance alchemical space sampling `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(True)]`. FEP is used by default for easier error analysis `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)]`. Not available for the geometrical route and LDDM.
 5. OPLS force field: If using an OPLS force field, enable OPLS mixing rules `[geometricAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True), alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.setChecked(True)]`.
+6. Force field type: If the user says they are using the CHARMM or Amber force field, set the force-field selector accordingly `[forceFieldCombobox.setCurrentText('CHARMM'|'Amber')]`.
 Other recommended options:
-6. Pin down the protein: always enable `[geometricAdvancedSettings.pinDownProCheckbox.setChecked(True), alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)]`.
-7. Use CUDASOA integrator: always enable for NAMD >= 3.0 `[geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True), alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)]`.
-8. Quaternion-based CVs: not recommended `[geometricAdvancedSettings.useOldCvCheckbox.setChecked(False), alchemicalAdvancedSettings.useOldCvCheckbox.setChecked(False)]`.
-9. Membrane protein: enable for membrane systems `[geometricAdvancedSettings.memProCheckbox.setChecked(True), alchemicalAdvancedSettings.memProCheckbox.setChecked(True)]`.
-10. Double-wide sampling: recommended for the alchemical route to save cost `[alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)]`. Not available for the geometrical route.
-11. Re-equilibration after guessing the restraining center: recommended for the alchemical route to improve the initial structure `[alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)]`. Not available for the geometrical route.
-12. Minimize before sampling: not recommended `[alchemicalAdvancedSettings.minBeforeSampleCheckbox.setChecked(False)]`. Not available for the geometrical route.
-13. Set protein and ligand selections: `[selectProteinLineEdit.setText('protein'), selectLigandLineEdit.setText('resname LIG')]`. Replace with MDAnalysis selections [e.g. "protein", "segid XXX", "resname XXX", etc.]; if unsure, use 'protein' and request the ligand residue name (e.g., LIG, LIG1, MCL) to set 'resname NAME'. No need to set it if the user does not ask, they may have set it themselves.
+7. Pin down the protein: always enable `[geometricAdvancedSettings.pinDownProCheckbox.setChecked(True), alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)]`.
+8. Use CUDASOA integrator: always enable for NAMD >= 3.0 `[geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True), alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)]`.
+9. Quaternion-based CVs: not recommended `[geometricAdvancedSettings.useOldCvCheckbox.setChecked(False), alchemicalAdvancedSettings.useOldCvCheckbox.setChecked(False)]`.
+10. Membrane protein: enable for membrane systems `[geometricAdvancedSettings.memProCheckbox.setChecked(True), alchemicalAdvancedSettings.memProCheckbox.setChecked(True)]`.
+11. Double-wide sampling: recommended for the alchemical route to save cost `[alchemicalAdvancedSettings.doubleWideCheckbox.setChecked(True)]`. Not available for the geometrical route.
+12. Re-equilibration after guessing the restraining center: recommended for the alchemical route to improve the initial structure `[alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)]`. Not available for the geometrical route.
+13. Minimize before sampling: not recommended `[alchemicalAdvancedSettings.minBeforeSampleCheckbox.setChecked(False)]`. Not available for the geometrical route.
+14. Set protein and ligand selections: `[selectProteinLineEdit.setText('protein'), selectLigandLineEdit.setText('resname LIG')]`. Replace with MDAnalysis selections [e.g. "protein", "segid XXX", "resname XXX", etc.]; if unsure, use 'protein' and request the ligand residue name (e.g., LIG, LIG1, MCL) to set 'resname NAME'. No need to set it if the user does not ask, they may have set it themselves.
 """
 
 outputPostFix = """
-End your output with the following block to automatically call functions. Do not change the sentences (Serious!). You can only change functions in the square brackets. The sentences must be in English. Example:
+If you want to automatically change GUI settings, end your output with a JSON code block using the following schema:
 ----------
-I will call the following functions:
-[_quickSetProteinProteinGeometric(), geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)]
-Please check the settings in the GUI and click "Generate Inputs"
+```json
+{
+  "bfee_schema": "skills-v1",
+  "skills": [
+    {
+      "name": "protein_ligand_geometric",
+      "args": {
+        "ligand_type": "flexible"
+      }
+    },
+    {
+      "name": "set_common_fields",
+      "args": {
+        "select_protein": "protein",
+        "select_ligand": "resname LIG"
+      }
+    },
+    {
+      "name": "apply_overrides",
+      "args": {
+        "force_field": "Amber",
+        "use_gawtm": false,
+        "use_cudasoa": true,
+        "consider_rmsd_cv": true,
+        "timestep": 2.0
+      }
+    }
+  ]
+}
+```
 ----------
-Again, the aformentioned format is just an example. You should change the functions in the square brackets according to the user's request.
+Rules:
+- Use valid JSON, not Python.
+- Use double quotes for all keys and strings.
+- Output exactly one actionable JSON code block, and place it at the end of the response.
+- The top-level object must contain exactly two keys: "bfee_schema" and "skills".
+- "bfee_schema" must be "skills-v1".
+- Allowed skill names are: "protein_protein_geometric", "protein_ligand_geometric", "protein_ligand_alchemical", "protein_ligand_lddm", "set_common_fields", and "apply_overrides".
+- Allowed keys for "set_common_fields" are: "select_protein", "select_ligand", and "temperature".
+- Allowed keys for "apply_overrides" are: "force_field", "consider_rmsd_cv", "use_gawtm", "use_cudasoa", "pin_down_protein", "use_quaternion_cv", "reflecting_boundary", "double_wide", "re_equilibration", "use_wtm_lambda_abf", "use_lddm", "membrane_protein", "opls_mixing_rule", "timestep", "parallel_runs", and "neutralize_ligand_only".
+- If no automatic action is needed, do not output a JSON block.
 """
 
 systemPrompt = selfIntro + BFEEIntro + BFEEControl + outputPostFix
