@@ -14,7 +14,15 @@ import requests
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide6 import QtCore
-from PySide6.QtGui import QAction, QActionGroup, QFont, QIcon, QTextCursor
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QColor,
+    QFont,
+    QIcon,
+    QPalette,
+    QTextCursor,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -633,11 +641,51 @@ class alchemicalAdvancedSettings(QWidget):
 class AIAssistantDialog(QWidget):
     """AI Assistant dialog for interactive help with OpenRouter API"""
 
+    THEME_COLORS = {
+        "dark": {
+            "surface": "#1e1e1e",
+            "panel": "#2b2b2b",
+            "border": "#555555",
+            "text": "#f0f0f0",
+            "accent": "#409EFF",
+        },
+        "light": {
+            "surface": "#ffffff",
+            "panel": "#f5f5f7",
+            "border": "#d2d2d7",
+            "text": "#1d1d1f",
+            "accent": "#0071e3",
+        },
+        "ocean": {
+            "surface": "#1e293b",
+            "panel": "#0f172a",
+            "border": "#334155",
+            "text": "#f1f5f9",
+            "accent": "#22d3ee",
+        },
+        "forest": {
+            "surface": "#21252b",
+            "panel": "#282c34",
+            "border": "#3e4451",
+            "text": "#abb2bf",
+            "accent": "#98c379",
+        },
+        "candy": {
+            "surface": "#2c2c2c",
+            "panel": "#212121",
+            "border": "#424242",
+            "text": "#ffffff",
+            "accent": "#ff007a",
+        },
+    }
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
         self.skillExecutor = AISkillExecutor(self)
         self._hasShownWelcomeMessage = False
+        self._themeName = self._resolveThemeName()
+        self._conversationEntries = []
         self._initUI()
         self._initSignalsSlots()
         self.setWindowTitle("AI Assistant")
@@ -663,16 +711,7 @@ class AIAssistantDialog(QWidget):
         self.conversationDisplay = QTextBrowser()
         self.conversationDisplay.setOpenExternalLinks(True)
         self.conversationDisplay.document().setDocumentMargin(8)
-        self.conversationDisplay.setStyleSheet(
-            """
-            QTextBrowser {
-                background-color: #f7f1e6;
-                border: 1px solid #d8cab3;
-                border-radius: 10px;
-                padding: 6px;
-            }
-            """
-        )
+        self.applyTheme(self._themeName)
 
         # Input area
         self.inputLayout = QHBoxLayout()
@@ -806,6 +845,11 @@ class AIAssistantDialog(QWidget):
 
     def _appendConversationText(self, text: str):
         """Append a chat message using a bubble-style layout."""
+        self._conversationEntries.append(text)
+        self._insertConversationText(text)
+
+    def _insertConversationText(self, text: str):
+        """Render one message entry in the conversation area."""
         message_type, speaker, content = self._classifyConversationText(text)
         bubble_html = self._buildConversationBubble(
             message_type, speaker, self._formatConversationBody(content)
@@ -819,6 +863,129 @@ class AIAssistantDialog(QWidget):
 
         scrollbar = self.conversationDisplay.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def _resolveThemeName(self):
+        """Return the currently selected app theme."""
+        if self.parent and hasattr(self.parent, "mainSettings"):
+            return self.parent.mainSettings.currentTheme
+        return "system"
+
+    def applyTheme(self, theme_name=None):
+        """Apply the current app theme to the conversation display."""
+        self._themeName = theme_name or self._resolveThemeName()
+        colors = self._getConversationThemeColors()
+        self.conversationDisplay.setStyleSheet(
+            f"""
+            QTextBrowser {{
+                background-color: {self._colorToCss(colors["surface"])};
+                color: {self._colorToCss(colors["text"])};
+                border: 1px solid {self._colorToCss(colors["border"])};
+                border-radius: 10px;
+                padding: 6px;
+            }}
+            QTextBrowser a {{
+                color: {self._colorToCss(colors["accent"])};
+            }}
+            """
+        )
+        self._rerenderConversation()
+
+    def _rerenderConversation(self):
+        """Rebuild all bubbles so existing messages follow the current theme."""
+        if not hasattr(self, "conversationDisplay"):
+            return
+        scrollbar = self.conversationDisplay.verticalScrollBar()
+        keep_at_bottom = scrollbar.value() >= max(0, scrollbar.maximum() - 4)
+        self.conversationDisplay.clear()
+        for text in self._conversationEntries:
+            self._insertConversationText(text)
+        if keep_at_bottom:
+            scrollbar.setValue(scrollbar.maximum())
+
+    def _getConversationThemeColors(self):
+        """Get the base colors for the chat UI."""
+        theme_colors = self.THEME_COLORS.get(self._themeName)
+        if theme_colors:
+            return {name: QColor(value) for name, value in theme_colors.items()}
+
+        palette = self.conversationDisplay.palette()
+        return {
+            "surface": palette.color(QPalette.Base),
+            "panel": palette.color(QPalette.Window),
+            "border": palette.color(QPalette.Mid),
+            "text": palette.color(QPalette.Text),
+            "accent": palette.color(QPalette.Highlight),
+        }
+
+    def _buildBubbleStyles(self):
+        """Derive bubble colors from the active theme."""
+        colors = self._getConversationThemeColors()
+
+        user_background = self._blendColors(colors["panel"], colors["accent"], 0.82)
+        user_text = self._idealForeground(user_background)
+        ai_background = self._blendColors(colors["surface"], colors["panel"], 0.45)
+        exec_background = self._blendColors(colors["surface"], colors["accent"], 0.14)
+
+        return {
+            "user": {
+                "align": "right",
+                "width": "78%",
+                "background": self._colorToCss(user_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["accent"], 0.72)
+                ),
+                "text": self._colorToCss(user_text),
+                "label": self._colorToCss(
+                    self._blendColors(user_text, user_background, 0.28)
+                ),
+            },
+            "ai": {
+                "align": "left",
+                "width": "78%",
+                "background": self._colorToCss(ai_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["surface"], 0.22)
+                ),
+                "text": self._colorToCss(colors["text"]),
+                "label": self._colorToCss(
+                    self._blendColors(colors["text"], ai_background, 0.34)
+                ),
+            },
+            "exec": {
+                "align": "center",
+                "width": "62%",
+                "background": self._colorToCss(exec_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["accent"], 0.26)
+                ),
+                "text": self._colorToCss(colors["text"]),
+                "label": self._colorToCss(
+                    self._blendColors(colors["text"], exec_background, 0.34)
+                ),
+            },
+        }
+
+    def _blendColors(self, base: QColor, overlay: QColor, alpha: float):
+        """Blend two colors and return a new QColor."""
+        alpha = max(0.0, min(alpha, 1.0))
+        return QColor(
+            round(base.red() * (1.0 - alpha) + overlay.red() * alpha),
+            round(base.green() * (1.0 - alpha) + overlay.green() * alpha),
+            round(base.blue() * (1.0 - alpha) + overlay.blue() * alpha),
+        )
+
+    def _idealForeground(self, background: QColor):
+        """Pick a readable foreground color for a given background."""
+        luminance = (
+            0.299 * background.red()
+            + 0.587 * background.green()
+            + 0.114 * background.blue()
+        )
+        return QColor("#111111") if luminance > 170 else QColor("#ffffff")
+
+    def _colorToCss(self, color: QColor):
+        """Convert QColor to a CSS hex string."""
+        return color.name()
 
     def _classifyConversationText(self, text: str):
         """Map plain text messages into display roles for chat bubbles."""
@@ -840,32 +1007,7 @@ class AIAssistantDialog(QWidget):
 
     def _buildConversationBubble(self, message_type: str, speaker: str, body_html: str):
         """Render one message bubble aligned by speaker."""
-        bubble_styles = {
-            "user": {
-                "align": "right",
-                "width": "78%",
-                "background": "#f6c86f",
-                "border": "#d89c28",
-                "text": "#2f2412",
-                "label": "#6a4d11",
-            },
-            "ai": {
-                "align": "left",
-                "width": "78%",
-                "background": "#ffffff",
-                "border": "#d3c7b8",
-                "text": "#2f2a24",
-                "label": "#856d57",
-            },
-            "exec": {
-                "align": "center",
-                "width": "62%",
-                "background": "#ebe3d6",
-                "border": "#d0c1ae",
-                "text": "#564a3c",
-                "label": "#7a6b59",
-            },
-        }
+        bubble_styles = self._buildBubbleStyles()
         style = bubble_styles[message_type]
 
         return f"""
@@ -895,6 +1037,7 @@ class AIAssistantDialog(QWidget):
     def _clearMessageHistory(self):
         """Clear the message history"""
         self.conversationDisplay.clear()
+        self._conversationEntries = []
         self.messageHistory = ""
 
     def _appendExecMessage(self, message: str):
@@ -997,6 +1140,9 @@ class mainUI(QMainWindow):
                 print(f"Error loading style: {e}")
         else:
             app.setStyleSheet("")
+
+        if hasattr(self, "aiAssistantDialog"):
+            self.aiAssistantDialog.applyTheme(theme_name)
 
         # save to config
         if save_config:
