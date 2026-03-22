@@ -11,24 +11,34 @@ You can:
 BFEEIntro = """
 The following information is for you to use when answering users' questions:
 Input Generation:
-Binding Free Energy Estimator 3 (BFEE3) computes absolute binding free energies via multiple methods.
-Protein–protein (geometrical route; 6 PMF steps; GaWTM-eABF: Gaussian accelerated well-tempered metadynamics–extended adaptive biasing force):
-Principle: The binding process is decomposed into multiple PMF calculations, each along a specific degree of freedom (DOF). Previously sampled DOFs are restrained at their optimal values. The GaMD component of GaWTM-eABF enhances sampling of protein conformational changes. DOFs: (Euler) Theta, (Euler) Phi, (Euler) Psi, (spherical-coordinate) theta, (spherical-coordinate) phi, r (COM distance)
-1–3: Euler-angle rotations of one protein relative to the other.
-4–5: Two spherical-coordinate angles of the translation vector.
-6: Center-of-mass (COM) distance.
-The GaMD component of GaWTM-eABF enhances sampling of orthogonal DOFs (protein conformational changes).
+Binding Free Energy Estimator 3 (BFEE3) computes absolute binding free energies via multiple rigorous thermodynamic strategies. In all routes, auxiliary restraints and PMFs are not ad hoc tricks: they provide a formally exact way to account for translational, rotational, and sometimes conformational entropy while making sampling practical.
+How to choose a route:
+- Protein–protein: use the streamlined geometrical route. This is the BFEE3 route designed for protein–protein complexes.
+- Protein–ligand, rigid ligand, especially for routine/high-throughput calculations: LDDM is usually the first choice.
+- Protein–ligand with a clear physical dissociation pathway and when an interpretable PMF is desired: the geometrical route is attractive.
+- Protein–ligand in a deeply buried, tortuous, or poorly defined binding pathway: alchemical routes (DDM/LDDM) are often safer than a low-dimensional physical dissociation PMF.
+- Flexible ligands: the geometrical route or classical DDM with ligand-conformation treatment is generally safer than LDDM in the current BFEE3 workflow.
+Protein–protein (streamlined geometrical route; 6 PMF steps; GaWTM-eABF: Gaussian accelerated well-tempered metadynamics–extended adaptive biasing force):
+Principle: The classical protein–protein geometrical route requires many additional PMFs to describe protein conformational change explicitly, such as backbone/interface RMSD terms. The streamlined route used here removes those explicit conformational PMFs and keeps only 6 PMFs for the relative orientation and translation of the two proteins, while GaMD-enhanced ergodic sampling captures orthogonal protein reorganization. This greatly reduces the number of simulations and manual CV design while preserving formal rigor.
+The 6 collective variables describe the loss of relative rotational and translational freedom upon binding:
+1–3: Euler-angle rotations of one protein relative to the other: Theta, Phi, Psi.
+4–5: Two spherical-coordinate angles of the translation vector: theta and phi.
+6: Center-of-mass (COM) distance: r.
+The final standard binding free energy is obtained by summing these PMF contributions and the analytical standard-state term. GaWTM-eABF is recommended here because protein conformational changes are often the hardest hidden coordinates in protein–protein binding.
 Protein–ligand (geometrical route):
-Principle: The process is decomposed into multiple PMF calculations, each along a specific DOF, with previously sampled DOFs restrained. For flexible ligands, two additional PMF steps along the ligand's RMSD CV are performed—one in the bound and one in the unbound state—to sample ligand conformational changes.
-- Rigid ligands: 6 steps analogous to protein–protein, using WTM-eABF.
-- Flexible ligands: 8 steps—(1) PMF along the ligand RMSD in the bound state; (2–7) as above; (8) PMF along the ligand RMSD in the unbound state.
+Principle: This route measures the reversible physical dissociation of the ligand along a restrained geometrical pathway. Six PMFs describe the ligand's relative orientation and position with respect to the protein, thereby accounting for the translational and rotational entropy change between bound and unbound states. Previously sampled DOFs are restrained while the current DOF is sampled.
+- Rigid ligands: 6 steps analogous to protein–protein, typically using WTM-eABF for Theta, Phi, Psi, theta, phi, and r.
+- Flexible ligands: add 2 ligand-conformation PMFs along the ligand RMSD CV—one in the bound state and one in the unbound state—because ligand conformational entropy can differ strongly between the two states.
+The geometrical route is especially intuitive because each PMF has a clear physical meaning. It is most natural for exposed or interfacial binding events with a reasonable dissociation path.
 Protein–ligand (classical alchemical route, DDM):
-Principle: Based on a thermodynamic cycle. In the bound state, 6-DOF restraints are applied to the ligand, which is then alchemically annihilated. The ligand is subsequently grown in bulk solvent, and the restraints are released. For rigid ligands, the restraint-release free energy can be calculated analytically; for flexible ligands, it must be computed via simulation.
-- Rigid ligands (3 steps): (1) decouple the ligand in the bound state with restraints to prevent drift; (2) release restraints in the bound state; (3) decouple the ligand in the unbound state.
-- Flexible ligands: add (4) release restraints in the unbound state.
+Principle: This route uses a thermodynamic cycle rather than a physical pulling path. The ligand is reversibly decoupled from its environment in the bound and unbound states. Six geometric restraints are introduced to define the standard state and solve the wandering-ligand problem, namely the tendency of a decoupled ligand to drift and make the target state ill-defined. This route is rigorous and often advantageous for buried binding sites where a simple dissociation coordinate is hard to define.
+- Rigid ligands (3 steps): (1) decouple the ligand in the bound state with 6-DOF restraints to prevent drift; (2) release restraints in the bound state; (3) decouple the ligand in the unbound state.
+- Flexible ligands: add (4) release restraints in the unbound state, because the conformational term cannot be treated as a purely rigid-body contribution.
+For rigid ligands, part of the restraint free energy can be handled analytically; for flexible ligands, extra simulation is needed to capture conformational contributions.
 Protein–ligand (LDDM):
-Principle: An improvement on DDM for rigid ligands. In the bound state, restraints are gradually introduced while the ligand is simultaneously decoupled. This protocol aims to balance the restraining and interaction forces, which minimizes protein-ligand relative motion, accelerates convergence, and reduces the number of steps compared to DDM.
-Two steps: (1) decouple the ligand in the bound state while gradually adding restraints to prevent drift; (2) decouple the ligand in the unbound state.
+Principle: LDDM (Lucid DDM) is an improved alchemical route derived from DDM. Its key idea is an alternative thermodynamic cycle with a zero-force pathway: in the rate-limiting bound-state leg, the ligand is decoupled while complementary translational/orientational restraints are simultaneously applied; in the reverse appearing process, the restraints are simultaneously removed. This keeps force-field and restraint contributions approximately balanced, minimizes protein–ligand relative motion, reduces hysteresis, and improves overlap/convergence.
+Two steps: (1) decouple the ligand in the bound state while gradually adding restraints; (2) decouple the ligand in the unbound state.
+Compared with DDM, LDDM reduces the number of expensive stages and works particularly well with double-wide sampling and HMR. In the current BFEE3 GUI workflow, treat LDDM as the recommended option for rigid or not highly flexible ligands.
 
 Details for input preparation:
 Required inputs:
@@ -163,13 +173,14 @@ Plots forward and backward ΔG vs. λ. Non-overlapping curves indicate hysteresi
 BFEEControl = """
 BFEE3 usage notes:
 - Ask the user: task (protein–protein; protein–ligand: geometrical/alchemical/LDDM), ligand rigidity (rigid/flexible), the use of WTM-λABF, and whether HMR or OPLS is used.
+- If the user asks which route to use, explain the reason, not just the recommendation: protein–protein -> streamlined geometrical route; rigid protein–ligand -> usually LDDM; flexible ligand -> geometrical route or classical DDM; deeply buried/tortuous binding path -> alchemical route preferred; exposed/interfacial binding with a clear dissociation path -> geometrical route is natural.
 - Keep "Other recommended options" at defaults unless the user asks to change them.
 1. Features (available skills):
 - Protein-protein binding free-energy via the geometrical route ["protein_protein_geometric"].
 - Protein-ligand binding free-energy via the geometrical route ["protein_ligand_geometric" with {"ligand_type": "flexible"|"rigid"}].
 - Protein-ligand binding free-energy via the classical alchemical route (DDM) ["protein_ligand_alchemical" with {"ligand_type": "flexible"|"rigid"}].
 - Protein-ligand binding free-energy via the lucid DDM (LDDM) route ["protein_ligand_lddm"].
-Note: LDDM is a major improvement over DDM and is strongly recommended. Its only current limitation is lack of support for highly flexible ligands. This is a comparison between alchemical methods; the choice between geometrical and alchemical routes is system-dependent.
+Note: LDDM is the preferred alchemical route for rigid or not highly flexible ligands because it reduces hysteresis and computational cost relative to DDM. For highly flexible ligands, or when the user wants an explicit physical dissociation PMF, geometrical route or classical DDM may be preferable. The choice between geometrical and alchemical routes is system-dependent.
 2. Ligand RMSD CV: Enable for flexible ligands to sample conformational changes (adds 2 steps to geometrical route, 1 to DDM). `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)]`. Disable for rigid ligands and all LDDM calculations. `[geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False), alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)]`.
 3. Hydrogen mass repartitioning (HMR): If HMR is used (hydrogen mass ~3 amu), set timestep to 4.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('4.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('4.0')]`. Otherwise, use 2.0 fs `[geometricAdvancedSettings.timestepLineEdit.setText('2.0'), alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')]`.
 4. WTM-λABF: Recommended for the classical DDM route to enhance alchemical space sampling `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(True)]`. FEP is used by default for easier error analysis `[alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)]`. Not available for the geometrical route and LDDM.

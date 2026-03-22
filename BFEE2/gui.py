@@ -1,7 +1,9 @@
 # the GUI of new BFEE
 
+import html
 import os
 import pathlib
+import re
 import shutil
 import sys
 import webbrowser
@@ -12,7 +14,7 @@ import requests
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide6 import QtCore
-from PySide6.QtGui import QAction, QActionGroup, QFont, QIcon
+from PySide6.QtGui import QAction, QActionGroup, QFont, QIcon, QTextCursor
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -35,6 +37,7 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QSplitter,
     QTabWidget,
+    QTextBrowser,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -634,6 +637,7 @@ class AIAssistantDialog(QWidget):
         super().__init__(parent)
         self.parent = parent
         self.skillExecutor = AISkillExecutor(self)
+        self._hasShownWelcomeMessage = False
         self._initUI()
         self._initSignalsSlots()
         self.setWindowTitle("AI Assistant")
@@ -641,15 +645,34 @@ class AIAssistantDialog(QWidget):
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.Dialog | QtCore.Qt.Tool)
         self.messageHistory = ""
 
+    def showEvent(self, event):
+        """Display a welcome message the first time the dialog is opened."""
+        super().showEvent(event)
+        if not self._hasShownWelcomeMessage:
+            self._appendConversationText(
+                "AI: I am the BFEE3 AI assistant. I can explain the algorithms in BFEE3 and where they are best applied, help you configure options for generating input files, and describe what each option does."
+            )
+            self._hasShownWelcomeMessage = True
+
     def _initUI(self):
         """Initialize the UI for AI Assistant dialog"""
 
         self.mainLayout = QVBoxLayout()
 
         # Conversation display area
-        self.conversationDisplay = QListWidget()
-        self.conversationDisplay.setWordWrap(True)
-        self.conversationDisplay.setAlternatingRowColors(True)
+        self.conversationDisplay = QTextBrowser()
+        self.conversationDisplay.setOpenExternalLinks(True)
+        self.conversationDisplay.document().setDocumentMargin(8)
+        self.conversationDisplay.setStyleSheet(
+            """
+            QTextBrowser {
+                background-color: #f7f1e6;
+                border: 1px solid #d8cab3;
+                border-radius: 10px;
+                padding: 6px;
+            }
+            """
+        )
 
         # Input area
         self.inputLayout = QHBoxLayout()
@@ -687,7 +710,7 @@ class AIAssistantDialog(QWidget):
             return
 
         # Add user message to display
-        self.conversationDisplay.addItem(f"You: {user_message}")
+        self._appendConversationText(f"You: {user_message}")
         self.messageHistory += f"You: {user_message}\n"
         self.inputLineEdit.clear()
 
@@ -701,12 +724,12 @@ class AIAssistantDialog(QWidget):
             )
             top_p_text = self.parent.mainSettings.openRouterTopPLineEdit.text().strip()
         else:
-            self.conversationDisplay.addItem("AI: Error - Cannot access API settings")
+            self._appendConversationText("AI: Error - Cannot access API settings")
             self.messageHistory += f"AI: Error - Cannot access API settings\n"
             return
 
         if not api_key or not model:
-            self.conversationDisplay.addItem(
+            self._appendConversationText(
                 "AI: Please configure OpenRouter API and model in Settings first"
             )
             self.messageHistory += (
@@ -764,11 +787,11 @@ class AIAssistantDialog(QWidget):
             if response.status_code == 200:
                 result = response.json()
                 ai_response = result["choices"][0]["message"]["content"]
-                self.conversationDisplay.addItem(f"AI: {ai_response}")
+                self._appendConversationText(f"AI: {ai_response}")
                 self.messageHistory += f"AI: {ai_response}\n"
                 self.skillExecutor.execute(ai_response)
             else:
-                self.conversationDisplay.addItem(
+                self._appendConversationText(
                     f"AI: Error - API request failed: {response.status_code}"
                 )
                 self.messageHistory += (
@@ -776,10 +799,98 @@ class AIAssistantDialog(QWidget):
                 )
 
         except Exception as e:
-            self.conversationDisplay.addItem(f"AI: Error - {str(e)}")
+            self._appendConversationText(f"AI: Error - {str(e)}")
             self.messageHistory += f"AI: Error - {str(e)}\n"
         finally:
             wait_dlg.close()
+
+    def _appendConversationText(self, text: str):
+        """Append a chat message using a bubble-style layout."""
+        message_type, speaker, content = self._classifyConversationText(text)
+        bubble_html = self._buildConversationBubble(
+            message_type, speaker, self._formatConversationBody(content)
+        )
+
+        cursor = self.conversationDisplay.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertHtml(bubble_html)
+        cursor.insertBlock()
+        self.conversationDisplay.setTextCursor(cursor)
+
+        scrollbar = self.conversationDisplay.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def _classifyConversationText(self, text: str):
+        """Map plain text messages into display roles for chat bubbles."""
+        if text.startswith("You: "):
+            return ("user", "You", text[5:])
+        if text.startswith("AI: "):
+            return ("ai", "AI Assistant", text[4:])
+        return ("exec", "BFEE2", text)
+
+    def _formatConversationBody(self, text: str):
+        """Escape user content and turn plain URLs into clickable links."""
+        escaped_text = html.escape(text)
+        escaped_text = re.sub(
+            r"(https?://[^\s<]+)",
+            r'<a href="\1" style="color: inherit; text-decoration: underline;">\1</a>',
+            escaped_text,
+        )
+        return escaped_text.replace("\n", "<br>")
+
+    def _buildConversationBubble(self, message_type: str, speaker: str, body_html: str):
+        """Render one message bubble aligned by speaker."""
+        bubble_styles = {
+            "user": {
+                "align": "right",
+                "width": "78%",
+                "background": "#f6c86f",
+                "border": "#d89c28",
+                "text": "#2f2412",
+                "label": "#6a4d11",
+            },
+            "ai": {
+                "align": "left",
+                "width": "78%",
+                "background": "#ffffff",
+                "border": "#d3c7b8",
+                "text": "#2f2a24",
+                "label": "#856d57",
+            },
+            "exec": {
+                "align": "center",
+                "width": "62%",
+                "background": "#ebe3d6",
+                "border": "#d0c1ae",
+                "text": "#564a3c",
+                "label": "#7a6b59",
+            },
+        }
+        style = bubble_styles[message_type]
+
+        return f"""
+<table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 12px 0;">
+  <tr>
+    <td align="{style["align"]}">
+      <table width="{style["width"]}" cellspacing="0" cellpadding="0"
+             style="background-color: {style["background"]};
+                    border: 1px solid {style["border"]};
+                    border-radius: 14px;">
+        <tr>
+          <td style="padding: 10px 12px;">
+            <div style="font-size: 10pt; font-weight: 600; color: {style["label"]}; margin-bottom: 4px;">
+              {html.escape(speaker)}
+            </div>
+            <div style="font-size: 10pt; line-height: 1.45; color: {style["text"]}; white-space: pre-wrap;">
+              {body_html}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+"""
 
     def _clearMessageHistory(self):
         """Clear the message history"""
@@ -788,7 +899,7 @@ class AIAssistantDialog(QWidget):
 
     def _appendExecMessage(self, message: str):
         """Append execution status message to the AI dialog."""
-        self.conversationDisplay.addItem(message)
+        self._appendConversationText(message)
         self.messageHistory += message + "\n"
 
     def _execute_skill_json(self, ai_text: str):
