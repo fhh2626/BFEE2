@@ -71,6 +71,7 @@ from BFEE2 import doc
 __PROGRAM_NAME__ = f"BFEEstimator v{BFEE2.version.__VERSION__}"
 __NAMD_VERSION__ = f"v{BFEE2.version.__NAMD_VERSION__}"
 __GMX_VERSION__ = f"{BFEE2.version.__GMX_VERSION__}"
+__DEFAULT_OPENROUTER_BASE_URL__ = "https://openrouter.ai/api/v1"
 
 
 class mainSettings(QWidget):
@@ -113,28 +114,52 @@ class mainSettings(QWidget):
         self.thirdPartySoftwareGridLayout.addWidget(self.vmdButton, 0, 2)
 
         # online AI assistant
-        self.onlineAIService = QGroupBox("Online AI Service:")
+        self.onlineAIService = QGroupBox("Online OpenAI-Compatible AI Service:")
         self.onlineAIServiceGridLayout = QGridLayout()
 
-        # OpenRouter
-        self.openRouterAPILabel = QLabel("OpenRouter API:")
-        self.openRouterAPILineEdit = QLineEdit("")
-        self.openRouterModelLabel = QLabel("OpenRouter Model:")
-        self.openRouterModelLineEdit = QLineEdit("")
-        self.openRouterTemperatureLabel = QLabel("Temperature:")
-        self.openRouterTemperatureLineEdit = QLineEdit("")
-        self.openRouterTopPLabel = QLabel("Top P:")
-        self.openRouterTopPLineEdit = QLineEdit("")
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILabel, 0, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILineEdit, 0, 1)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLabel, 1, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLineEdit, 1, 1)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTemperatureLabel, 2, 0)
-        self.onlineAIServiceGridLayout.addWidget(
-            self.openRouterTemperatureLineEdit, 2, 1
+        # OpenAI-compatible API
+        self.openAICompatibleAPIAddressLabel = QLabel(
+            "API Address:"
         )
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLabel, 3, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLineEdit, 3, 1)
+        self.openAICompatibleAPIAddressLineEdit = QLineEdit(
+            __DEFAULT_OPENROUTER_BASE_URL__
+        )
+        self.openAICompatibleKeyLabel = QLabel("API Key:")
+        self.openAICompatibleKeyLineEdit = QLineEdit("")
+        self.openAICompatibleModelLabel = QLabel("Model:")
+        self.openAICompatibleModelLineEdit = QLineEdit("")
+        self.openAICompatibleTemperatureLabel = QLabel("Temperature:")
+        self.openAICompatibleTemperatureLineEdit = QLineEdit("")
+        self.openAICompatibleTopPLabel = QLabel("Top P:")
+        self.openAICompatibleTopPLineEdit = QLineEdit("")
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleAPIAddressLabel, 0, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleAPIAddressLineEdit, 0, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(self.openAICompatibleKeyLabel, 1, 0)
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleKeyLineEdit, 1, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleModelLabel, 2, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleModelLineEdit, 2, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTemperatureLabel, 3, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTemperatureLineEdit, 3, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTopPLabel, 4, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTopPLineEdit, 4, 1
+        )
 
         # OK and Cancel
         self.settingsButtonLayout = QHBoxLayout()
@@ -165,26 +190,49 @@ class mainSettings(QWidget):
             return
 
         with open(f"{self.config_dir}/3rdSoft.ini", "r") as cFile:
-            self.vmdLineEdit.setText(cFile.readline().strip())
-            self.openRouterAPILineEdit.setText(cFile.readline().strip())
-            self.openRouterModelLineEdit.setText(cFile.readline().strip())
-            self.openRouterTemperatureLineEdit.setText(cFile.readline().strip())
-            self.openRouterTopPLineEdit.setText(cFile.readline().strip())
+            lines = [line.strip() for line in cFile.readlines()]
 
-            # Read theme
-            saved_theme = cFile.readline().strip()
-            if saved_theme:
-                self.currentTheme = saved_theme
+        if not lines:
+            return
+
+        self.vmdLineEdit.setText(lines[0])
+
+        if len(lines) >= 7:
+            self.openAICompatibleAPIAddressLineEdit.setText(lines[1])
+            self.openAICompatibleKeyLineEdit.setText(lines[2])
+            self.openAICompatibleModelLineEdit.setText(lines[3])
+            self.openAICompatibleTemperatureLineEdit.setText(lines[4])
+            self.openAICompatibleTopPLineEdit.setText(lines[5])
+            saved_theme = lines[6]
+        else:
+            # Legacy OpenRouter-only config: VMD, key, model, temperature, top_p, theme.
+            if len(lines) > 1:
+                self.openAICompatibleAPIAddressLineEdit.setText(
+                    __DEFAULT_OPENROUTER_BASE_URL__
+                )
+                self.openAICompatibleKeyLineEdit.setText(lines[1])
+            if len(lines) > 2:
+                self.openAICompatibleModelLineEdit.setText(lines[2])
+            if len(lines) > 3:
+                self.openAICompatibleTemperatureLineEdit.setText(lines[3])
+            if len(lines) > 4:
+                self.openAICompatibleTopPLineEdit.setText(lines[4])
+            saved_theme = lines[5] if len(lines) > 5 else ""
+
+        # Read theme
+        if saved_theme:
+            self.currentTheme = saved_theme
 
     def _writeConfig(self):
         """write the config saving paths for third-party softwares"""
 
         with open(f"{self.config_dir}/3rdSoft.ini", "w") as cFile:
             cFile.write(self.vmdLineEdit.text() + "\n")
-            cFile.write(self.openRouterAPILineEdit.text() + "\n")
-            cFile.write(self.openRouterModelLineEdit.text() + "\n")
-            cFile.write(self.openRouterTemperatureLineEdit.text() + "\n")
-            cFile.write(self.openRouterTopPLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleAPIAddressLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleKeyLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleModelLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleTemperatureLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleTopPLineEdit.text() + "\n")
             cFile.write(self.currentTheme + "\n")
 
     def _OKSlot(self):
@@ -639,7 +687,7 @@ class alchemicalAdvancedSettings(QWidget):
 
 
 class AIAssistantDialog(QWidget):
-    """AI Assistant dialog for interactive help with OpenRouter API"""
+    """AI Assistant dialog for interactive help with OpenAI-compatible API"""
 
     THEME_COLORS = {
         "dark": {
@@ -742,7 +790,7 @@ class AIAssistantDialog(QWidget):
         self.clearButton.clicked.connect(self._clearMessageHistory)
 
     def _sendMessage(self):
-        """Send message to OpenRouter API and display response"""
+        """Send message to OpenAI-compatible API and display response"""
 
         user_message = self.inputLineEdit.text().strip()
         if not user_message:
@@ -755,24 +803,44 @@ class AIAssistantDialog(QWidget):
 
         # Get API settings from parent's mainSettings
         if self.parent:
-            api_key = self.parent.mainSettings.openRouterAPILineEdit.text()
-            model = self.parent.mainSettings.openRouterModelLineEdit.text()
+            api_base_url = (
+                self.parent.mainSettings.openAICompatibleAPIAddressLineEdit.text()
+                .strip()
+            )
+            api_key = (
+                self.parent.mainSettings.openAICompatibleKeyLineEdit.text().strip()
+            )
+            model = (
+                self.parent.mainSettings.openAICompatibleModelLineEdit.text().strip()
+            )
             # optional parameters
             temperature_text = (
-                self.parent.mainSettings.openRouterTemperatureLineEdit.text().strip()
+                self.parent.mainSettings.openAICompatibleTemperatureLineEdit.text()
+                .strip()
             )
-            top_p_text = self.parent.mainSettings.openRouterTopPLineEdit.text().strip()
+            top_p_text = (
+                self.parent.mainSettings.openAICompatibleTopPLineEdit.text().strip()
+            )
         else:
             self._appendConversationText("AI: Error - Cannot access API settings")
             self.messageHistory += f"AI: Error - Cannot access API settings\n"
             return
 
-        if not api_key or not model:
+        if not api_base_url or not api_key or not model:
+            settings_message = (
+                "AI: Please configure OpenAI-compatible API address, key, "
+                "and model in Settings first"
+            )
+            self._appendConversationText(settings_message)
+            self.messageHistory += f"{settings_message}\n"
+            return
+
+        if not api_base_url.lower().startswith(("http://", "https://")):
             self._appendConversationText(
-                "AI: Please configure OpenRouter API and model in Settings first"
+                "AI: Please configure a valid OpenAI-compatible API address in Settings"
             )
             self.messageHistory += (
-                f"AI: Please configure OpenRouter API and model in Settings first\n"
+                f"AI: Please configure a valid OpenAI-compatible API address in Settings\n"
             )
             return
 
@@ -817,7 +885,7 @@ class AIAssistantDialog(QWidget):
                     pass
 
             response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
+                f"{api_base_url.rstrip('/')}/chat/completions",
                 headers=headers,
                 json=data,
                 timeout=30,
@@ -3963,13 +4031,14 @@ through the LDDM!",
     def _quickSetAI(self):
         """AI-assisted setting for binding free energy calculations"""
         if (
-            self.mainSettings.openRouterAPILineEdit.text() == ""
-            or self.mainSettings.openRouterModelLineEdit.text() == ""
+            self.mainSettings.openAICompatibleAPIAddressLineEdit.text().strip() == ""
+            or self.mainSettings.openAICompatibleKeyLineEdit.text().strip() == ""
+            or self.mainSettings.openAICompatibleModelLineEdit.text().strip() == ""
         ):
             QMessageBox.warning(
                 self,
                 "Warning",
-                "Please set both the OpenRouter API and model paths before using the AI assistance.",
+                "Please set the OpenAI-compatible API address, key, and model before using the AI assistance.",
             )
             return
         self.aiAssistantDialog.show()
