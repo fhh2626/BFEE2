@@ -16,3 +16,11 @@ BFEE2.templates\_namd.scriptTemplate
    :members:
    :undoc-members:
    :show-inheritance:
+
+BFEE2.templates\_namd.updateCenters
+-------------------------------------------
+
+.. automodule:: BFEE2.templates_namd.updateCenters
+   :members:
+   :undoc-members:
+   :show-inheritance:

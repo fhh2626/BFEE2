@@ -61,7 +61,8 @@ def getGaWTMBaseNames(filePath):
     """Extract all possible base names from a GaWTM PMF file for flexible matching.
     
     This function returns a list of candidate base names to support flexible pairing.
-    For example:
+    For example::
+
         'path/to/abf_1.abf1.czar.pmf' -> ['abf_1.abf1', 'abf_1']
         'path/to/001.czar.pmf' -> ['001']
         'path/to/step1.abf2.czar.pmf' -> ['step1.abf2', 'step1']
@@ -295,7 +296,8 @@ def getGaWTMHistBaseNames(filePath):
     """Extract all possible base names from a GaWTM History PMF file for flexible matching.
     
     This function returns a list of candidate base names to support flexible pairing.
-    For example:
+    For example::
+
         'path/to/abf_1.abf1.hist.czar.pmf' -> ['abf_1.abf1', 'abf_1']
         'path/to/001.hist.czar.pmf' -> ['001']
     
@@ -335,12 +337,13 @@ def pairGaWTMHistFiles(pmfFiles):
     
     Returns:
         tuple: (paired_list, unpaired_czar_list, orphan_correction_list, other_files, wrong_correction_files)
-            paired_list: list of tuples (pmf_file_path, correction_file_path, is_hist_correction)
-                is_hist_correction: True if correction is .hist.pmf, False if single-frame .pmf
-            unpaired_czar_list: list of hist.czar.pmf file paths without correction
-            orphan_correction_list: list of correction file paths without matching hist.czar.pmf
-            other_files: list of other PMF files
-            wrong_correction_files: list of .reweightamd1.reweight.pmf files (wrong type)
+
+        ``paired_list`` is a list of tuples
+        ``(pmf_file_path, correction_file_path, is_hist_correction)``.
+        ``is_hist_correction`` is True if correction is .hist.pmf and False if
+        it is a single-frame .pmf. Other returned lists contain unpaired
+        hist.czar.pmf files, orphan correction files, other PMF files, and
+        wrong .reweightamd1.reweight.pmf correction files.
     """
     czar_files = {}  # baseName -> filePath
     czar_file_candidates = {}  # baseName -> list of candidate base names for matching

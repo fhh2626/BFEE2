@@ -42,7 +42,7 @@ def parseDat(filename):
     return maxCV
 
 def findOptimalCVs():
-    """ read *.dat files generated through equilibration
+    """ read ``*.dat`` files generated through equilibration
         and find out the most probable values of CVs
         
     Returns:
@@ -66,7 +66,7 @@ def findOptimalCVs():
     return optimalCVs
  
 def readCenters(filename, CVs):
-    """ find the value of centers of provided CVs in a *.in file
+    """ find the value of centers of provided CVs in a ``*.in`` file
 
     Args:
         filename (str): a Colvars config file
@@ -106,7 +106,7 @@ def readCenters(filename, CVs):
     return CVValues
  
 def changeCenters(filename, CVs, newCenters):
-    """ change Centers of harmonic restraints in a *.in file
+    """ change Centers of harmonic restraints in a ``*.in`` file
 
     Args:
         filename (str): a Colvars config file
@@ -151,7 +151,7 @@ def changeCenters(filename, CVs, newCenters):
     os.rename(filename + '.tmp', filename)
     
 def changeABFRange(filename, CVs, newCenters, originalCenters):
-    """ change lowerboundary, upperboundary, lowerWalls, upperWalls of ABF in a *.in file
+    """ change lowerboundary, upperboundary, lowerWalls, upperWalls of ABF in a ``*.in`` file
 
     Args:
         filename (str): a Colvars config file
@@ -218,7 +218,7 @@ def changeABFRange(filename, CVs, newCenters, originalCenters):
     os.rename(filename + '.tmp', filename)
 
 def updateAlchemicalFiles():
-    """Update the Centers of *.in files based on equilibration
+    """Update the Centers of ``*.in`` files based on equilibration
     """
     
     files = [
@@ -263,7 +263,7 @@ def updateAlchemicalFiles():
             print(f'File {confFile} updated!')
         
 def updateGeometricFiles():
-    """Update the Centers of *.in files based on equilibration
+    """Update the Centers of ``*.in`` files based on equilibration
     """
     
     CVNames = ['eulerTheta', 'eulerPhi', 'eulerPsi', 'polarTheta', 'polarPhi']
