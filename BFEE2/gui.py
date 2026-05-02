@@ -1,29 +1,63 @@
 # the GUI of new BFEE
 
+import html
 import os
+import pathlib
+import re
 import shutil
 import sys
 import webbrowser
-import requests
-import re
 
 import numpy as np
+import requests
+
 # use appdirs to manage persistent configuration
 from appdirs import user_config_dir
 from PySide6 import QtCore
-from PySide6.QtGui import QFont, QIcon, QAction
-from PySide6.QtWidgets import ( QApplication, QCheckBox, QComboBox,
-                               QFileDialog, QGridLayout, QGroupBox,
-                               QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                               QMainWindow, QMessageBox, QPushButton,
-                               QSplitter, QTabWidget, QToolBar, QVBoxLayout,
-                               QWidget, QSpacerItem, QProgressDialog)
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QColor,
+    QFont,
+    QIcon,
+    QPalette,
+    QTextCursor,
+)
+from PySide6.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMainWindow,
+    QMessageBox,
+    QProgressDialog,
+    QPushButton,
+    QRadioButton,
+    QSpacerItem,
+    QSplitter,
+    QTabWidget,
+    QTextBrowser,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+)
 
 import BFEE2.inputGenerator as inputGenerator
 import BFEE2.postTreatment as postTreatment
 import BFEE2.templates_gromacs.BFEEGromacs as BFEEGromacs
 from BFEE2.commonTools import commonSlots, fileParser, ploter
+from BFEE2.skills import AISkillExecutor
 from BFEE2.templates_readme import rags
+from BFEE2.third_party import py_bar
 
 try:
     import importlib.resources as pkg_resources
@@ -34,72 +68,102 @@ except ImportError:
 import BFEE2.version
 from BFEE2 import doc
 
-__PROGRAM_NAME__ = f'BFEEstimator v{BFEE2.version.__VERSION__}'
-__NAMD_VERSION__ = f'v{BFEE2.version.__NAMD_VERSION__}'
-__GMX_VERSION__ = f'{BFEE2.version.__GMX_VERSION__}'
+__PROGRAM_NAME__ = f"BFEEstimator v{BFEE2.version.__VERSION__}"
+__NAMD_VERSION__ = f"v{BFEE2.version.__NAMD_VERSION__}"
+__GMX_VERSION__ = f"{BFEE2.version.__GMX_VERSION__}"
+__DEFAULT_OPENROUTER_BASE_URL__ = "https://openrouter.ai/api/v1"
+
 
 class mainSettings(QWidget):
     """settings in the menubar
-       set pathes of third-party softwares (VMD, gmx and tleap)
+    set pathes of third-party softwares (VMD, gmx and tleap)
     """
-    
+
     def __init__(self):
         super().__init__()
-        self.config_dir = user_config_dir('BFEE2', 'chinfo')
+        self.config_dir = user_config_dir("BFEE2", "chinfo")
         # test if config directory exists
         if not os.path.exists(self.config_dir):
             # create it if not exists
             os.makedirs(self.config_dir)
         self._initUI()
         self._initSingalsSlots()
-        self.setWindowTitle('Settings')
+        self.setWindowTitle("Settings")
+        self.setWindowTitle("Settings")
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
+        self.currentTheme = "dark"  # Default theme
         self._readConfig()
-        #self.setGeometry(0,0,0,0)
-        #self.show()
+        # self.setGeometry(0,0,0,0)
+        # self.show()
 
     def _initUI(self):
-        """settings GUI
-        """
+        """settings GUI"""
 
         self.mainLayout = QVBoxLayout()
 
         # third party softward
-        self.thirdPartySoftware = QGroupBox('Third party software:')      
+        self.thirdPartySoftware = QGroupBox("Third party software:")
         self.thirdPartySoftwareGridLayout = QGridLayout()
 
         # vmd
-        self.vmdLabel = QLabel('VMD:')
+        self.vmdLabel = QLabel("VMD:")
         self.vmdLineEdit = QLineEdit()
-        self.vmdButton = QPushButton('Browse')
+        self.vmdButton = QPushButton("Browse")
         self.thirdPartySoftwareGridLayout.addWidget(self.vmdLabel, 0, 0)
         self.thirdPartySoftwareGridLayout.addWidget(self.vmdLineEdit, 0, 1)
         self.thirdPartySoftwareGridLayout.addWidget(self.vmdButton, 0, 2)
 
         # online AI assistant
-        self.onlineAIService = QGroupBox('Online AI Service:')
+        self.onlineAIService = QGroupBox("Online OpenAI-Compatible AI Service:")
         self.onlineAIServiceGridLayout = QGridLayout()
 
-        # OpenRouter
-        self.openRouterAPILabel = QLabel('OpenRouter API:')
-        self.openRouterAPILineEdit = QLineEdit('')
-        self.openRouterModelLabel = QLabel('OpenRouter Model:')
-        self.openRouterModelLineEdit = QLineEdit('')
-        self.openRouterTemperatureLabel = QLabel('Temperature:')
-        self.openRouterTemperatureLineEdit = QLineEdit('')
-        self.openRouterTopPLabel = QLabel('Top P:')
-        self.openRouterTopPLineEdit = QLineEdit('')
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILabel, 0, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterAPILineEdit, 0, 1)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLabel, 1, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterModelLineEdit, 1, 1)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTemperatureLabel, 2, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTemperatureLineEdit, 2, 1)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLabel, 3, 0)
-        self.onlineAIServiceGridLayout.addWidget(self.openRouterTopPLineEdit, 3, 1)
+        # OpenAI-compatible API
+        self.openAICompatibleAPIAddressLabel = QLabel(
+            "API Address:"
+        )
+        self.openAICompatibleAPIAddressLineEdit = QLineEdit(
+            __DEFAULT_OPENROUTER_BASE_URL__
+        )
+        self.openAICompatibleKeyLabel = QLabel("API Key:")
+        self.openAICompatibleKeyLineEdit = QLineEdit("")
+        self.openAICompatibleModelLabel = QLabel("Model:")
+        self.openAICompatibleModelLineEdit = QLineEdit("")
+        self.openAICompatibleTemperatureLabel = QLabel("Temperature:")
+        self.openAICompatibleTemperatureLineEdit = QLineEdit("")
+        self.openAICompatibleTopPLabel = QLabel("Top P:")
+        self.openAICompatibleTopPLineEdit = QLineEdit("")
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleAPIAddressLabel, 0, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleAPIAddressLineEdit, 0, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(self.openAICompatibleKeyLabel, 1, 0)
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleKeyLineEdit, 1, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleModelLabel, 2, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleModelLineEdit, 2, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTemperatureLabel, 3, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTemperatureLineEdit, 3, 1
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTopPLabel, 4, 0
+        )
+        self.onlineAIServiceGridLayout.addWidget(
+            self.openAICompatibleTopPLineEdit, 4, 1
+        )
 
         # OK and Cancel
         self.settingsButtonLayout = QHBoxLayout()
-        self.settingsOKButton = QPushButton('OK')
+        self.settingsOKButton = QPushButton("OK")
         self.settingsButtonLayout.addWidget(QSplitter())
         self.settingsButtonLayout.addWidget(self.settingsOKButton)
 
@@ -112,70 +176,100 @@ class mainSettings(QWidget):
         self.setLayout(self.mainLayout)
 
     def _initSingalsSlots(self):
-        """initialize singals and slots
-        """
-        self.vmdButton.clicked.connect(commonSlots.openFileDialog('exe', self.vmdLineEdit))
-        #self.gromacsButton.clicked.connect(commonSlots.openFileDialog('exe', self.gromacsLineEdit))
-        #self.tleapButton.clicked.connect(commonSlots.openFileDialog('exe', self.tleapLineEdit))
+        """initialize singals and slots"""
+        self.vmdButton.clicked.connect(
+            commonSlots.openFileDialog("exe", self.vmdLineEdit)
+        )
+        # self.gromacsButton.clicked.connect(commonSlots.openFileDialog('exe', self.gromacsLineEdit))
+        # self.tleapButton.clicked.connect(commonSlots.openFileDialog('exe', self.tleapLineEdit))
         self.settingsOKButton.clicked.connect(self._OKSlot())
 
     def _readConfig(self):
-        """read the config saving paths for third-party softwares
-        """
-        if not os.path.exists(f'{self.config_dir}/3rdSoft.ini'):
+        """read the config saving paths for third-party softwares"""
+        if not os.path.exists(f"{self.config_dir}/3rdSoft.ini"):
             return
 
-        with open(f'{self.config_dir}/3rdSoft.ini', 'r') as cFile:
-            self.vmdLineEdit.setText(cFile.readline().strip())
-            self.openRouterAPILineEdit.setText(cFile.readline().strip())
-            self.openRouterModelLineEdit.setText(cFile.readline().strip())
-            self.openRouterTemperatureLineEdit.setText(cFile.readline().strip())
-            self.openRouterTopPLineEdit.setText(cFile.readline().strip())
+        with open(f"{self.config_dir}/3rdSoft.ini", "r") as cFile:
+            lines = [line.strip() for line in cFile.readlines()]
+
+        if not lines:
+            return
+
+        self.vmdLineEdit.setText(lines[0])
+
+        if len(lines) >= 7:
+            self.openAICompatibleAPIAddressLineEdit.setText(lines[1])
+            self.openAICompatibleKeyLineEdit.setText(lines[2])
+            self.openAICompatibleModelLineEdit.setText(lines[3])
+            self.openAICompatibleTemperatureLineEdit.setText(lines[4])
+            self.openAICompatibleTopPLineEdit.setText(lines[5])
+            saved_theme = lines[6]
+        else:
+            # Legacy OpenRouter-only config: VMD, key, model, temperature, top_p, theme.
+            if len(lines) > 1:
+                self.openAICompatibleAPIAddressLineEdit.setText(
+                    __DEFAULT_OPENROUTER_BASE_URL__
+                )
+                self.openAICompatibleKeyLineEdit.setText(lines[1])
+            if len(lines) > 2:
+                self.openAICompatibleModelLineEdit.setText(lines[2])
+            if len(lines) > 3:
+                self.openAICompatibleTemperatureLineEdit.setText(lines[3])
+            if len(lines) > 4:
+                self.openAICompatibleTopPLineEdit.setText(lines[4])
+            saved_theme = lines[5] if len(lines) > 5 else ""
+
+        # Read theme
+        if saved_theme:
+            self.currentTheme = saved_theme
 
     def _writeConfig(self):
-        """write the config saving paths for third-party softwares
-        """
+        """write the config saving paths for third-party softwares"""
 
-        with open(f'{self.config_dir}/3rdSoft.ini', 'w') as cFile:
-            cFile.write(self.vmdLineEdit.text() + '\n')
-            cFile.write(self.openRouterAPILineEdit.text() + '\n')
-            cFile.write(self.openRouterModelLineEdit.text() + '\n')
-            cFile.write(self.openRouterTemperatureLineEdit.text() + '\n')
-            cFile.write(self.openRouterTopPLineEdit.text() + '\n')
+        with open(f"{self.config_dir}/3rdSoft.ini", "w") as cFile:
+            cFile.write(self.vmdLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleAPIAddressLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleKeyLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleModelLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleTemperatureLineEdit.text() + "\n")
+            cFile.write(self.openAICompatibleTopPLineEdit.text() + "\n")
+            cFile.write(self.currentTheme + "\n")
 
     def _OKSlot(self):
-        """the slot corresponding the OK button
-        """
-        def f(): 
+        """the slot corresponding the OK button"""
+
+        def f():
             self._writeConfig()
             self.close()
+
         return f
 
+
 class geometricAdvancedSettings(QWidget):
-    """advanced settings for the geometric route
-       set pulling direction, non-standard solvent
-       and number of stratification windows
+    """advanced settings for the geometrical route
+    set pulling direction, non-standard solvent
+    and number of stratification windows
     """
 
     def __init__(self):
         super().__init__()
         self._initUI()
         self._initSingalsSlots()
-        self.setWindowTitle('Geometric advanced settings')
-        self.setGeometry(0,0,0,0)
-        #self.show()
+        self.setWindowTitle("Advanced settings for the geometrical route")
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
+        self.setGeometry(0, 0, 0, 0)
+        # self.show()
 
     def _initUI(self):
-        """initialize UI for the geometric advanced settings
-        """
+        """initialize UI for the geometrical advanced settings"""
 
         self.mainLayout = QVBoxLayout()
 
         # user-defined pulling direction
-        self.userDefinedDirection = QGroupBox('User-defined separation direction')
+        self.userDefinedDirection = QGroupBox("User-defined separation direction")
         self.userDefinedDirectionLayout = QHBoxLayout()
 
-        self.userDefinedDirectionLabel = QLabel('Reference:')
+        self.userDefinedDirectionLabel = QLabel("Reference:")
         self.userDefinedDirectionLineEdit = QLineEdit()
         self.userDefinedDirectionLayout.addWidget(self.userDefinedDirectionLabel)
         self.userDefinedDirectionLayout.addWidget(self.userDefinedDirectionLineEdit)
@@ -183,44 +277,48 @@ class geometricAdvancedSettings(QWidget):
         self.userDefinedDirection.setLayout(self.userDefinedDirectionLayout)
 
         # non-standard solvent
-        self.nonStandardSolvent = QGroupBox('User-provided large box')
+        self.nonStandardSolvent = QGroupBox("User-provided large box")
         self.nonStandardSolventLayout = QGridLayout()
 
-        self.nonStandardSolventPsfLabel = QLabel('psf/parm file:')
+        self.nonStandardSolventPsfLabel = QLabel("psf/parm file:")
         self.nonStandardSolventPsfLineEdit = QLineEdit()
-        self.nonStandardSolventPsfButton = QPushButton('Browse')
-        self.nonStandardSolventPdbLabel = QLabel('pdb/rst7 file:')
+        self.nonStandardSolventPsfButton = QPushButton("Browse")
+        self.nonStandardSolventPdbLabel = QLabel("pdb/rst7 file:")
         self.nonStandardSolventPdbLineEdit = QLineEdit()
-        self.nonStandardSolventPdbButton = QPushButton('Browse')
+        self.nonStandardSolventPdbButton = QPushButton("Browse")
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPsfLabel, 0, 0)
-        self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPsfLineEdit, 0, 1)
+        self.nonStandardSolventLayout.addWidget(
+            self.nonStandardSolventPsfLineEdit, 0, 1
+        )
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPsfButton, 0, 2)
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPdbLabel, 1, 0)
-        self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPdbLineEdit, 1, 1)
+        self.nonStandardSolventLayout.addWidget(
+            self.nonStandardSolventPdbLineEdit, 1, 1
+        )
         self.nonStandardSolventLayout.addWidget(self.nonStandardSolventPdbButton, 1, 2)
 
         self.nonStandardSolvent.setLayout(self.nonStandardSolventLayout)
 
         # stratification
-        self.stratification = QGroupBox('Stratification (number of strata)')
+        self.stratification = QGroupBox("Stratification (number of strata)")
         self.stratificationLayout = QGridLayout()
 
-        self.stratificationRMSDBoundLabel = QLabel('RMSD(Bound):')
-        self.stratificationRMSDBoundLineEdit = QLineEdit('1')
-        self.stratificationTheta = QLabel('Theta:')
-        self.stratificationThetaLineEdit = QLineEdit('1')
-        self.stratificationPhiLabel = QLabel('Phi:')
-        self.stratificationPhiLineEdit = QLineEdit('1')
-        self.stratificationPsiLabel = QLabel('Psi:')
-        self.stratificationPsiLineEdit = QLineEdit('1')
-        self.stratificationthetaLabel = QLabel('theta:')
-        self.stratificationthetaLineEdit = QLineEdit('1')
-        self.stratificationphiLabel = QLabel('phi:')
-        self.stratificationphiLineEdit = QLineEdit('1')
-        self.stratificationRLabel = QLabel('r:')
-        self.stratificationRLineEdit = QLineEdit('1')
-        self.stratificationRMSDUnboundLabel = QLabel('RMSD(Unbound):')
-        self.stratificationRMSDUnboundLineEdit = QLineEdit('1')
+        self.stratificationRMSDBoundLabel = QLabel("RMSD(Bound):")
+        self.stratificationRMSDBoundLineEdit = QLineEdit("3")
+        self.stratificationTheta = QLabel("Theta:")
+        self.stratificationThetaLineEdit = QLineEdit("1")
+        self.stratificationPhiLabel = QLabel("Phi:")
+        self.stratificationPhiLineEdit = QLineEdit("1")
+        self.stratificationPsiLabel = QLabel("Psi:")
+        self.stratificationPsiLineEdit = QLineEdit("1")
+        self.stratificationthetaLabel = QLabel("theta:")
+        self.stratificationthetaLineEdit = QLineEdit("1")
+        self.stratificationphiLabel = QLabel("phi:")
+        self.stratificationphiLineEdit = QLineEdit("1")
+        self.stratificationRLabel = QLabel("r:")
+        self.stratificationRLineEdit = QLineEdit("5")
+        self.stratificationRMSDUnboundLabel = QLabel("RMSD(Unbound):")
+        self.stratificationRMSDUnboundLineEdit = QLineEdit("3")
 
         self.stratificationLayout.addWidget(self.stratificationRMSDBoundLabel, 0, 0)
         self.stratificationLayout.addWidget(self.stratificationRMSDBoundLineEdit, 0, 1)
@@ -237,77 +335,81 @@ class geometricAdvancedSettings(QWidget):
         self.stratificationLayout.addWidget(self.stratificationRLabel, 1, 4)
         self.stratificationLayout.addWidget(self.stratificationRLineEdit, 1, 5)
         self.stratificationLayout.addWidget(self.stratificationRMSDUnboundLabel, 1, 6)
-        self.stratificationLayout.addWidget(self.stratificationRMSDUnboundLineEdit, 1, 7)
+        self.stratificationLayout.addWidget(
+            self.stratificationRMSDUnboundLineEdit, 1, 7
+        )
 
         self.stratification.setLayout(self.stratificationLayout)
-        
+
         # compatibility
-        self.compatibility = QGroupBox('Compatibility')
+        self.compatibility = QGroupBox("Compatibility")
         self.compatibilityLayout = QGridLayout()
-        
-        self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
+
+        self.pinDownProCheckbox = QCheckBox("Pinning down the protein")
         self.pinDownProCheckbox.setChecked(True)
-        
-        self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
+
+        self.useOldCvCheckbox = QCheckBox("Use quaternion-based CVs")
         self.useOldCvCheckbox.setChecked(False)
-        
-        self.reflectingBoundaryCheckbox = QCheckBox('Use reflecting boundary')
+
+        self.reflectingBoundaryCheckbox = QCheckBox("Use reflecting boundary")
         self.reflectingBoundaryCheckbox.setChecked(True)
 
-        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator = QCheckBox("Use CUDASOA integrator")
         self.useCUDASOAIntegrator.setChecked(True)
-        
+
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.reflectingBoundaryCheckbox, 1, 0)
         self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 1)
         self.compatibility.setLayout(self.compatibilityLayout)
-        
+
         # force field settings
-        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettings = QGroupBox("Force field settings")
         self.FFSettingsLayout = QHBoxLayout()
-        
-        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+
+        self.OPLSMixingRuleCheckbox = QCheckBox("OPLS mixing rules")
         self.OPLSMixingRuleCheckbox.setChecked(False)
 
         self.timestepLayout = QHBoxLayout()
-        self.timestepLabel = QLabel('    Timestep:')
-        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLabel = QLabel("    Timestep:")
+        self.timestepLineEdit = QLineEdit("2.0")
         self.timestepLayout.addWidget(self.timestepLabel)
         self.timestepLayout.addWidget(self.timestepLineEdit)
-        
+
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
-        self.strategy = QGroupBox('Strategy settings')
+        self.strategy = QGroupBox("Strategy settings")
         self.strategyLayout = QHBoxLayout()
 
-        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox = QCheckBox(
+            "Take into account RMSD CV (flexible ligand)"
+        )
         self.considerRMSDCVCheckbox.setChecked(True)
 
-        self.useGaWTMCheckbox = QCheckBox('Use GaWTM-eABF')
+        self.useGaWTMCheckbox = QCheckBox("Use GaWTM-eABF")
         self.useGaWTMCheckbox.setChecked(False)
 
         self.strategyLayout.addWidget(self.considerRMSDCVCheckbox)
         self.strategyLayout.addWidget(self.useGaWTMCheckbox)
         self.strategy.setLayout(self.strategyLayout)
-        
+
         # membrane protein
-        self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
+        self.modeling = QGroupBox("Modeling (avaiable for CHARMM FF)")
         self.modelingLayout = QVBoxLayout()
 
-        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox = QCheckBox("Membrane protein")
         self.memProCheckbox.setChecked(False)
-        
+
         self.neutralizeLigOnlyLayout = QHBoxLayout()
-        self.neutralizeLigOnlyLabel = QLabel('Auto-neutralize ligand-only system by:')
+        self.neutralizeLigOnlyLabel = QLabel("Auto-neutralize ligand-only system by:")
         self.neutralizeLigOnlyCombobox = QComboBox()
-        self.neutralizeLigOnlyCombobox.addItem('NaCl')
-        self.neutralizeLigOnlyCombobox.addItem('KCl')
-        self.neutralizeLigOnlyCombobox.addItem('CaCl2')
-        self.neutralizeLigOnlyCombobox.addItem('None')
+        self.neutralizeLigOnlyCombobox.addItem("NaCl")
+        self.neutralizeLigOnlyCombobox.addItem("KCl")
+        self.neutralizeLigOnlyCombobox.addItem("CaCl2")
+        self.neutralizeLigOnlyCombobox.addItem("None")
         self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyLabel)
         self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyCombobox)
 
@@ -316,23 +418,24 @@ class geometricAdvancedSettings(QWidget):
         self.modeling.setLayout(self.modelingLayout)
 
         # parallel runs for error estimation
-        self.parallelRuns = QGroupBox('Parallel runs')
+        self.parallelRuns = QGroupBox("Parallel runs")
         self.parallelRunsLayout = QHBoxLayout()
 
-        self.parallelRunsLabel = QLabel('Number of parallel runs: ')
-        self.parallelRunsLineEdit = QLineEdit('1')
+        self.parallelRunsLabel = QLabel("Number of parallel runs: ")
+        self.parallelRunsLineEdit = QLineEdit("1")
 
         self.parallelRunsLayout.addWidget(self.parallelRunsLabel)
         self.parallelRunsLayout.addWidget(self.parallelRunsLineEdit)
         self.parallelRuns.setLayout(self.parallelRunsLayout)
-        
 
         self.geometricAdvancedSettingsButtonLayout = QHBoxLayout()
-        self.geometricAdvancedSettingsOKButton = QPushButton('OK')
-        #self.geometricAdvancedSettingsCancelButton = QPushButton('Cancel')
+        self.geometricAdvancedSettingsOKButton = QPushButton("OK")
+        # self.geometricAdvancedSettingsCancelButton = QPushButton('Cancel')
         self.geometricAdvancedSettingsButtonLayout.addWidget(QSplitter())
-        self.geometricAdvancedSettingsButtonLayout.addWidget(self.geometricAdvancedSettingsOKButton)
-        #self.geometricAdvancedSettingsButtonLayout.addWidget(self.geometricAdvancedSettingsCancelButton)
+        self.geometricAdvancedSettingsButtonLayout.addWidget(
+            self.geometricAdvancedSettingsOKButton
+        )
+        # self.geometricAdvancedSettingsButtonLayout.addWidget(self.geometricAdvancedSettingsCancelButton)
 
         self.mainLayout.addWidget(self.userDefinedDirection)
         self.mainLayout.addWidget(self.nonStandardSolvent)
@@ -347,8 +450,8 @@ class geometricAdvancedSettings(QWidget):
 
     # below are slow functions
     def _toggleGaWTMBox(self, checked):
-        """when enable GaWTM, restraint simulations and considering RMSD are not needed, and 
-           re-equilbration and double-wide simulations are necessary.
+        """when enable GaWTM, restraint simulations and considering RMSD are not needed, and
+        re-equilbration and double-wide simulations are necessary.
         """
 
         if checked:
@@ -358,57 +461,58 @@ class geometricAdvancedSettings(QWidget):
             self.useCUDASOAIntegrator.setEnabled(True)
             self.useCUDASOAIntegrator.setChecked(True)
 
+    def _toggleRMSDLineEdits(self, checked):
+        """Enable or disable RMSD(Bound) and RMSD(Unbound) LineEdits based on checkbox state."""
+        self.stratificationRMSDBoundLineEdit.setEnabled(checked)
+        self.stratificationRMSDUnboundLineEdit.setEnabled(checked)
+
     def _initSingalsSlots(self):
-        """initialize (connect) signial and slots for geometric advanced settings
-        """
+        """initialize (connect) signial and slots for geometrical advanced settings"""
 
         self.nonStandardSolventPsfButton.clicked.connect(
             commonSlots.openFileDialog(
-                'psf/parm/top', 
-                self.nonStandardSolventPsfLineEdit
+                "psf/parm/top", self.nonStandardSolventPsfLineEdit
             )
         )
         self.nonStandardSolventPdbButton.clicked.connect(
-            commonSlots.openFileDialog(
-                'pdb/gro', 
-                self.nonStandardSolventPdbLineEdit
-            )
+            commonSlots.openFileDialog("pdb/gro", self.nonStandardSolventPdbLineEdit)
         )
         self.geometricAdvancedSettingsOKButton.clicked.connect(self.close)
         self.useGaWTMCheckbox.toggled.connect(self._toggleGaWTMBox)
+        self.considerRMSDCVCheckbox.toggled.connect(self._toggleRMSDLineEdits)
 
 
 class alchemicalAdvancedSettings(QWidget):
     """advanced settings for the alchemical route
-       set the number of stratification windows
+    set the number of stratification windows
     """
 
     def __init__(self):
         super().__init__()
         self._initUI()
         self._initSingalsSlots()
-        self.setWindowTitle('Alchemical advanced settings')
-        self.setGeometry(0,0,0,0)
-        #self.show()
+        self.setWindowTitle("Advanced settings for the alchemical route")
+        self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
+        self.setGeometry(0, 0, 0, 0)
+        # self.show()
 
     def _initUI(self):
-        """initialize UI for the alchemical advanced settings
-        """
+        """initialize UI for the alchemical advanced settings"""
 
         self.mainLayout = QVBoxLayout()
 
         # stratification windows
-        self.stratification = QGroupBox('Stratification (number of strata)')
+        self.stratification = QGroupBox("Stratification (number of strata)")
         self.stratificationLayout = QGridLayout()
 
-        self.boundLigandLabel = QLabel('Ligand/Bound state:')
-        self.boundLigandLineEdit = QLineEdit('50')
-        self.unboundLigandLabel = QLabel('Ligand/Unbound state:')
-        self.unboundLigandLineEdit = QLineEdit('20')
-        self.boundRestraintsLabel = QLabel('Restraints/Bound state:')
-        self.boundRestraintsLineEdit = QLineEdit('50')
-        self.unboundRestraintsLabel = QLabel('Restraints/Unbound state:')
-        self.unboundRestraintsLineEdit = QLineEdit('20')
+        self.boundLigandLabel = QLabel("Ligand/Bound state:")
+        self.boundLigandLineEdit = QLineEdit("200")
+        self.unboundLigandLabel = QLabel("Ligand/Unbound state:")
+        self.unboundLigandLineEdit = QLineEdit("100")
+        self.boundRestraintsLabel = QLabel("Restraints/Bound state:")
+        self.boundRestraintsLineEdit = QLineEdit("200")
+        self.unboundRestraintsLabel = QLabel("Restraints/Unbound state:")
+        self.unboundRestraintsLineEdit = QLineEdit("100")
 
         self.stratificationLayout.addWidget(self.boundLigandLabel, 0, 0)
         self.stratificationLayout.addWidget(self.boundLigandLineEdit, 0, 1)
@@ -422,72 +526,78 @@ class alchemicalAdvancedSettings(QWidget):
         self.stratification.setLayout(self.stratificationLayout)
 
         # double-wide simulation
-        self.doubleWide = QGroupBox('Double-wide sampling simulation')
+        self.doubleWide = QGroupBox("Double-wide sampling simulation")
         self.doubleWideLayout = QGridLayout()
 
-        self.doubleWideCheckbox = QCheckBox('Generate input files for double-wide sampling')
+        self.doubleWideCheckbox = QCheckBox(
+            "Generate input files for double-wide sampling"
+        )
         self.doubleWideCheckbox.setChecked(True)
         self.doubleWideLayout.addWidget(self.doubleWideCheckbox)
         self.doubleWide.setLayout(self.doubleWideLayout)
 
         # minimize before sampling in each window
-        self.minBeforeSample = QGroupBox('Minimization before sampling')
+        self.minBeforeSample = QGroupBox("Minimization before sampling")
         self.minBeforeSampleLayout = QVBoxLayout()
 
-        self.minBeforeSampleCheckbox = QCheckBox('Minimize before sampling in each window')
+        self.minBeforeSampleCheckbox = QCheckBox(
+            "Minimize before sampling in each window"
+        )
         self.minBeforeSampleCheckbox.setChecked(False)
         self.minBeforeSampleLayout.addWidget(self.minBeforeSampleCheckbox)
         self.minBeforeSample.setLayout(self.minBeforeSampleLayout)
-        
+
         # compatibility
-        self.compatibility = QGroupBox('Compatibility')
+        self.compatibility = QGroupBox("Compatibility")
         self.compatibilityLayout = QGridLayout()
-        
-        self.pinDownProCheckbox = QCheckBox('Pinning down the protein')
+
+        self.pinDownProCheckbox = QCheckBox("Pinning down the protein")
         self.pinDownProCheckbox.setChecked(True)
-        
-        self.useOldCvCheckbox = QCheckBox('Use quaternion-based CVs')
+
+        self.useOldCvCheckbox = QCheckBox("Use quaternion-based CVs")
         self.useOldCvCheckbox.setChecked(False)
 
-        self.useCUDASOAIntegrator = QCheckBox('Use CUDASOA integrator')
+        self.useCUDASOAIntegrator = QCheckBox("Use CUDASOA integrator")
         self.useCUDASOAIntegrator.setChecked(True)
-        
+
         self.compatibilityLayout.addWidget(self.pinDownProCheckbox, 0, 0)
         self.compatibilityLayout.addWidget(self.useOldCvCheckbox, 0, 1)
         self.compatibilityLayout.addWidget(self.useCUDASOAIntegrator, 1, 0)
         self.compatibility.setLayout(self.compatibilityLayout)
-        
+
         # force field settings
-        self.FFSettings = QGroupBox('Force field settings')
+        self.FFSettings = QGroupBox("Force field settings")
         self.FFSettingsLayout = QHBoxLayout()
-        
-        self.OPLSMixingRuleCheckbox = QCheckBox('OPLS mixing rules')
+
+        self.OPLSMixingRuleCheckbox = QCheckBox("OPLS mixing rules")
         self.OPLSMixingRuleCheckbox.setChecked(False)
 
         self.timestepLayout = QHBoxLayout()
-        self.timestepLabel = QLabel('    Timestep:')
-        self.timestepLineEdit = QLineEdit('2.0')
+        self.timestepLabel = QLabel("    Timestep:")
+        self.timestepLineEdit = QLineEdit("2.0")
         self.timestepLayout.addWidget(self.timestepLabel)
         self.timestepLayout.addWidget(self.timestepLineEdit)
-        
+
         self.FFSettingsLayout.addWidget(self.OPLSMixingRuleCheckbox)
         self.FFSettingsLayout.addLayout(self.timestepLayout)
         self.FFSettings.setLayout(self.FFSettingsLayout)
 
         # strategy settings
-        self.strategy = QGroupBox('Strategy settings')
+        self.strategy = QGroupBox("Strategy settings")
         self.strategyLayout = QGridLayout()
 
-        self.considerRMSDCVCheckbox = QCheckBox('Take into account RMSD CV')
+        self.considerRMSDCVCheckbox = QCheckBox(
+            "Take into account RMSD CV (flexible ligand)"
+        )
         self.considerRMSDCVCheckbox.setChecked(True)
 
-        self.reEqCheckbox = QCheckBox('Re-equilibration after histogram')
+        self.reEqCheckbox = QCheckBox("Re-equilibration after histogram")
         self.reEqCheckbox.setChecked(True)
 
-        self.LDDMCheckbox = QCheckBox('Use LDDM strategy')
+        self.LDDMCheckbox = QCheckBox("Use LDDM strategy")
         self.LDDMCheckbox.setChecked(False)
 
-        self.useWTMLambdaABFCheckbox = QCheckBox('Use WTM-lambdaABF')
+        self.useWTMLambdaABFCheckbox = QCheckBox("Use WTM-lambdaABF")
         self.useWTMLambdaABFCheckbox.setChecked(False)
 
         self.strategyLayout.addWidget(self.considerRMSDCVCheckbox, 0, 0)
@@ -497,19 +607,19 @@ class alchemicalAdvancedSettings(QWidget):
         self.strategy.setLayout(self.strategyLayout)
 
         # membrane protein
-        self.modeling = QGroupBox('Modeling (avaiable for CHARMM FF)')
+        self.modeling = QGroupBox("Modeling (avaiable for CHARMM FF)")
         self.modelingLayout = QVBoxLayout()
 
-        self.memProCheckbox = QCheckBox('Membrane protein')
+        self.memProCheckbox = QCheckBox("Membrane protein")
         self.memProCheckbox.setChecked(False)
-        
+
         self.neutralizeLigOnlyLayout = QHBoxLayout()
-        self.neutralizeLigOnlyLabel = QLabel('Auto-neutralize ligand-only system by:')
+        self.neutralizeLigOnlyLabel = QLabel("Auto-neutralize ligand-only system by:")
         self.neutralizeLigOnlyCombobox = QComboBox()
-        self.neutralizeLigOnlyCombobox.addItem('NaCl')
-        self.neutralizeLigOnlyCombobox.addItem('KCl')
-        self.neutralizeLigOnlyCombobox.addItem('CaCl2')
-        self.neutralizeLigOnlyCombobox.addItem('None')
+        self.neutralizeLigOnlyCombobox.addItem("NaCl")
+        self.neutralizeLigOnlyCombobox.addItem("KCl")
+        self.neutralizeLigOnlyCombobox.addItem("CaCl2")
+        self.neutralizeLigOnlyCombobox.addItem("None")
         self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyLabel)
         self.neutralizeLigOnlyLayout.addWidget(self.neutralizeLigOnlyCombobox)
 
@@ -518,12 +628,14 @@ class alchemicalAdvancedSettings(QWidget):
         self.modeling.setLayout(self.modelingLayout)
 
         self.alchemicalAdvancedSettingsButtonLayout = QHBoxLayout()
-        self.alchemicalAdvancedSettingsOKButton = QPushButton('OK')
-        #self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
+        self.alchemicalAdvancedSettingsOKButton = QPushButton("OK")
+        # self.alchemicalAdvancedSettingsCancelButton = QPushButton('Cancel')
         self.alchemicalAdvancedSettingsButtonLayout.addWidget(QSplitter())
-        self.alchemicalAdvancedSettingsButtonLayout.addWidget(self.alchemicalAdvancedSettingsOKButton)
-        #self.alchemicalAdvancedSettingsButtonLayout.addWidget(self.alchemicalAdvancedSettingsCancelButton)
-        
+        self.alchemicalAdvancedSettingsButtonLayout.addWidget(
+            self.alchemicalAdvancedSettingsOKButton
+        )
+        # self.alchemicalAdvancedSettingsButtonLayout.addWidget(self.alchemicalAdvancedSettingsCancelButton)
+
         self.mainLayout.addWidget(self.stratification)
         self.mainLayout.addWidget(self.doubleWide)
         self.mainLayout.addWidget(self.compatibility)
@@ -536,8 +648,8 @@ class alchemicalAdvancedSettings(QWidget):
 
     # below are slow functions
     def _toggleLDDMBox(self, checked):
-        """when enable LDDM, restraint simulations and considering RMSD are not needed, and 
-           re-equilbration and double-wide simulations are necessary.
+        """when enable LDDM, restraint simulations and considering RMSD are not needed, and
+        re-equilbration and double-wide simulations are necessary.
         """
 
         if checked:
@@ -562,91 +674,176 @@ class alchemicalAdvancedSettings(QWidget):
             self.minBeforeSampleCheckbox.setEnabled(True)
             self.useWTMLambdaABFCheckbox.setEnabled(True)
 
+    def _toggleRMSDLineEdit(self, checked):
+        """Enable or disable Restraints/Unbound State LineEdit based on RMSD CV checkbox state."""
+        self.unboundRestraintsLineEdit.setEnabled(checked)
+
     def _initSingalsSlots(self):
-        """initialize (connect) signals and slots for the alchemical advanced settings
-        """
+        """initialize (connect) signals and slots for the alchemical advanced settings"""
 
         self.LDDMCheckbox.toggled.connect(self._toggleLDDMBox)
+        self.considerRMSDCVCheckbox.toggled.connect(self._toggleRMSDLineEdit)
         self.alchemicalAdvancedSettingsOKButton.clicked.connect(self.close)
-        
-class AIAssistantDialog(QWidget):  
-    """AI Assistant dialog for interactive help with OpenRouter API"""  
-      
-    def __init__(self, parent=None):  
-        super().__init__(parent)  
-        self.parent = parent  
-        self._initUI()  
-        self._initSignalsSlots()  
-        self.setWindowTitle('AI Assistant')  
-        self.setGeometry(100, 100, 800, 600)  
+
+
+class AIAssistantDialog(QWidget):
+    """AI Assistant dialog for interactive help with OpenAI-compatible API"""
+
+    THEME_COLORS = {
+        "dark": {
+            "surface": "#1e1e1e",
+            "panel": "#2b2b2b",
+            "border": "#555555",
+            "text": "#f0f0f0",
+            "accent": "#409EFF",
+        },
+        "light": {
+            "surface": "#ffffff",
+            "panel": "#f5f5f7",
+            "border": "#d2d2d7",
+            "text": "#1d1d1f",
+            "accent": "#0071e3",
+        },
+        "ocean": {
+            "surface": "#1e293b",
+            "panel": "#0f172a",
+            "border": "#334155",
+            "text": "#f1f5f9",
+            "accent": "#22d3ee",
+        },
+        "forest": {
+            "surface": "#21252b",
+            "panel": "#282c34",
+            "border": "#3e4451",
+            "text": "#abb2bf",
+            "accent": "#98c379",
+        },
+        "candy": {
+            "surface": "#2c2c2c",
+            "panel": "#212121",
+            "border": "#424242",
+            "text": "#ffffff",
+            "accent": "#ff007a",
+        },
+    }
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.skillExecutor = AISkillExecutor(self)
+        self._hasShownWelcomeMessage = False
+        self._themeName = self._resolveThemeName()
+        self._conversationEntries = []
+        self._initUI()
+        self._initSignalsSlots()
+        self.setWindowTitle("AI Assistant")
+        self.setGeometry(100, 100, 800, 600)
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.Dialog | QtCore.Qt.Tool)
         self.messageHistory = ""
-          
-    def _initUI(self):  
-        """Initialize the UI for AI Assistant dialog"""  
-          
-        self.mainLayout = QVBoxLayout()  
-          
-        # Conversation display area  
-        self.conversationDisplay = QListWidget()  
-        self.conversationDisplay.setWordWrap(True)  
-        self.conversationDisplay.setAlternatingRowColors(True)  
-          
-        # Input area  
-        self.inputLayout = QHBoxLayout()  
-        self.inputLineEdit = QLineEdit()  
-        self.inputLineEdit.setPlaceholderText("Type your message here...")  
-        self.sendButton = QPushButton('Send')  
-          
-        self.inputLayout.addWidget(self.inputLineEdit)  
-        self.inputLayout.addWidget(self.sendButton)  
-          
-        # Clear conversation button  
-        self.clearButton = QPushButton('Clear Conversation')  
-          
-        # Layout assembly  
-        self.mainLayout.addWidget(QLabel('AI Assistant - Ask about and automate BFEE settings:'))  
-        self.mainLayout.addWidget(self.conversationDisplay)  
-        self.mainLayout.addLayout(self.inputLayout)  
-        self.mainLayout.addWidget(self.clearButton)  
-          
-        self.setLayout(self.mainLayout)  
-          
-    def _initSignalsSlots(self):  
-        """Initialize signals and slots"""  
-        self.sendButton.clicked.connect(self._sendMessage)  
-        self.inputLineEdit.returnPressed.connect(self._sendMessage)  
-        self.clearButton.clicked.connect(self._clearMessageHistory)  
 
-    def _sendMessage(self):  
-        """Send message to OpenRouter API and display response"""  
-          
-        user_message = self.inputLineEdit.text().strip()  
-        if not user_message:  
-            return  
-              
-        # Add user message to display  
-        self.conversationDisplay.addItem(f"You: {user_message}")  
-        self.messageHistory += f"You: {user_message}\n"
-        self.inputLineEdit.clear()  
-          
-        # Get API settings from parent's mainSettings  
-        if self.parent:  
-            api_key = self.parent.mainSettings.openRouterAPILineEdit.text()  
-            model = self.parent.mainSettings.openRouterModelLineEdit.text()
-            # optional parameters
-            temperature_text = self.parent.mainSettings.openRouterTemperatureLineEdit.text().strip()
-            top_p_text = self.parent.mainSettings.openRouterTopPLineEdit.text().strip()
-        else:  
-            self.conversationDisplay.addItem("AI: Error - Cannot access API settings")  
-            self.messageHistory += f"AI: Error - Cannot access API settings\n"
-            return  
-              
-        if not api_key or not model:  
-            self.conversationDisplay.addItem("AI: Please configure OpenRouter API and model in Settings first")  
-            self.messageHistory += f"AI: Please configure OpenRouter API and model in Settings first\n"
+    def showEvent(self, event):
+        """Display a welcome message the first time the dialog is opened."""
+        super().showEvent(event)
+        if not self._hasShownWelcomeMessage:
+            self._appendConversationText(
+                "AI: I am the BFEE3 AI assistant. I can explain the algorithms in BFEE3 and where they are best applied, help you configure options for generating input files, and describe what each option does."
+            )
+            self._hasShownWelcomeMessage = True
+
+    def _initUI(self):
+        """Initialize the UI for AI Assistant dialog"""
+
+        self.mainLayout = QVBoxLayout()
+
+        # Conversation display area
+        self.conversationDisplay = QTextBrowser()
+        self.conversationDisplay.setOpenExternalLinks(True)
+        self.conversationDisplay.document().setDocumentMargin(8)
+        self.applyTheme(self._themeName)
+
+        # Input area
+        self.inputLayout = QHBoxLayout()
+        self.inputLineEdit = QLineEdit()
+        self.inputLineEdit.setPlaceholderText("Type your message here...")
+        self.sendButton = QPushButton("Send")
+
+        self.inputLayout.addWidget(self.inputLineEdit)
+        self.inputLayout.addWidget(self.sendButton)
+
+        # Clear conversation button
+        self.clearButton = QPushButton("Clear Conversation")
+
+        # Layout assembly
+        self.mainLayout.addWidget(
+            QLabel("AI Assistant - Ask about and automate BFEE settings:")
+        )
+        self.mainLayout.addWidget(self.conversationDisplay)
+        self.mainLayout.addLayout(self.inputLayout)
+        self.mainLayout.addWidget(self.clearButton)
+
+        self.setLayout(self.mainLayout)
+
+    def _initSignalsSlots(self):
+        """Initialize signals and slots"""
+        self.sendButton.clicked.connect(self._sendMessage)
+        self.inputLineEdit.returnPressed.connect(self._sendMessage)
+        self.clearButton.clicked.connect(self._clearMessageHistory)
+
+    def _sendMessage(self):
+        """Send message to OpenAI-compatible API and display response"""
+
+        user_message = self.inputLineEdit.text().strip()
+        if not user_message:
             return
-            
+
+        # Add user message to display
+        self._appendConversationText(f"You: {user_message}")
+        self.messageHistory += f"You: {user_message}\n"
+        self.inputLineEdit.clear()
+
+        # Get API settings from parent's mainSettings
+        if self.parent:
+            api_base_url = (
+                self.parent.mainSettings.openAICompatibleAPIAddressLineEdit.text()
+                .strip()
+            )
+            api_key = (
+                self.parent.mainSettings.openAICompatibleKeyLineEdit.text().strip()
+            )
+            model = (
+                self.parent.mainSettings.openAICompatibleModelLineEdit.text().strip()
+            )
+            # optional parameters
+            temperature_text = (
+                self.parent.mainSettings.openAICompatibleTemperatureLineEdit.text()
+                .strip()
+            )
+            top_p_text = (
+                self.parent.mainSettings.openAICompatibleTopPLineEdit.text().strip()
+            )
+        else:
+            self._appendConversationText("AI: Error - Cannot access API settings")
+            self.messageHistory += f"AI: Error - Cannot access API settings\n"
+            return
+
+        if not api_base_url or not api_key or not model:
+            settings_message = (
+                "AI: Please configure OpenAI-compatible API address, key, "
+                "and model in Settings first"
+            )
+            self._appendConversationText(settings_message)
+            self.messageHistory += f"{settings_message}\n"
+            return
+
+        if not api_base_url.lower().startswith(("http://", "https://")):
+            self._appendConversationText(
+                "AI: Please configure a valid OpenAI-compatible API address in Settings"
+            )
+            self.messageHistory += (
+                f"AI: Please configure a valid OpenAI-compatible API address in Settings\n"
+            )
+            return
+
         # Show a modal waiting dialog in front of the AI window
         wait_dlg = QProgressDialog("Receiving server response...", None, 0, 0, self)
         wait_dlg.setWindowTitle("Please wait")
@@ -655,26 +852,26 @@ class AIAssistantDialog(QWidget):
         wait_dlg.setAutoClose(False)
         wait_dlg.setAutoReset(False)
         wait_dlg.setMinimumDuration(0)
-        
+
         # Remove close/help buttons
         wait_dlg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         wait_dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         wait_dlg.show()
         QApplication.processEvents()
-              
-        # Prepare API request  
-        try:  
-            headers = {  
-                "Authorization": f"Bearer {api_key}",  
-                "Content-Type": "application/json"  
-            }  
-              
-            data = {  
-                "model": model,  
-                "messages": [  
-                    {"role": "system", "content": rags.systemPrompt},  
-                    {"role": "user", "content": self.messageHistory}  
-                ]  
+
+        # Prepare API request
+        try:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+
+            data = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": rags.systemPrompt},
+                    {"role": "user", "content": self.messageHistory},
+                ],
             }
             if temperature_text:
                 try:
@@ -686,178 +883,255 @@ class AIAssistantDialog(QWidget):
                     data["top_p"] = float(top_p_text)
                 except ValueError:
                     pass
-              
-            response = requests.post(  
-                "https://openrouter.ai/api/v1/chat/completions",  
-                headers=headers,  
-                json=data,  
-                timeout=30  
-            )  
-              
-            if response.status_code == 200:  
-                result = response.json()  
-                ai_response = result['choices'][0]['message']['content']  
-                self.conversationDisplay.addItem(f"AI: {ai_response}")  
-                self.messageHistory += f"AI: {ai_response}\n"
-                self._execute_suggested_calls(ai_response)
-            else:  
-                self.conversationDisplay.addItem(f"AI: Error - API request failed: {response.status_code}")  
-                self.messageHistory += f"AI: Error - API request failed: {response.status_code}\n"
 
-        except Exception as e:  
-            self.conversationDisplay.addItem(f"AI: Error - {str(e)}")
+            response = requests.post(
+                f"{api_base_url.rstrip('/')}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30,
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                ai_response = result["choices"][0]["message"]["content"]
+                self._appendConversationText(f"AI: {ai_response}")
+                self.messageHistory += f"AI: {ai_response}\n"
+                self.skillExecutor.execute(ai_response)
+            else:
+                self._appendConversationText(
+                    f"AI: Error - API request failed: {response.status_code}"
+                )
+                self.messageHistory += (
+                    f"AI: Error - API request failed: {response.status_code}\n"
+                )
+
+        except Exception as e:
+            self._appendConversationText(f"AI: Error - {str(e)}")
             self.messageHistory += f"AI: Error - {str(e)}\n"
         finally:
             wait_dlg.close()
 
+    def _appendConversationText(self, text: str):
+        """Append a chat message using a bubble-style layout."""
+        self._conversationEntries.append(text)
+        self._insertConversationText(text)
+
+    def _insertConversationText(self, text: str):
+        """Render one message entry in the conversation area."""
+        message_type, speaker, content = self._classifyConversationText(text)
+        bubble_html = self._buildConversationBubble(
+            message_type, speaker, self._formatConversationBody(content)
+        )
+
+        cursor = self.conversationDisplay.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertHtml(bubble_html)
+        cursor.insertBlock()
+        self.conversationDisplay.setTextCursor(cursor)
+
+        scrollbar = self.conversationDisplay.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def _resolveThemeName(self):
+        """Return the currently selected app theme."""
+        if self.parent and hasattr(self.parent, "mainSettings"):
+            return self.parent.mainSettings.currentTheme
+        return "system"
+
+    def applyTheme(self, theme_name=None):
+        """Apply the current app theme to the conversation display."""
+        self._themeName = theme_name or self._resolveThemeName()
+        colors = self._getConversationThemeColors()
+        self.conversationDisplay.setStyleSheet(
+            f"""
+            QTextBrowser {{
+                background-color: {self._colorToCss(colors["surface"])};
+                color: {self._colorToCss(colors["text"])};
+                border: 1px solid {self._colorToCss(colors["border"])};
+                border-radius: 10px;
+                padding: 6px;
+            }}
+            QTextBrowser a {{
+                color: {self._colorToCss(colors["accent"])};
+            }}
+            """
+        )
+        self._rerenderConversation()
+
+    def _rerenderConversation(self):
+        """Rebuild all bubbles so existing messages follow the current theme."""
+        if not hasattr(self, "conversationDisplay"):
+            return
+        scrollbar = self.conversationDisplay.verticalScrollBar()
+        keep_at_bottom = scrollbar.value() >= max(0, scrollbar.maximum() - 4)
+        self.conversationDisplay.clear()
+        for text in self._conversationEntries:
+            self._insertConversationText(text)
+        if keep_at_bottom:
+            scrollbar.setValue(scrollbar.maximum())
+
+    def _getConversationThemeColors(self):
+        """Get the base colors for the chat UI."""
+        theme_colors = self.THEME_COLORS.get(self._themeName)
+        if theme_colors:
+            return {name: QColor(value) for name, value in theme_colors.items()}
+
+        palette = self.conversationDisplay.palette()
+        return {
+            "surface": palette.color(QPalette.Base),
+            "panel": palette.color(QPalette.Window),
+            "border": palette.color(QPalette.Mid),
+            "text": palette.color(QPalette.Text),
+            "accent": palette.color(QPalette.Highlight),
+        }
+
+    def _buildBubbleStyles(self):
+        """Derive bubble colors from the active theme."""
+        colors = self._getConversationThemeColors()
+
+        user_background = self._blendColors(colors["panel"], colors["accent"], 0.82)
+        user_text = self._idealForeground(user_background)
+        ai_background = self._blendColors(colors["surface"], colors["panel"], 0.45)
+        exec_background = self._blendColors(colors["surface"], colors["accent"], 0.14)
+
+        return {
+            "user": {
+                "align": "right",
+                "width": "78%",
+                "background": self._colorToCss(user_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["accent"], 0.72)
+                ),
+                "text": self._colorToCss(user_text),
+                "label": self._colorToCss(
+                    self._blendColors(user_text, user_background, 0.28)
+                ),
+            },
+            "ai": {
+                "align": "left",
+                "width": "78%",
+                "background": self._colorToCss(ai_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["surface"], 0.22)
+                ),
+                "text": self._colorToCss(colors["text"]),
+                "label": self._colorToCss(
+                    self._blendColors(colors["text"], ai_background, 0.34)
+                ),
+            },
+            "exec": {
+                "align": "center",
+                "width": "62%",
+                "background": self._colorToCss(exec_background),
+                "border": self._colorToCss(
+                    self._blendColors(colors["border"], colors["accent"], 0.26)
+                ),
+                "text": self._colorToCss(colors["text"]),
+                "label": self._colorToCss(
+                    self._blendColors(colors["text"], exec_background, 0.34)
+                ),
+            },
+        }
+
+    def _blendColors(self, base: QColor, overlay: QColor, alpha: float):
+        """Blend two colors and return a new QColor."""
+        alpha = max(0.0, min(alpha, 1.0))
+        return QColor(
+            round(base.red() * (1.0 - alpha) + overlay.red() * alpha),
+            round(base.green() * (1.0 - alpha) + overlay.green() * alpha),
+            round(base.blue() * (1.0 - alpha) + overlay.blue() * alpha),
+        )
+
+    def _idealForeground(self, background: QColor):
+        """Pick a readable foreground color for a given background."""
+        luminance = (
+            0.299 * background.red()
+            + 0.587 * background.green()
+            + 0.114 * background.blue()
+        )
+        return QColor("#111111") if luminance > 170 else QColor("#ffffff")
+
+    def _colorToCss(self, color: QColor):
+        """Convert QColor to a CSS hex string."""
+        return color.name()
+
+    def _classifyConversationText(self, text: str):
+        """Map plain text messages into display roles for chat bubbles."""
+        if text.startswith("You: "):
+            return ("user", "You", text[5:])
+        if text.startswith("AI: "):
+            return ("ai", "AI Assistant", text[4:])
+        return ("exec", "BFEE2", text)
+
+    def _formatConversationBody(self, text: str):
+        """Escape user content and turn plain URLs into clickable links."""
+        escaped_text = html.escape(text)
+        escaped_text = re.sub(
+            r"(https?://[^\s<]+)",
+            r'<a href="\1" style="color: inherit; text-decoration: underline;">\1</a>',
+            escaped_text,
+        )
+        return escaped_text.replace("\n", "<br>")
+
+    def _buildConversationBubble(self, message_type: str, speaker: str, body_html: str):
+        """Render one message bubble aligned by speaker."""
+        bubble_styles = self._buildBubbleStyles()
+        style = bubble_styles[message_type]
+
+        return f"""
+<table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 12px 0;">
+  <tr>
+    <td align="{style["align"]}">
+      <table width="{style["width"]}" cellspacing="0" cellpadding="0"
+             style="background-color: {style["background"]};
+                    border: 1px solid {style["border"]};
+                    border-radius: 14px;">
+        <tr>
+          <td style="padding: 10px 12px;">
+            <div style="font-size: 10pt; font-weight: 600; color: {style["label"]}; margin-bottom: 4px;">
+              {html.escape(speaker)}
+            </div>
+            <div style="font-size: 10pt; line-height: 1.45; color: {style["text"]}; white-space: pre-wrap;">
+              {body_html}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+"""
+
     def _clearMessageHistory(self):
         """Clear the message history"""
         self.conversationDisplay.clear()
+        self._conversationEntries = []
         self.messageHistory = ""
-        
+
+    def _appendExecMessage(self, message: str):
+        """Append execution status message to the AI dialog."""
+        self._appendConversationText(message)
+        self.messageHistory += message + "\n"
+
+    def _execute_skill_json(self, ai_text: str):
+        """Parse and execute whitelisted skills from a JSON payload."""
+        self.skillExecutor.execute(ai_text)
+
     def _execute_suggested_calls(self, ai_text: str):
         """
-        Finds and executes function calls specified in the AI's output.
+        Backward-compatible wrapper. The old dynamic function-call execution path
+        has been replaced by JSON skill dispatch with a strict whitelist.
         """
-        # 1. marker sentence
-        start_marker = "I will call the following functions:"
-        
-        # 2. find the marker in output
-        try:
-            # do not distinguish upper and lower letters
-            search_text = ai_text.casefold()
-            marker_pos = search_text.find(start_marker.casefold())
-            
-            if marker_pos == -1:
-                return
-        except AttributeError:
-            return
-        # 3. find '['
-        open_bracket_pos = ai_text.find('[', marker_pos)
-        if open_bracket_pos == -1:
-            return
-        # 4. find ']'
-        close_bracket_pos = ai_text.find(']', open_bracket_pos)
-        if close_bracket_pos == -1:
-            return
-        # 5. get things between "[]"
-        block = ai_text[open_bracket_pos + 1 : close_bracket_pos].strip()
-        
-        if not block:
-            return
+        self._execute_skill_json(ai_text)
 
-        calls = self._split_top_level_commas(block)
-        for call in calls:
-            call = call.strip()
-            if not call:
-                continue
-            m2 = re.match(
-                r'^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*\((.*)\)\s*$',
-                call
-            )
-            if not m2:
-                msg = f"Exec: skip unsupported expression: {call}"
-                self.conversationDisplay.addItem(msg)
-                self.messageHistory += msg + "\n"
-                continue
-            path = m2.group(1)
-            args_str = m2.group(2).strip()
-            try:
-                # assume it is of self.parent
-                target = self.parent
-                for part in path.split('.'):
-                    target = getattr(target, part)
-                # args
-                args = self._parse_args(args_str)
-                # execute
-                result = target(*args)
-                # report
-                args_repr = ", ".join(repr(a) for a in args)
-                msg = f"Exec: {path}({args_repr}) -> OK"
-                self.conversationDisplay.addItem(msg)
-                self.messageHistory += msg + "\n"
-            except Exception as e:
-                msg = f"Exec: {path} failed: {e}"
-                self.conversationDisplay.addItem(msg)
-                self.messageHistory += msg + "\n"
-                
-    def _split_top_level_commas(self, s: str):
-        """split using comma"""
-        parts = []
-        cur = []
-        level = 0
-        in_str = None
-        escape = False
-        for ch in s:
-            if in_str:
-                cur.append(ch)
-                if escape:
-                    escape = False
-                elif ch == '\\':
-                    escape = True
-                elif ch == in_str:
-                    in_str = None
-                continue
-            if ch in ("'", '"'):
-                in_str = ch
-                cur.append(ch)
-                continue
-            if ch == '(':
-                level += 1
-                cur.append(ch)
-            elif ch == ')':
-                level = max(0, level - 1)
-                cur.append(ch)
-            elif ch == ',' and level == 0:
-                part = ''.join(cur).strip()
-                if part:
-                    parts.append(part)
-                cur = []
-            else:
-                cur.append(ch)
-        if cur:
-            part = ''.join(cur).strip()
-            if part:
-                parts.append(part)
-        return parts
-        
-    def _parse_args(self, s: str):
-        """understand the type of args in AI-output calls"""
-        if s == '':
-            return []
-        items = self._split_top_level_commas(s)
-        args = []
-        for it in items:
-            t = it.strip()
-            if t == '':
-                continue
-            if t == 'True':
-                args.append(True)
-            elif t == 'False':
-                args.append(False)
-            elif t == 'None':
-                args.append(None)
-            elif (t.startswith("'") and t.endswith("'")) or (t.startswith('"') and t.endswith('"')):
-                args.append(t[1:-1])
-            else:
-                # try float or int
-                try:
-                    if any(c in t for c in ('.', 'e', 'E')):
-                        args.append(float(t))
-                    else:
-                        args.append(int(t, 0))
-                except Exception:
-                    # common string
-                    args.append(t)
-        return args
 
 class mainUI(QMainWindow):
-    """the main window UI 
-       include the preTreatment, postTreatment and QuickPlot tab
-       the preTreatment tab include NAMD and Gromacs tab
-       the postTreatment tab include geometric and alchemical tab
+    """the main window UI
+    include the preTreatment, postTreatment and QuickPlot tab
+    the preTreatment tab include NAMD and Gromacs tab
+    the postTreatment tab include geometric and alchemical tab
     """
-    
+
     def __init__(self):
         super().__init__()
 
@@ -870,6 +1144,7 @@ class mainUI(QMainWindow):
 
         self._initGeometricTab()
         self._initAlchemicalTab()
+        self._toggleAlchemicalMethod()  # Set initial state for alchemical method selection
         self._initLDDMTab()
         self._initPostTreatmentTab()
 
@@ -884,120 +1159,227 @@ class mainUI(QMainWindow):
         self.aiAssistantDialog = AIAssistantDialog(self)
         self.aiAssistantDialog.hide()
 
-        self.setGeometry(0,0,0,0)
-        self.setWindowTitle(__PROGRAM_NAME__)    
+        # Apply saved theme
+        self._applyTheme(self.mainSettings.currentTheme, save_config=False)
+
+        self.setGeometry(0, 0, 0, 0)
+        self.setWindowTitle(__PROGRAM_NAME__)
         self.setWindowIcon(QIcon("BFEE2/icon/icon.png"))
         self.show()
 
         self._showMDEngineVersionWarning()
 
+    def _applyTheme(self, theme_name, save_config=True):
+        """Apply the selected theme to the application."""
+        app = QApplication.instance()
+        style_file = ""
+
+        # update state
+        if theme_name == "dark":
+            self.modernDarkAction.setChecked(True)
+            style_file = "modern_dark.qss"
+        elif theme_name == "light":
+            self.modernLightAction.setChecked(True)
+            style_file = "modern_light.qss"
+        elif theme_name == "ocean":
+            self.oceanBlueAction.setChecked(True)
+            style_file = "ocean_blue.qss"
+        elif theme_name == "forest":
+            self.forestNightAction.setChecked(True)
+            style_file = "forest_night.qss"
+        elif theme_name == "candy":
+            self.candyPopAction.setChecked(True)
+            style_file = "candy_pop.qss"
+        elif theme_name == "system":
+            self.systemStyleAction.setChecked(True)
+
+        # apply style
+        if style_file:
+            try:
+                style_path = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "styles", style_file
+                )
+                if os.path.exists(style_path):
+                    with open(style_path, "r") as f:
+                        app.setStyleSheet(f.read())
+                else:
+                    print(f"Style file not found: {style_path}")
+            except Exception as e:
+                print(f"Error loading style: {e}")
+        else:
+            app.setStyleSheet("")
+
+        if hasattr(self, "aiAssistantDialog"):
+            self.aiAssistantDialog.applyTheme(theme_name)
+
+        # save to config
+        if save_config:
+            self.mainSettings.currentTheme = theme_name
+            self.mainSettings._writeConfig()
+
     def _showMDEngineVersionWarning(self):
-        ''' show a message box ask for the latest NAMD version '''
-        QMessageBox.warning(self, 
-                            'Warning', 
-                            f'\
-{__PROGRAM_NAME__} is fully compatible with NAMD {__NAMD_VERSION__} or GROMACS {__GMX_VERSION__}. \n\
-Please use the same or a later version of NAMD or GROMACS if you have any problem.\n'
-                        )
+        """show a message box ask for the latest NAMD version"""
+        msgBox = QMessageBox(self)
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setWindowTitle("Warning")
+        msgBox.setTextFormat(QtCore.Qt.RichText)
+        msgBox.setText(
+            f"\
+{__PROGRAM_NAME__} is fully compatible with <b>NAMD {__NAMD_VERSION__}</b> or <b>GROMACS {__GMX_VERSION__}</b>. <br>\
+Please use the same or a later version of NAMD or GROMACS if you have any problem.<br>\
+<br>\
+<b>We highly recommend you start from Quick Settings menu.</b><br>"
+        )
+        msgBox.exec_()
 
     def _initActions(self):
-        ''' initialize actions for menubar '''
+        """initialize actions for menubar"""
 
         # settings
-        self.settingsAction = QAction('&Settings', self)
-        self.settingsAction.setStatusTip('Setting third-party service')
+        self.settingsAction = QAction("&Settings", self)
+        self.settingsAction.setStatusTip("Setting third-party service")
         self.settingsAction.triggered.connect(self._mainSettings())
 
         # exit
-        self.exitAction = QAction('&Exit', self)        
-        self.exitAction.setStatusTip('Exit application')
+        self.exitAction = QAction("&Exit", self)
+        self.exitAction.setStatusTip("Exit application")
         self.exitAction.triggered.connect(QApplication.quit)
+
+        # theme
+        self.themeActionGroup = QActionGroup(self)
+
+        self.systemStyleAction = QAction("System Style", self)
+        self.systemStyleAction.setCheckable(True)
+        self.systemStyleAction.triggered.connect(lambda: self._applyTheme("system"))
+        self.themeActionGroup.addAction(self.systemStyleAction)
+
+        self.modernDarkAction = QAction("Modern Dark", self)
+        self.modernDarkAction.setCheckable(True)
+        # self.modernDarkAction.setChecked(True) # Handled by _applyTheme on init
+        self.modernDarkAction.triggered.connect(lambda: self._applyTheme("dark"))
+        self.themeActionGroup.addAction(self.modernDarkAction)
+
+        self.modernLightAction = QAction("Modern Light", self)
+        self.modernLightAction.setCheckable(True)
+        self.modernLightAction.triggered.connect(lambda: self._applyTheme("light"))
+        self.themeActionGroup.addAction(self.modernLightAction)
+
+        self.oceanBlueAction = QAction("Ocean Blue", self)
+        self.oceanBlueAction.setCheckable(True)
+        self.oceanBlueAction.triggered.connect(lambda: self._applyTheme("ocean"))
+        self.themeActionGroup.addAction(self.oceanBlueAction)
+
+        self.forestNightAction = QAction("Forest Night", self)
+        self.forestNightAction.setCheckable(True)
+        self.forestNightAction.triggered.connect(lambda: self._applyTheme("forest"))
+        self.themeActionGroup.addAction(self.forestNightAction)
+
+        self.candyPopAction = QAction("Candy Pop", self)
+        self.candyPopAction.setCheckable(True)
+        self.candyPopAction.triggered.connect(lambda: self._applyTheme("candy"))
+        self.themeActionGroup.addAction(self.candyPopAction)
 
         # quick settings
         # geometrical protein protein
-        self.quickGeometricProteinProteinAction = QAction('Protein-Protein / Geometrical')
-        self.quickGeometricProteinProteinAction.setStatusTip(
-            'Change settings for geometrical protein-protein binding free-energy calculations'
+        self.quickGeometricProteinProteinAction = QAction(
+            "Protein-Protein / Geometrical"
         )
-        self.quickGeometricProteinProteinAction.triggered.connect(self._quickSetProteinProteinGeometric)
+        self.quickGeometricProteinProteinAction.setStatusTip(
+            "Change settings for geometrical protein-protein binding free-energy calculations"
+        )
+        self.quickGeometricProteinProteinAction.triggered.connect(
+            self._quickSetProteinProteinGeometric
+        )
 
         # geometrical protein ligand
-        self.quickGeometricProteinLigandAction = QAction('Protein-Ligand / Geometrical')
+        self.quickGeometricProteinLigandAction = QAction("Protein-Ligand / Geometrical")
         self.quickGeometricProteinLigandAction.setStatusTip(
-            'Change settings for geometrical protein-ligand binding free-energy calculations'
+            "Change settings for geometrical protein-ligand binding free-energy calculations"
         )
-        self.quickGeometricProteinLigandAction.triggered.connect(self._quickSetProteinLigandGeometric)
+        self.quickGeometricProteinLigandAction.triggered.connect(
+            self._quickSetProteinLigandGeometric
+        )
 
         # alchemical protein ligand
-        self.quickAlchemicalProteinLigandAction = QAction('Protein-Ligand / Alchemical')
+        self.quickAlchemicalProteinLigandAction = QAction("Protein-Ligand / Alchemical")
         self.quickAlchemicalProteinLigandAction.setStatusTip(
-            'Change settings for alchemical protein-ligand binding free-energy calculations'
+            "Change settings for alchemical protein-ligand binding free-energy calculations"
         )
-        self.quickAlchemicalProteinLigandAction.triggered.connect(self._quickSetProteinLigandAlchemical)
+        self.quickAlchemicalProteinLigandAction.triggered.connect(
+            self._quickSetProteinLigandAlchemical
+        )
 
         # LDDM
-        self.quickLDDMProteinLigandAction = QAction('Protein-Ligand / LDDM')
+        self.quickLDDMProteinLigandAction = QAction("Protein-Ligand / LDDM")
         self.quickLDDMProteinLigandAction.setStatusTip(
-            'Change settings for protein-ligand binding free-energy calculations using the LDDM strategy'
+            "Change settings for protein-ligand binding free-energy calculations using the LDDM strategy"
         )
-        self.quickLDDMProteinLigandAction.triggered.connect(self._quickSetProteinLigandLDDM)
+        self.quickLDDMProteinLigandAction.triggered.connect(
+            self._quickSetProteinLigandLDDM
+        )
 
         # LDDM
-        self.quickAISettingAction = QAction('AI-Assisted Setting')
-        self.quickAISettingAction.setStatusTip(
-            'Set up simulations using AI assistance'
-        )
+        self.quickAISettingAction = QAction("AI-Assisted Setting")
+        self.quickAISettingAction.setStatusTip("Set up simulations using AI assistance")
         self.quickAISettingAction.triggered.connect(self._quickSetAI)
 
         # help
-        self.helpAction = QAction('&Help (Deprecated)', self)
-        self.helpAction.setStatusTip('Open user manual')
+        self.helpAction = QAction("&Help (Deprecated)", self)
+        self.helpAction.setStatusTip("Open user manual")
         self.helpAction.triggered.connect(self._openDocFile)
 
         # python API
-        self.pythonAPIAction = QAction('&Python API', self)
-        self.pythonAPIAction.setStatusTip('Open Python API Documentation')
+        self.pythonAPIAction = QAction("&Python API", self)
+        self.pythonAPIAction.setStatusTip("Open Python API Documentation")
         self.pythonAPIAction.triggered.connect(self._openPythonAPIFile)
 
         # about
-        self.aboutAction = QAction('&About', self)
-        self.aboutAction.setStatusTip('About BFEEstimator')
+        self.aboutAction = QAction("&About", self)
+        self.aboutAction.setStatusTip("About BFEEstimator")
         self.aboutAction.triggered.connect(self._showAboutBox())
 
-        
     def _initMainUI(self):
-        """initialize main window
-        """
-        
+        """initialize main window"""
+
         # status bar
-        #self.statusBar()
+        # self.statusBar()
 
         # menu bar
         menubar = self.menuBar()
         menubar.setNativeMenuBar(False)
-        self.fileMenu = menubar.addMenu('&File')
+        self.fileMenu = menubar.addMenu("&File")
         self.fileMenu.addAction(self.settingsAction)
+
+        self.themeMenu = self.fileMenu.addMenu("Theme")
+        self.themeMenu.addAction(self.systemStyleAction)
+        self.themeMenu.addAction(self.modernDarkAction)
+        self.themeMenu.addAction(self.modernLightAction)
+        self.themeMenu.addAction(self.oceanBlueAction)
+        self.themeMenu.addAction(self.forestNightAction)
+        self.themeMenu.addAction(self.candyPopAction)
+
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAction)
 
-        self.quickSettingsMenu = menubar.addMenu('&Quick Settings')
+        self.quickSettingsMenu = menubar.addMenu("&Quick Settings")
         self.quickSettingsMenu.addAction(self.quickGeometricProteinProteinAction)
         self.quickSettingsMenu.addAction(self.quickGeometricProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickAlchemicalProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickLDDMProteinLigandAction)
         self.quickSettingsMenu.addAction(self.quickAISettingAction)
 
-        self.helpMenu = menubar.addMenu('&Help')
-        self.helpMenu.addAction(self.helpAction)
-        self.helpMenu.addAction(self.pythonAPIAction)
-        self.helpMenu.addSeparator()
+        self.helpMenu = menubar.addMenu("&Help")
+        # Temporarily hidden - to be restored later
+        # self.helpMenu.addAction(self.helpAction)
+        # self.helpMenu.addAction(self.pythonAPIAction)
+        # self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
 
         # main layout
         self.mainLayout = QVBoxLayout()
 
         # title
-        self.title = QLabel('Binding Free Energy Estimator')
+        self.title = QLabel("Binding Free Energy Estimator")
         titleFont = QFont()
         titleFont.setBold(True)
         self.title.setFont(titleFont)
@@ -1008,75 +1390,76 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         # tabs
         self.mainTabs = QTabWidget()
-        #self.preTreatmentTab = QWidget()
-        #self.postTreatmentTab = QWidget()
-        #self.quickPlot = QWidget()
+        # self.preTreatmentTab = QWidget()
+        # self.postTreatmentTab = QWidget()
+        # self.quickPlot = QWidget()
 
-        self.mainTabs.addTab(self.preTreatmentTab, 'Pre-treatment')
-        self.mainTabs.addTab(self.postTreatmentTab, 'Post-treatment')
-        self.mainTabs.addTab(self.quickPlot, 'Quick-Plot')
+        self.mainTabs.addTab(self.preTreatmentTab, "Pre-treatment")
+        self.mainTabs.addTab(self.postTreatmentTab, "Post-treatment")
+        self.mainTabs.addTab(self.quickPlot, "Quick-Plot")
 
         # main layout
-        #self.mainLayout.addWidget(self.titleBox)
+        # self.mainLayout.addWidget(self.titleBox)
         self.mainLayout.addWidget(self.mainTabs)
         self.mainWidgit = QWidget()
         self.mainWidgit.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidgit)
 
     def _initPreTreatmentTab(self):
-        """initialize pre-treatment tab
-        """
+        """initialize pre-treatment tab"""
 
         self.preTreatmentTab = QWidget()
-        
+
         # pre-treatment tabs
         # NAMD and gromacs
         self.preTreatmentMainTabs = QTabWidget()
 
-        self.preTreatmentMainTabs.addTab(self.NAMDTab, 'NAMD/Gromacs(CHARMM/Amber files)')
-        self.preTreatmentMainTabs.addTab(self.GromacsTab, 'Gromacs(Gromacs files)')
+        self.preTreatmentMainTabs.addTab(
+            self.NAMDTab, "NAMD/Gromacs(CHARMM/Amber files)"
+        )
+        self.preTreatmentMainTabs.addTab(self.GromacsTab, "Gromacs(Gromacs files)")
 
         self.preTreatmentMainLayout = QVBoxLayout()
         self.preTreatmentMainLayout.addWidget(self.preTreatmentMainTabs)
 
         # other parameters
-        self.otherParameters = QGroupBox('Other parameters')
+        self.otherParameters = QGroupBox("Other parameters")
         self.otherParametersLayout = QVBoxLayout()
 
         # temperature, selection protein and ligand layout
         self.otherParametersChildLayout = QGridLayout()
 
         # temperature
-        self.temperatureLabel = QLabel('Temperature:      ')
-        self.temperatureLineEdit = QLineEdit('300')
+        self.temperatureLabel = QLabel("Temperature:      ")
+        self.temperatureLineEdit = QLineEdit("300")
         self.otherParametersChildLayout.addWidget(self.temperatureLabel, 0, 0)
         self.otherParametersChildLayout.addWidget(self.temperatureLineEdit, 0, 1)
 
         # select protein
-        self.selectProteinLabel = QLabel('Select protein:   ')
-        self.selectProteineLineEdit = QLineEdit('segid SH3D')
+        self.selectProteinLabel = QLabel("Select protein:   ")
+        self.selectProteinLineEdit = QLineEdit("segid SH3D")
         self.otherParametersChildLayout.addWidget(self.selectProteinLabel, 1, 0)
-        self.otherParametersChildLayout.addWidget(self.selectProteineLineEdit, 1, 1)
+        self.otherParametersChildLayout.addWidget(self.selectProteinLineEdit, 1, 1)
 
         # select ligand
-        self.selectLigandLabel = QLabel('Select ligand:    ')
-        self.selectLigandLineEdit = QLineEdit('segid PPRO')
+        self.selectLigandLabel = QLabel("Select ligand:    ")
+        self.selectLigandLineEdit = QLineEdit("segid PPRO")
         self.otherParametersChildLayout.addWidget(self.selectLigandLabel, 2, 0)
         self.otherParametersChildLayout.addWidget(self.selectLigandLineEdit, 2, 1)
 
         # select strategy
         self.selectStrategyLayout = QHBoxLayout()
-        
-        self.selectStrategyLabel = QLabel('Select MD engine and strategy: ')
+
+        self.selectStrategyLabel = QLabel("Select MD engine and strategy: ")
         self.selectStrategyCombobox = QComboBox()
-        self.selectStrategyCombobox.addItem('Geometric')
-        self.selectStrategyCombobox.addItem('Alchemical')
-        self.selectStrategyAdvancedButton = QPushButton('Advanced settings')
-        
+        self.selectStrategyCombobox.addItem("Geometrical")
+        self.selectStrategyCombobox.addItem("Alchemical")
+        self.selectStrategyAdvancedButton = QPushButton("Advanced settings")
+
         self.selectMDEngineCombobox = QComboBox()
-        self.selectMDEngineCombobox.addItem('NAMD')
-        self.selectMDEngineCombobox.addItem('Gromacs')
-        
+        self.selectMDEngineCombobox.addItem("NAMD")
+        self.selectMDEngineCombobox.addItem("Gromacs")
+
         self.selectStrategyChildLayout = QHBoxLayout()
         self.selectStrategyChildLayout.addWidget(self.selectMDEngineCombobox)
         self.selectStrategyChildLayout.addWidget(self.selectStrategyCombobox)
@@ -1084,11 +1467,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         self.selectStrategyLayout.addWidget(self.selectStrategyLabel)
         self.selectStrategyLayout.addLayout(self.selectStrategyChildLayout)
-        
 
         # generate input button
-        self.generateInputButton = QPushButton('Generate Inputs')
- 
+        self.generateInputButton = QPushButton("Generate Inputs")
+
         self.otherParametersLayout.addLayout(self.otherParametersChildLayout)
         self.otherParametersLayout.addLayout(self.selectStrategyLayout)
         self.otherParameters.setLayout(self.otherParametersLayout)
@@ -1099,53 +1481,52 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.preTreatmentTab.setLayout(self.preTreatmentMainLayout)
 
     def _initNAMDTab(self):
-        """initialize NAMD Tab in pre-treatment Tab
-        """
+        """initialize NAMD Tab in pre-treatment Tab"""
 
         self.NAMDTab = QWidget()
         self.NAMDTabMainLayout = QVBoxLayout()
 
         # inputs for the complex
-        self.inputsForComplex = QGroupBox('Inputs for complex')
+        self.inputsForComplex = QGroupBox("Inputs for complex")
         self.inputsForComplexLayout = QGridLayout()
 
         # psf/parm
-        self.psfLabel = QLabel('psf/parm file:')
+        self.psfLabel = QLabel("psf/parm file:")
         self.psfLineEdit = QLineEdit()
-        self.psfButton = QPushButton('Browse')
+        self.psfButton = QPushButton("Browse")
         self.inputsForComplexLayout.addWidget(self.psfLabel, 0, 0)
         self.inputsForComplexLayout.addWidget(self.psfLineEdit, 0, 1)
         self.inputsForComplexLayout.addWidget(self.psfButton, 0, 2)
 
         # coor
-        self.coorLabel = QLabel('pdb/rst file:')
+        self.coorLabel = QLabel("pdb/rst file:")
         self.coorLineEdit = QLineEdit()
-        self.coorButton = QPushButton('Browse')
+        self.coorButton = QPushButton("Browse")
         self.inputsForComplexLayout.addWidget(self.coorLabel, 1, 0)
         self.inputsForComplexLayout.addWidget(self.coorLineEdit, 1, 1)
         self.inputsForComplexLayout.addWidget(self.coorButton, 1, 2)
 
         # force fields
-        self.forceFields = QGroupBox('Force fields')
+        self.forceFields = QGroupBox("Force fields")
         self.forceFieldsLayout = QVBoxLayout()
 
         # force field type
         self.forceFieldTypeLayout = QHBoxLayout()
-        self.forceFieldTypeLabel = QLabel('Force field type:')
+        self.forceFieldTypeLabel = QLabel("Force field type:")
         self.forceFieldCombobox = QComboBox()
-        self.forceFieldCombobox.addItem('CHARMM')
-        self.forceFieldCombobox.addItem('Amber')
+        self.forceFieldCombobox.addItem("CHARMM")
+        self.forceFieldCombobox.addItem("Amber")
 
         self.forceFieldTypeLayout.addWidget(self.forceFieldTypeLabel)
         self.forceFieldTypeLayout.addWidget(self.forceFieldCombobox)
 
         # CHARMM force field files
         self.forceFieldFilesLayout = QVBoxLayout()
-        self.forceFieldFilesLabel = QLabel('Force field files:')
+        self.forceFieldFilesLabel = QLabel("Force field files:")
         self.forceFieldFilesBox = QListWidget()
         self.forceFieldFilesChildLayout = QHBoxLayout()
-        self.forceFieldAddButton = QPushButton('Add')
-        self.forceFieldClearButton = QPushButton('Clear')
+        self.forceFieldAddButton = QPushButton("Add")
+        self.forceFieldClearButton = QPushButton("Clear")
         self.forceFieldFilesChildLayout.addWidget(self.forceFieldAddButton)
         self.forceFieldFilesChildLayout.addWidget(self.forceFieldClearButton)
         self.forceFieldFilesLayout.addWidget(self.forceFieldFilesLabel)
@@ -1162,76 +1543,105 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.NAMDTab.setLayout(self.NAMDTabMainLayout)
 
     def _initGromacsTab(self):
-        """initialize GMX Tab in pre-treatment Tab
-        """
+        """initialize GMX Tab in pre-treatment Tab"""
 
         self.GromacsTab = QWidget()
         self.GromacsTabMainLayout = QVBoxLayout()
 
         # inputs for the complex
-        self.GromacsInputsForComplex = QGroupBox('Inputs for complex')
+        self.GromacsInputsForComplex = QGroupBox("Inputs for complex")
         self.GromacsInputsForComplexLayout = QGridLayout()
 
         # top
-        self.topLabel = QLabel('Topology file: ')
+        self.topLabel = QLabel("Topology file: ")
         self.topLineEdit = QLineEdit()
-        self.topButton = QPushButton('Browse')
+        self.topButton = QPushButton("Browse")
         self.GromacsInputsForComplexLayout.addWidget(self.topLabel, 0, 0)
         self.GromacsInputsForComplexLayout.addWidget(self.topLineEdit, 0, 1)
         self.GromacsInputsForComplexLayout.addWidget(self.topButton, 0, 2)
 
         # gro
-        self.gromacsPdbLabel = QLabel('Structure file: ')
+        self.gromacsPdbLabel = QLabel("Structure file: ")
         self.gromacsPdbLineEdit = QLineEdit()
-        self.gromacsPdbButton = QPushButton('Browse')
+        self.gromacsPdbButton = QPushButton("Browse")
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLabel, 1, 0)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbLineEdit, 1, 1)
         self.GromacsInputsForComplexLayout.addWidget(self.gromacsPdbButton, 1, 2)
 
         # structure file format
         self.gromacsStructureFileFormatLayout = QHBoxLayout()
-        self.gromacsStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsStructureFileFormatLabel = QLabel("Structure file format:")
         self.gromacsStructureFileFormatCombobox = QComboBox()
-        self.gromacsStructureFileFormatCombobox.addItem('pdb')
-        self.gromacsStructureFileFormatCombobox.addItem('xpdb')
-        self.gromacsStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
-        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatLabel)
-        self.gromacsStructureFileFormatLayout.addWidget(self.gromacsStructureFileFormatCombobox)
-        self.GromacsInputsForComplexLayout.addLayout(self.gromacsStructureFileFormatLayout, 2, 0, 1, 3)
+        self.gromacsStructureFileFormatCombobox.addItem("pdb")
+        self.gromacsStructureFileFormatCombobox.addItem("xpdb")
+        self.gromacsStructureFileFormatCombobox.setToolTip(
+            'Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues'
+        )
+        self.gromacsStructureFileFormatLayout.addWidget(
+            self.gromacsStructureFileFormatLabel
+        )
+        self.gromacsStructureFileFormatLayout.addWidget(
+            self.gromacsStructureFileFormatCombobox
+        )
+        self.GromacsInputsForComplexLayout.addLayout(
+            self.gromacsStructureFileFormatLayout, 2, 0, 1, 3
+        )
 
         self.GromacsInputsForComplexLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsForComplex.setLayout(self.GromacsInputsForComplexLayout)
 
         # inputs for the ligand-only system
-        self.GromacsInputsLigandOnly = QGroupBox('Inputs for ligand-only system')
+        self.GromacsInputsLigandOnly = QGroupBox("Inputs for ligand-only system")
         self.GromacsInputsLigandOnlyLayout = QGridLayout()
 
         # top
-        self.gromacsLigandOnlyTopLabel = QLabel('Topology file: ')
+        self.gromacsLigandOnlyTopLabel = QLabel("Topology file: ")
         self.gromacsLigandOnlyTopLineEdit = QLineEdit()
-        self.gromacsLigandOnlyTopButton = QPushButton('Browse')
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopLabel, 0, 0)
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopLineEdit, 0, 1)
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyTopButton, 0, 2)
+        self.gromacsLigandOnlyTopButton = QPushButton("Browse")
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyTopLabel, 0, 0
+        )
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyTopLineEdit, 0, 1
+        )
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyTopButton, 0, 2
+        )
 
         # gro
-        self.gromacsLigandOnlyPdbLabel = QLabel('Structure file: ')
+        self.gromacsLigandOnlyPdbLabel = QLabel("Structure file: ")
         self.gromacsLigandOnlyPdbLineEdit = QLineEdit()
-        self.gromacsLigandOnlyPdbButton = QPushButton('Browse')
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLabel, 1, 0)
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbLineEdit, 1, 1)
-        self.GromacsInputsLigandOnlyLayout.addWidget(self.gromacsLigandOnlyPdbButton, 1, 2)
+        self.gromacsLigandOnlyPdbButton = QPushButton("Browse")
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyPdbLabel, 1, 0
+        )
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyPdbLineEdit, 1, 1
+        )
+        self.GromacsInputsLigandOnlyLayout.addWidget(
+            self.gromacsLigandOnlyPdbButton, 1, 2
+        )
 
         # structure file format
         self.gromacsLigandOnlyStructureFileFormatLayout = QHBoxLayout()
-        self.gromacsLigandOnlyStructureFileFormatLabel = QLabel('Structure file format:')
+        self.gromacsLigandOnlyStructureFileFormatLabel = QLabel(
+            "Structure file format:"
+        )
         self.gromacsLigandOnlyStructureFileFormatCombobox = QComboBox()
-        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('pdb')
-        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem('xpdb')
-        self.gromacsLigandOnlyStructureFileFormatCombobox.setToolTip('Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues')
-        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatLabel)
-        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(self.gromacsLigandOnlyStructureFileFormatCombobox)
-        self.GromacsInputsLigandOnlyLayout.addLayout(self.gromacsLigandOnlyStructureFileFormatLayout, 2, 0, 1, 3)
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem("pdb")
+        self.gromacsLigandOnlyStructureFileFormatCombobox.addItem("xpdb")
+        self.gromacsLigandOnlyStructureFileFormatCombobox.setToolTip(
+            'Select "<b>xpdb</b>" if your PDB file has more than 9,999 number of residues'
+        )
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(
+            self.gromacsLigandOnlyStructureFileFormatLabel
+        )
+        self.gromacsLigandOnlyStructureFileFormatLayout.addWidget(
+            self.gromacsLigandOnlyStructureFileFormatCombobox
+        )
+        self.GromacsInputsLigandOnlyLayout.addLayout(
+            self.gromacsLigandOnlyStructureFileFormatLayout, 2, 0, 1, 3
+        )
 
         self.GromacsInputsLigandOnlyLayout.addWidget(QSplitter(), 3, 1)
         self.GromacsInputsLigandOnly.setLayout(self.GromacsInputsLigandOnlyLayout)
@@ -1242,107 +1652,151 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.GromacsTab.setLayout(self.GromacsTabMainLayout)
 
     def _initPostTreatmentTab(self):
-        """initialize pre-treatment tab
-        """
+        """initialize pre-treatment tab"""
 
         self.postTreatmentTab = QWidget()
 
         # post-treatment tabs
-        # Geometric and alchemical
+        # Geometrical and alchemical
         self.postTreatmentMainTabs = QTabWidget()
 
-        self.postTreatmentMainTabs.addTab(self.geometricTab, 'Geometric')
-        self.postTreatmentMainTabs.addTab(self.alchemicalTab, 'Alchemical')
-        self.postTreatmentMainTabs.addTab(self.LDDMTab, 'LDDM')
+        self.postTreatmentMainTabs.addTab(self.geometricTab, "Geometrical")
+        self.postTreatmentMainTabs.addTab(self.alchemicalTab, "Alchemical")
+        self.postTreatmentMainTabs.addTab(self.LDDMTab, "LDDM")
 
         self.postTreatmentMainLayout = QVBoxLayout()
         self.postTreatmentMainLayout.addWidget(self.postTreatmentMainTabs)
 
-        self.calculateButton = QPushButton('Calculate binding free energy')
+        self.calculateButton = QPushButton("Calculate binding free energy")
         self.postTreatmentMainLayout.addWidget(self.calculateButton)
 
         self.postTreatmentTab.setLayout(self.postTreatmentMainLayout)
 
     def _initGeometricTab(self):
-        """initialize geometric tab of post-treatment
-        """
+        """initialize geometrical tab of post-treatment"""
 
         self.geometricTab = QWidget()
         self.geometricTabLayout = QVBoxLayout()
 
+        # ligand flexibility
+        self.ligandFlexibilityLayout = QHBoxLayout()
+        self.geometricFlexibleLigandRadioButton = QRadioButton("Flexible ligand")
+        self.geometricRigidLigandRadioButton = QRadioButton(
+            "Rigid ligand/Protein-Protein"
+        )
+        self.geometricFlexibleLigandRadioButton.setChecked(True)
+
+        self.ligandFlexibilityButtonGroup = QButtonGroup(self)
+        self.ligandFlexibilityButtonGroup.addButton(
+            self.geometricFlexibleLigandRadioButton
+        )
+        self.ligandFlexibilityButtonGroup.addButton(
+            self.geometricRigidLigandRadioButton
+        )
+
+        self.ligandFlexibilityLayout.addStretch(1)
+        self.ligandFlexibilityLayout.addWidget(self.geometricFlexibleLigandRadioButton)
+        self.ligandFlexibilityLayout.addWidget(self.geometricRigidLigandRadioButton)
+
+        # separator
+        self.ligandFlexibilitySeparator = QLabel("|")
+        self.ligandFlexibilityLayout.addWidget(self.ligandFlexibilitySeparator)
+
+        # PMF type radio buttons
+        self.geometricPlainPmfRadioButton = QRadioButton("Plain PMFs")
+        self.geometricHistoryPmfRadioButton = QRadioButton(
+            "History PMFs (error estimation)"
+        )
+        self.geometricPlainPmfRadioButton.setChecked(True)
+
+        self.geometricPmfTypeButtonGroup = QButtonGroup(self)
+        self.geometricPmfTypeButtonGroup.addButton(self.geometricPlainPmfRadioButton)
+        self.geometricPmfTypeButtonGroup.addButton(self.geometricHistoryPmfRadioButton)
+
+        self.ligandFlexibilityLayout.addWidget(self.geometricPlainPmfRadioButton)
+        self.ligandFlexibilityLayout.addWidget(self.geometricHistoryPmfRadioButton)
+        self.ligandFlexibilityLayout.addStretch(1)
+
+        self.geometricFlexibleLigandRadioButton.toggled.connect(
+            self._toggleGeometricLigandFlexibility
+        )
+        self.geometricPlainPmfRadioButton.toggled.connect(self._toggleGeometricPmfType)
+
+        self.geometricTabLayout.addLayout(self.ligandFlexibilityLayout)
+
         # pmf inputs
-        self.pmfInputs = QGroupBox('PMF inputs (.czar.pmf/.UI.pmf):')
+        self.pmfInputs = QGroupBox("Merged PMF inputs (.czar.pmf/.UI.pmf):")
         self.pmfInputsLayout = QVBoxLayout()
 
         # bound stats
-        self.boundStateLabel = QLabel('Bound state:')
+        self.boundStateLabel = QLabel("Bound state:")
         self.boundStateLayout = QGridLayout()
 
         # RMSD
-        self.rmsdBoundLabel = QLabel('RMSD: ')
+        self.rmsdBoundLabel = QLabel("RMSD: ")
         self.rmsdBoundLineEdit = QLineEdit()
-        self.rmsdBoundButton = QPushButton('Browse')
+        self.rmsdBoundButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.rmsdBoundLabel, 0, 0)
         self.boundStateLayout.addWidget(self.rmsdBoundLineEdit, 0, 1)
         self.boundStateLayout.addWidget(self.rmsdBoundButton, 0, 2)
 
         # Theta
-        self.ThetaLabel = QLabel('Theta:')
+        self.ThetaLabel = QLabel("Theta:")
         self.ThetaLineEdit = QLineEdit()
-        self.ThetaButton = QPushButton('Browse')
+        self.ThetaButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.ThetaLabel, 1, 0)
         self.boundStateLayout.addWidget(self.ThetaLineEdit, 1, 1)
         self.boundStateLayout.addWidget(self.ThetaButton, 1, 2)
 
         # Phi
-        self.PhiLabel = QLabel('Phi:  ')
+        self.PhiLabel = QLabel("Phi:  ")
         self.PhiLineEdit = QLineEdit()
-        self.PhiButton = QPushButton('Browse')
+        self.PhiButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.PhiLabel, 2, 0)
         self.boundStateLayout.addWidget(self.PhiLineEdit, 2, 1)
         self.boundStateLayout.addWidget(self.PhiButton, 2, 2)
 
         # Psi
-        self.PsiLabel = QLabel('Psi:  ')
+        self.PsiLabel = QLabel("Psi:  ")
         self.PsiLineEdit = QLineEdit()
-        self.PsiButton = QPushButton('Browse')
+        self.PsiButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.PsiLabel, 3, 0)
         self.boundStateLayout.addWidget(self.PsiLineEdit, 3, 1)
         self.boundStateLayout.addWidget(self.PsiButton, 3, 2)
 
         # theta
         self.thetaLayout = QHBoxLayout()
-        self.thetaLabel = QLabel('theta:')
+        self.thetaLabel = QLabel("theta:")
         self.thetaLineEdit = QLineEdit()
-        self.thetaButton = QPushButton('Browse')
+        self.thetaButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.thetaLabel, 4, 0)
         self.boundStateLayout.addWidget(self.thetaLineEdit, 4, 1)
         self.boundStateLayout.addWidget(self.thetaButton, 4, 2)
 
         # phi
         self.phiLayout = QHBoxLayout()
-        self.phiLabel = QLabel('phi:  ')
+        self.phiLabel = QLabel("phi:  ")
         self.phiLineEdit = QLineEdit()
-        self.phiButton = QPushButton('Browse')
+        self.phiButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.phiLabel, 5, 0)
         self.boundStateLayout.addWidget(self.phiLineEdit, 5, 1)
         self.boundStateLayout.addWidget(self.phiButton, 5, 2)
 
         # r
-        self.rLabel = QLabel('r:    ')
+        self.rLabel = QLabel("r:    ")
         self.rLineEdit = QLineEdit()
-        self.rButton = QPushButton('Browse')
+        self.rButton = QPushButton("Browse")
         self.boundStateLayout.addWidget(self.rLabel, 6, 0)
         self.boundStateLayout.addWidget(self.rLineEdit, 6, 1)
         self.boundStateLayout.addWidget(self.rButton, 6, 2)
 
-        self.unboundStateLabel = QLabel('Unbound state:')
+        self.unboundStateLabel = QLabel("Unbound state:")
 
         # RMSD unbound
         self.rmsdUnboundLayout = QHBoxLayout()
-        self.rmsdUnboundLabel = QLabel('RMSD: ')
+        self.rmsdUnboundLabel = QLabel("RMSD: ")
         self.rmsdUnboundLineEdit = QLineEdit()
-        self.rmsdUnboundButton = QPushButton('Browse')
+        self.rmsdUnboundButton = QPushButton("Browse")
         self.rmsdUnboundLayout.addWidget(self.rmsdUnboundLabel)
         self.rmsdUnboundLayout.addWidget(self.rmsdUnboundLineEdit)
         self.rmsdUnboundLayout.addWidget(self.rmsdUnboundButton)
@@ -1355,24 +1809,24 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.pmfInputs.setLayout(self.pmfInputsLayout)
 
         # force constants
-        self.forceConstants = QGroupBox('Force constants (in Colvars unit):')
+        self.forceConstants = QGroupBox("Force constants (in Colvars unit):")
         self.forceConstantsLayout = QGridLayout()
 
-        self.fcBoundStateLabel = QLabel('Bound state:')
+        self.fcBoundStateLabel = QLabel("Bound state:")
 
         # all widgets
-        self.fcRMSDLabel = QLabel('RMSD:')
-        self.fcRMSDLineEdit = QLineEdit('10')
-        self.fcThetaLabel = QLabel('Theta:')
-        self.fcThetaLineEdit = QLineEdit('0.1')
-        self.fcPhiLabel = QLabel('Phi:')
-        self.fcPhiLineEdit = QLineEdit('0.1')
-        self.fcPsiLabel = QLabel('Psi:')
-        self.fcPsiLineEdit = QLineEdit('0.1')
-        self.fcthetaLabel = QLabel('theta:')
-        self.fcthetaLineEdit = QLineEdit('0.1')
-        self.fcphiLabel = QLabel('phi:')
-        self.fcphiLineEdit = QLineEdit('0.1')
+        self.fcRMSDLabel = QLabel("RMSD:")
+        self.fcRMSDLineEdit = QLineEdit("10")
+        self.fcThetaLabel = QLabel("Theta:")
+        self.fcThetaLineEdit = QLineEdit("0.1")
+        self.fcPhiLabel = QLabel("Phi:")
+        self.fcPhiLineEdit = QLineEdit("0.1")
+        self.fcPsiLabel = QLabel("Psi:")
+        self.fcPsiLineEdit = QLineEdit("0.1")
+        self.fcthetaLabel = QLabel("theta:")
+        self.fcthetaLineEdit = QLineEdit("0.1")
+        self.fcphiLabel = QLabel("phi:")
+        self.fcphiLineEdit = QLineEdit("0.1")
 
         self.forceConstantsLayout.addWidget(self.fcRMSDLabel, 0, 0)
         self.forceConstantsLayout.addWidget(self.fcRMSDLineEdit, 0, 1)
@@ -1390,17 +1844,17 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.forceConstants.setLayout(self.forceConstantsLayout)
 
         # other parameters
-        self.postOtherParams = QGroupBox('Other parameters:')
+        self.postOtherParams = QGroupBox("Other parameters:")
         self.postOtherParamsLayout = QHBoxLayout()
 
-        self.postTemperatureLabel = QLabel('temperature:')
-        self.postTemperatureLineEdit = QLineEdit('300')
-        self.postRstarLabel = QLabel(' r*:')
-        self.postRstarLineEdit = QLineEdit('30')
-        self.postPMFTypeLabel = QLabel(' PMF type:')
+        self.postTemperatureLabel = QLabel("temperature:")
+        self.postTemperatureLineEdit = QLineEdit("300")
+        self.postRstarLabel = QLabel(" r*:")
+        self.postRstarLineEdit = QLineEdit("30")
+        self.postPMFTypeLabel = QLabel(" PMF type:")
         self.postPMFTypeBox = QComboBox()
-        self.postPMFTypeBox.addItem('NAMD')
-        self.postPMFTypeBox.addItem('Gromacs')
+        self.postPMFTypeBox.addItem("NAMD")
+        self.postPMFTypeBox.addItem("Gromacs")
 
         self.postOtherParamsLayout.addWidget(self.postTemperatureLabel)
         self.postOtherParamsLayout.addWidget(self.postTemperatureLineEdit)
@@ -1411,7 +1865,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
         self.postOtherParams.setLayout(self.postOtherParamsLayout)
 
-        self.fcBoundStateLabel = QLabel('Bound state:')
+        self.fcBoundStateLabel = QLabel("Bound state:")
 
         self.geometricTabLayout.addWidget(self.pmfInputs)
         self.geometricTabLayout.addWidget(self.forceConstants)
@@ -1419,86 +1873,157 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.geometricTab.setLayout(self.geometricTabLayout)
 
     def _initAlchemicalTab(self):
-        """initialize alchemical tab of post-treatment
-        """
+        """initialize alchemical tab of post-treatment"""
 
         self.alchemicalTab = QWidget()
         self.alchemicalTabLayout = QVBoxLayout()
 
-        
-        self.restraintInputs = QGroupBox('Inputs for alchemical simulations (.fepout/.pmf/.log):')
+        # FEP method and ligand flexibility radio buttons (all in one row)
+        self.alchemicalMethodLayout = QHBoxLayout()
+
+        # FEP method selection
+        self.alchemicalBidirectionalFEPRadio = QRadioButton("Bidirectional FEP")
+        self.alchemicalDoubleWideFEPRadio = QRadioButton("Double-wide FEP")
+        self.alchemicalWTMABFRadio = QRadioButton("WTM-λABF")
+        self.alchemicalBidirectionalFEPRadio.setChecked(True)  # Default selection
+
+        self.alchemicalMethodButtonGroup = QButtonGroup(self)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalBidirectionalFEPRadio)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalDoubleWideFEPRadio)
+        self.alchemicalMethodButtonGroup.addButton(self.alchemicalWTMABFRadio)
+
+        # Ligand flexibility selection
+        self.alchemicalFlexibleLigandRadio = QRadioButton("Flexible ligand")
+        self.alchemicalRigidLigandRadio = QRadioButton("Rigid ligand")
+        self.alchemicalFlexibleLigandRadio.setChecked(True)  # Default selection
+
+        self.alchemicalLigandFlexibilityButtonGroup = QButtonGroup(self)
+        self.alchemicalLigandFlexibilityButtonGroup.addButton(
+            self.alchemicalFlexibleLigandRadio
+        )
+        self.alchemicalLigandFlexibilityButtonGroup.addButton(
+            self.alchemicalRigidLigandRadio
+        )
+
+        # Add all to layout with separator
+        self.alchemicalMethodLayout.addStretch(1)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalBidirectionalFEPRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalDoubleWideFEPRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalWTMABFRadio)
+        self.alchemicalMethodLayout.addWidget(QLabel("  |  "))  # Separator
+        self.alchemicalMethodLayout.addWidget(self.alchemicalFlexibleLigandRadio)
+        self.alchemicalMethodLayout.addWidget(self.alchemicalRigidLigandRadio)
+        self.alchemicalMethodLayout.addStretch(1)
+
+        # Connect radio buttons to state change handlers
+        self.alchemicalBidirectionalFEPRadio.toggled.connect(
+            self._toggleAlchemicalMethod
+        )
+        self.alchemicalDoubleWideFEPRadio.toggled.connect(self._toggleAlchemicalMethod)
+        self.alchemicalWTMABFRadio.toggled.connect(self._toggleAlchemicalMethod)
+        self.alchemicalFlexibleLigandRadio.toggled.connect(
+            self._toggleAlchemicalLigandFlexibility
+        )
+
+        self.alchemicalTabLayout.addLayout(self.alchemicalMethodLayout)
+
+        self.restraintInputs = QGroupBox(
+            "Inputs for alchemical simulations (.fepout/.hist.pmf/.log):"
+        )
         self.restraintInputsLayout = QVBoxLayout()
 
         # bound state
-        self.alchemicalBoundStateLabel = QLabel('Atoms/Bound state (.fepout/.pmf):')
+        self.alchemicalBoundStateLabel = QLabel("Atoms/Bound state (.fepout/.pmf):")
         self.alchemicalBoundStateLayout = QGridLayout()
-        
-        self.alchemicalForwardLabel1 = QLabel('Forward:')
+
+        self.alchemicalForwardLabel1 = QLabel("Forward:")
         self.alchemicalForwardLineEdit1 = QLineEdit()
-        self.alchemicalForwardButton1 = QPushButton('Browse')
+        self.alchemicalForwardButton1 = QPushButton("Browse")
         self.alchemicalBoundStateLayout.addWidget(self.alchemicalForwardLabel1, 0, 0)
         self.alchemicalBoundStateLayout.addWidget(self.alchemicalForwardLineEdit1, 0, 1)
         self.alchemicalBoundStateLayout.addWidget(self.alchemicalForwardButton1, 0, 2)
 
-        self.alchemicalBackwardLabel1 = QLabel('Backward:')
+        self.alchemicalBackwardLabel1 = QLabel("Backward:")
         self.alchemicalBackwardLineEdit1 = QLineEdit()
-        self.alchemicalBackwardButton1 = QPushButton('Browse')
+        self.alchemicalBackwardButton1 = QPushButton("Browse")
         self.alchemicalBoundStateLayout.addWidget(self.alchemicalBackwardLabel1, 1, 0)
-        self.alchemicalBoundStateLayout.addWidget(self.alchemicalBackwardLineEdit1, 1, 1)
+        self.alchemicalBoundStateLayout.addWidget(
+            self.alchemicalBackwardLineEdit1, 1, 1
+        )
         self.alchemicalBoundStateLayout.addWidget(self.alchemicalBackwardButton1, 1, 2)
 
-        self.alchemicalBoundStateLabel2 = QLabel('Restraints/Bound state (.log):')
+        self.alchemicalBoundStateLabel2 = QLabel("Restraints/Bound state (.log):")
         self.alchemicalBoundStateLayout2 = QGridLayout()
-        
-        self.alchemicalForwardLabel2 = QLabel('Forward:')
+
+        self.alchemicalForwardLabel2 = QLabel("Forward:")
         self.alchemicalForwardLineEdit2 = QLineEdit()
-        self.alchemicalForwardButton2 = QPushButton('Browse')
+        self.alchemicalForwardButton2 = QPushButton("Browse")
         self.alchemicalBoundStateLayout2.addWidget(self.alchemicalForwardLabel2, 0, 0)
-        self.alchemicalBoundStateLayout2.addWidget(self.alchemicalForwardLineEdit2, 0, 1)
+        self.alchemicalBoundStateLayout2.addWidget(
+            self.alchemicalForwardLineEdit2, 0, 1
+        )
         self.alchemicalBoundStateLayout2.addWidget(self.alchemicalForwardButton2, 0, 2)
 
-        self.alchemicalBackwardLabel2 = QLabel('Backward:')
+        self.alchemicalBackwardLabel2 = QLabel("Backward:")
         self.alchemicalBackwardLineEdit2 = QLineEdit()
-        self.alchemicalBackwardButton2 = QPushButton('Browse')
+        self.alchemicalBackwardButton2 = QPushButton("Browse")
         self.alchemicalBoundStateLayout2.addWidget(self.alchemicalBackwardLabel2, 1, 0)
-        self.alchemicalBoundStateLayout2.addWidget(self.alchemicalBackwardLineEdit2, 1, 1)
+        self.alchemicalBoundStateLayout2.addWidget(
+            self.alchemicalBackwardLineEdit2, 1, 1
+        )
         self.alchemicalBoundStateLayout2.addWidget(self.alchemicalBackwardButton2, 1, 2)
 
         # unbound state
 
-        self.alchemicalUnboundStateLabel = QLabel('Atoms/Unbound state (.fepout/.pmf):')
+        self.alchemicalUnboundStateLabel = QLabel("Atoms/Unbound state (.fepout/.pmf):")
         self.alchemicalUnboundStateLayout = QGridLayout()
-        
-        self.alchemicalForwardLabel3 = QLabel('Forward:')
+
+        self.alchemicalForwardLabel3 = QLabel("Forward:")
         self.alchemicalForwardLineEdit3 = QLineEdit()
-        self.alchemicalForwardButton3 = QPushButton('Browse')
+        self.alchemicalForwardButton3 = QPushButton("Browse")
         self.alchemicalUnboundStateLayout.addWidget(self.alchemicalForwardLabel3, 0, 0)
-        self.alchemicalUnboundStateLayout.addWidget(self.alchemicalForwardLineEdit3, 0, 1)
+        self.alchemicalUnboundStateLayout.addWidget(
+            self.alchemicalForwardLineEdit3, 0, 1
+        )
         self.alchemicalUnboundStateLayout.addWidget(self.alchemicalForwardButton3, 0, 2)
 
-        self.alchemicalBackwardLabel3 = QLabel('Backward:')
+        self.alchemicalBackwardLabel3 = QLabel("Backward:")
         self.alchemicalBackwardLineEdit3 = QLineEdit()
-        self.alchemicalBackwardButton3 = QPushButton('Browse')
+        self.alchemicalBackwardButton3 = QPushButton("Browse")
         self.alchemicalUnboundStateLayout.addWidget(self.alchemicalBackwardLabel3, 1, 0)
-        self.alchemicalUnboundStateLayout.addWidget(self.alchemicalBackwardLineEdit3, 1, 1)
-        self.alchemicalUnboundStateLayout.addWidget(self.alchemicalBackwardButton3, 1, 2)
+        self.alchemicalUnboundStateLayout.addWidget(
+            self.alchemicalBackwardLineEdit3, 1, 1
+        )
+        self.alchemicalUnboundStateLayout.addWidget(
+            self.alchemicalBackwardButton3, 1, 2
+        )
 
-        self.alchemicalUnboundStateLabel2 = QLabel('Restraints/Unbound state (.log):')
+        self.alchemicalUnboundStateLabel2 = QLabel("Restraints/Unbound state (.log):")
         self.alchemicalUnboundStateLayout2 = QGridLayout()
-        
-        self.alchemicalForwardLabel4 = QLabel('Forward:')
-        self.alchemicalForwardLineEdit4 = QLineEdit()
-        self.alchemicalForwardButton4 = QPushButton('Browse')
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalForwardLabel4, 0, 0)
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalForwardLineEdit4, 0, 1)
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalForwardButton4, 0, 2)
 
-        self.alchemicalBackwardLabel4 = QLabel('Backward:')
+        self.alchemicalForwardLabel4 = QLabel("Forward:")
+        self.alchemicalForwardLineEdit4 = QLineEdit()
+        self.alchemicalForwardButton4 = QPushButton("Browse")
+        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalForwardLabel4, 0, 0)
+        self.alchemicalUnboundStateLayout2.addWidget(
+            self.alchemicalForwardLineEdit4, 0, 1
+        )
+        self.alchemicalUnboundStateLayout2.addWidget(
+            self.alchemicalForwardButton4, 0, 2
+        )
+
+        self.alchemicalBackwardLabel4 = QLabel("Backward:")
         self.alchemicalBackwardLineEdit4 = QLineEdit()
-        self.alchemicalBackwardButton4 = QPushButton('Browse')
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalBackwardLabel4, 1, 0)
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalBackwardLineEdit4, 1, 1)
-        self.alchemicalUnboundStateLayout2.addWidget(self.alchemicalBackwardButton4, 1, 2)
+        self.alchemicalBackwardButton4 = QPushButton("Browse")
+        self.alchemicalUnboundStateLayout2.addWidget(
+            self.alchemicalBackwardLabel4, 1, 0
+        )
+        self.alchemicalUnboundStateLayout2.addWidget(
+            self.alchemicalBackwardLineEdit4, 1, 1
+        )
+        self.alchemicalUnboundStateLayout2.addWidget(
+            self.alchemicalBackwardButton4, 1, 2
+        )
 
         self.restraintInputsLayout.addWidget(self.alchemicalBoundStateLabel)
         self.restraintInputsLayout.addLayout(self.alchemicalBoundStateLayout)
@@ -1511,22 +2036,22 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.restraintInputs.setLayout(self.restraintInputsLayout)
 
         # alchemical force constants
-        self.alchemicalForceConstants = QGroupBox('Force constants (in Colvars unit):')
+        self.alchemicalForceConstants = QGroupBox("Force constants (in Colvars unit):")
 
         # all widgets
         self.alchemicalFCLayout = QHBoxLayout()
-        self.alchemicalfcThetaLabel = QLabel('Theta:')
-        self.alchemicalfcThetaLineEdit = QLineEdit('0.1')
-        self.alchemicalfcPhiLabel = QLabel(' Phi: ')
-        self.alchemicalfcPhiLineEdit = QLineEdit('0.1')
-        self.alchemicalfcPsiLabel = QLabel('Psi:  ')
-        self.alchemicalfcPsiLineEdit = QLineEdit('0.1')
-        self.alchemicalfcthetaLabel = QLabel('theta:')
-        self.alchemicalfcthetaLineEdit = QLineEdit('0.1')
-        self.alchemicalfcphiLabel = QLabel(' phi: ')
-        self.alchemicalfcphiLineEdit = QLineEdit('0.1')
-        self.alchemicalfcRLabel = QLabel('r: ')
-        self.alchemicalfcRLineEdit = QLineEdit('10')
+        self.alchemicalfcThetaLabel = QLabel("Theta:")
+        self.alchemicalfcThetaLineEdit = QLineEdit("0.1")
+        self.alchemicalfcPhiLabel = QLabel(" Phi: ")
+        self.alchemicalfcPhiLineEdit = QLineEdit("0.1")
+        self.alchemicalfcPsiLabel = QLabel("Psi:  ")
+        self.alchemicalfcPsiLineEdit = QLineEdit("0.1")
+        self.alchemicalfcthetaLabel = QLabel("theta:")
+        self.alchemicalfcthetaLineEdit = QLineEdit("0.1")
+        self.alchemicalfcphiLabel = QLabel(" phi: ")
+        self.alchemicalfcphiLineEdit = QLineEdit("0.1")
+        self.alchemicalfcRLabel = QLabel("r: ")
+        self.alchemicalfcRLineEdit = QLineEdit("10")
 
         self.alchemicalFCLayout.addWidget(self.alchemicalfcThetaLabel)
         self.alchemicalFCLayout.addWidget(self.alchemicalfcThetaLineEdit)
@@ -1544,23 +2069,25 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.alchemicalForceConstants.setLayout(self.alchemicalFCLayout)
 
         # alchemical restraint centers
-        self.alchemicalRestraintCenters = QGroupBox('Restraint centers (in Colvars unit), temperature and others:')
+        self.alchemicalRestraintCenters = QGroupBox(
+            "Restraint centers (in Colvars unit), temperature and others:"
+        )
 
         # all widgets
         self.alchemicalRCLayout = QHBoxLayout()
-        self.alchemicalRCThetaLabel = QLabel('Theta:')
-        self.alchemicalRCThetaLineEdit = QLineEdit('0')
-        self.alchemicalRCthetaLabel = QLabel('theta:')
-        self.alchemicalRCthetaLineEdit = QLineEdit('90')
-        self.alchemicalRCRLabel = QLabel('r: ')
-        self.alchemicalRCRLineEdit = QLineEdit('8')
-        self.alchemicalPostTemperatureLabel = QLabel('temperature:')
-        self.alchemicalPostTemperatureLineEdit = QLineEdit('300')
-        self.alchemicalPostTypeLabel = QLabel('Post-treatment type:')
+        self.alchemicalRCThetaLabel = QLabel("Theta:")
+        self.alchemicalRCThetaLineEdit = QLineEdit("0")
+        self.alchemicalRCthetaLabel = QLabel("theta:")
+        self.alchemicalRCthetaLineEdit = QLineEdit("90")
+        self.alchemicalRCRLabel = QLabel("r: ")
+        self.alchemicalRCRLineEdit = QLineEdit("8")
+        self.alchemicalPostTemperatureLabel = QLabel("temperature:")
+        self.alchemicalPostTemperatureLineEdit = QLineEdit("300")
+        self.alchemicalPostTypeLabel = QLabel("Post-treatment type:")
         self.alchemicalPostTypeBox = QComboBox()
-        self.alchemicalPostTypeBox.addItem('FEP')
-        self.alchemicalPostTypeBox.addItem('BAR')
-        self.alchemicalPostTypeBox.addItem('PMF')
+        self.alchemicalPostTypeBox.addItem("FEP")
+        self.alchemicalPostTypeBox.addItem("BAR")
+        self.alchemicalPostTypeBox.addItem("PMF")
         self.alchemicalPostTypeBox.setCurrentIndex(1)
 
         self.alchemicalRCLayout.addWidget(self.alchemicalRCThetaLabel)
@@ -1582,47 +2109,45 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.alchemicalTab.setLayout(self.alchemicalTabLayout)
 
     def _initLDDMTab(self):
-        """initialize LDDM tab of post-treatment
-        """
+        """initialize LDDM tab of post-treatment"""
 
         self.LDDMTab = QWidget()
         self.LDDMTabLayout = QVBoxLayout()
 
-        
-        self.LDDMSimulationInputs = QGroupBox('Inputs for LDDM simulations:')
+        self.LDDMSimulationInputs = QGroupBox("Inputs for LDDM simulations:")
         self.LDDMSimulationInputsLayout = QVBoxLayout()
 
         # step 1
-        self.LDDMStep1Label = QLabel('Step 1:')
+        self.LDDMStep1Label = QLabel("Step 1:")
         self.LDDMStep1Layout = QGridLayout()
-        
-        self.LDDMStep1ColvarsLabel = QLabel('colvars.in.tmp file:')
+
+        self.LDDMStep1ColvarsLabel = QLabel("colvars.in.tmp file:")
         self.LDDMStep1ColvarsLineEdit = QLineEdit()
-        self.LDDMStep1ColvarsButton = QPushButton('Browse')
+        self.LDDMStep1ColvarsButton = QPushButton("Browse")
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLabel, 0, 0)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsLineEdit, 0, 1)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsButton, 0, 2)
 
-        self.LDDMStep1ColvarsTrajLabel = QLabel('colvars.traj file:')
+        self.LDDMStep1ColvarsTrajLabel = QLabel("colvars.traj file:")
         self.LDDMStep1ColvarsTrajLineEdit = QLineEdit()
-        self.LDDMStep1ColvarsTrajButton = QPushButton('Browse')
+        self.LDDMStep1ColvarsTrajButton = QPushButton("Browse")
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLabel, 1, 0)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajLineEdit, 1, 1)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1ColvarsTrajButton, 1, 2)
 
-        self.LDDMStep1FepoutLabel = QLabel('fepout file:')
+        self.LDDMStep1FepoutLabel = QLabel("fepout file:")
         self.LDDMStep1FepoutLineEdit = QLineEdit()
-        self.LDDMStep1FepoutButton = QPushButton('Browse')
+        self.LDDMStep1FepoutButton = QPushButton("Browse")
         self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLabel, 2, 0)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutLineEdit, 2, 1)
         self.LDDMStep1Layout.addWidget(self.LDDMStep1FepoutButton, 2, 2)
 
-        self.LDDMStep3Label = QLabel('Step 3:')
+        self.LDDMStep3Label = QLabel("Step 3:")
         self.LDDMStep3Layout = QGridLayout()
-        
-        self.LDDMStep3FepoutLabel = QLabel('fepout file:            ')
+
+        self.LDDMStep3FepoutLabel = QLabel("fepout file:            ")
         self.LDDMStep3FepoutLineEdit = QLineEdit()
-        self.LDDMStep3FepoutButton = QPushButton('Browse')
+        self.LDDMStep3FepoutButton = QPushButton("Browse")
         self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLabel, 0, 0)
         self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutLineEdit, 0, 1)
         self.LDDMStep3Layout.addWidget(self.LDDMStep3FepoutButton, 0, 2)
@@ -1634,30 +2159,36 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.LDDMSimulationInputs.setLayout(self.LDDMSimulationInputsLayout)
 
         # other parameter
-        self.LDDMParameters = QGroupBox('Other parameters:')
+        self.LDDMParameters = QGroupBox("Other parameters:")
 
         # all widgets
         self.LDDMParametersLayout = QGridLayout()
-        self.LDDMStep1StepsPerWindowLabel = QLabel('Steps per window (Step 1):')
-        self.LDDMStep1StepsPerWindowLineEdit = QLineEdit('500000')
-        self.LDDMStep1EquilStepsPerWindowLabel = QLabel('Equilbration per window (Step 1): ')
-        self.LDDMStep1EquilStepsPerWindowLineEdit = QLineEdit('100000')
-        self.LDDMStep1WindowsLabel = QLabel('Windows (Step 1):  ')
-        self.LDDMStep1WindowsLineEdit = QLineEdit('200')
-        self.LDDMPostTemperatureLabel = QLabel('temperature:')
-        self.LDDMPostTemperatureLineEdit = QLineEdit('300')
-        self.LDDMPostTypeLabel = QLabel('Post-treatment type:')
+        self.LDDMStep1StepsPerWindowLabel = QLabel("Steps per window (Step 1):")
+        self.LDDMStep1StepsPerWindowLineEdit = QLineEdit("500000")
+        self.LDDMStep1EquilStepsPerWindowLabel = QLabel(
+            "Equilbration per window (Step 1): "
+        )
+        self.LDDMStep1EquilStepsPerWindowLineEdit = QLineEdit("100000")
+        self.LDDMStep1WindowsLabel = QLabel("Windows (Step 1):  ")
+        self.LDDMStep1WindowsLineEdit = QLineEdit("200")
+        self.LDDMPostTemperatureLabel = QLabel("temperature:")
+        self.LDDMPostTemperatureLineEdit = QLineEdit("300")
+        self.LDDMPostTypeLabel = QLabel("Post-treatment type:")
         self.LDDMPostTypeBox = QComboBox()
-        self.LDDMPostTypeBox.addItem('FEP')
-        self.LDDMPostTypeBox.addItem('BAR')
+        self.LDDMPostTypeBox.addItem("FEP")
+        self.LDDMPostTypeBox.addItem("BAR")
         self.LDDMPostTypeBox.setCurrentIndex(1)
 
         self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLabel, 0, 0)
         self.LDDMParametersLayout.addWidget(self.LDDMStep1StepsPerWindowLineEdit, 0, 1)
         self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLabel, 0, 2)
         self.LDDMParametersLayout.addWidget(self.LDDMStep1WindowsLineEdit, 0, 3)
-        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLabel, 1, 0)
-        self.LDDMParametersLayout.addWidget(self.LDDMStep1EquilStepsPerWindowLineEdit, 1, 1)
+        self.LDDMParametersLayout.addWidget(
+            self.LDDMStep1EquilStepsPerWindowLabel, 1, 0
+        )
+        self.LDDMParametersLayout.addWidget(
+            self.LDDMStep1EquilStepsPerWindowLineEdit, 1, 1
+        )
         self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLabel, 1, 2)
         self.LDDMParametersLayout.addWidget(self.LDDMPostTemperatureLineEdit, 1, 3)
         self.LDDMParametersLayout.addWidget(self.LDDMPostTypeLabel, 2, 0)
@@ -1670,101 +2201,157 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.LDDMTab.setLayout(self.LDDMTabLayout)
 
     def _initQuickPlotTab(self):
-        """initialize quick-plot tab
-        """
+        """initialize quick-plot tab"""
 
         self.quickPlot = QWidget()
         self.quickPlotLayout = QVBoxLayout()
 
-        # plot a (stratified) pmf
-        self.plotPmf = QGroupBox('Plot (stratified) PMFs:')
-        self.plotPmfLayout = QVBoxLayout()
+        # merge/plot a (stratified) pmf
+        self.mergePmf = QGroupBox("Merge stratified (WTM-eABF/GaWTM-eABF) PMFs:")
+        self.mergePmfLayout = QVBoxLayout()
 
-        self.plotPmfLabel = QLabel('PMF files:')
-        self.plotPmfBox = QListWidget()
-        self.plotPmfChildLayout = QHBoxLayout()
-        self.plotPmfAddButton = QPushButton('Add')
-        self.plotPmfClearButton = QPushButton('Clear')
-        self.plotPmfPlotButton = QPushButton('Plot')
-        self.plotPmfChildLayout.addWidget(self.plotPmfAddButton)
-        self.plotPmfChildLayout.addWidget(self.plotPmfClearButton)
-        self.plotPmfChildLayout.addWidget(self.plotPmfPlotButton)
+        # Radio buttons for PMF type selection
+        self.mergePmfRadioLayout = QHBoxLayout()
+        self.mergePmfPlainRadio = QRadioButton("Plain PMFs")
+        self.mergePmfHistoryRadio = QRadioButton("History PMFs")
+        self.mergePmfPlainRadio.setChecked(True)  # Default selection
+        self.mergePmfRadioButtonGroup = QButtonGroup(self)
+        self.mergePmfRadioButtonGroup.addButton(self.mergePmfPlainRadio)
+        self.mergePmfRadioButtonGroup.addButton(self.mergePmfHistoryRadio)
+        self.mergePmfRadioLayout.addStretch(1)
+        self.mergePmfRadioLayout.addWidget(self.mergePmfPlainRadio)
+        self.mergePmfRadioLayout.addWidget(self.mergePmfHistoryRadio)
+        self.mergePmfRadioLayout.addStretch(1)
+        # Connect radio buttons to state change handler
+        self.mergePmfPlainRadio.toggled.connect(self._changeMergePmfTypeState)
+        self.mergePmfHistoryRadio.toggled.connect(self._changeMergePmfTypeState)
 
-        self.plotPmfLayout.addWidget(self.plotPmfLabel)
-        self.plotPmfLayout.addWidget(self.plotPmfBox)
-        self.plotPmfLayout.addLayout(self.plotPmfChildLayout)
-        self.plotPmf.setLayout(self.plotPmfLayout)
+        self.mergePmfLabel = QLabel(
+            "PMF files (.czar.pmf, with optional .reweightamd1.cumulant.pmf):"
+        )
+        self.mergePmfBox = QListWidget()
+        self.mergePmfChildLayout = QHBoxLayout()
+        self.mergePmfAddButton = QPushButton("Add")
+        self.mergePmfClearButton = QPushButton("Clear")
+        self.mergePmfPlotButton = QPushButton("Plot")
+        self.mergePmfSaveButton = QPushButton("Save")
+        self.mergePmfChildLayout.addWidget(self.mergePmfAddButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfClearButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfPlotButton)
+        self.mergePmfChildLayout.addWidget(self.mergePmfSaveButton)
+
+        self.mergePmfLayout.addLayout(self.mergePmfRadioLayout)
+        self.mergePmfLayout.addWidget(self.mergePmfLabel)
+        self.mergePmfLayout.addWidget(self.mergePmfBox)
+        self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
+        self.mergePmf.setLayout(self.mergePmfLayout)
 
         # calculate pmf RMSD convergence
-        self.plotPmfConvergence = QGroupBox('Calculate PMF RMSD convergence:')
+        self.plotPmfConvergence = QGroupBox("Calculate PMF RMSD convergence:")
         self.plotPmfConvergenceLayout = QVBoxLayout()
 
-        self.plotPmfConvergenceLabel = QLabel('history file:')
+        self.plotPmfConvergenceLabel = QLabel("History file:")
         self.plotPmfConvergenceBox = QLineEdit()
         self.plotPmfConvergenceChildLayout = QHBoxLayout()
-        self.plotPmfConvergenceBrowseButton = QPushButton('Browse')
-        self.plotPmfConvergencePlotButton = QPushButton('Plot')
-        self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergenceBrowseButton)
+        self.plotPmfConvergenceBrowseButton = QPushButton("Browse")
+        self.plotPmfConvergencePlotButton = QPushButton("Plot")
+        self.plotPmfConvergenceSaveButton = QPushButton("Save")
+        self.plotPmfConvergenceChildLayout.addWidget(
+            self.plotPmfConvergenceBrowseButton
+        )
         self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergencePlotButton)
+        self.plotPmfConvergenceChildLayout.addWidget(self.plotPmfConvergenceSaveButton)
 
         self.plotPmfConvergenceLayout.addWidget(self.plotPmfConvergenceLabel)
         self.plotPmfConvergenceLayout.addWidget(self.plotPmfConvergenceBox)
         self.plotPmfConvergenceLayout.addLayout(self.plotPmfConvergenceChildLayout)
         self.plotPmfConvergence.setLayout(self.plotPmfConvergenceLayout)
 
-        # merge a (stratified) pmf
-        self.mergePmf = QGroupBox('Merge (stratified) PMFs:')
-        self.mergePmfLayout = QVBoxLayout()
-
-        self.mergePmfLabel = QLabel('PMF files:')
-        self.mergePmfBox = QListWidget()
-        self.mergePmfChildLayout = QHBoxLayout()
-        self.mergePmfAddButton = QPushButton('Add')
-        self.mergePmfClearButton = QPushButton('Clear')
-        self.mergePmfmergeButton = QPushButton('Merge')
-        self.mergePmfChildLayout.addWidget(self.mergePmfAddButton)
-        self.mergePmfChildLayout.addWidget(self.mergePmfClearButton)
-        self.mergePmfChildLayout.addWidget(self.mergePmfmergeButton)
-
-        self.mergePmfLayout.addWidget(self.mergePmfLabel)
-        self.mergePmfLayout.addWidget(self.mergePmfBox)
-        self.mergePmfLayout.addLayout(self.mergePmfChildLayout)
-        self.mergePmf.setLayout(self.mergePmfLayout)
-
         # plot hysteresis between forward and backward simulations
-        self.plotHysteresis = QGroupBox('Plot hysteresis between bidirectional simulations:')
+        self.plotHysteresis = QGroupBox(
+            "Plot hysteresis between bidirectional simulations:"
+        )
         self.plotHysteresisLayout = QVBoxLayout()
 
+        # Radio buttons for file type selection
+        self.plotHysteresisRadioLayout = QHBoxLayout()
+        self.plotHysteresisRadioBidirectionalFepout = QRadioButton(
+            "Bidirectional fepout"
+        )
+        self.plotHysteresisRadioBidirectionalLog = QRadioButton("Bidirectional log")
+        self.plotHysteresisRadioDoubleWideFepout = QRadioButton("Double-wide fepout")
+        self.plotHysteresisRadioBidirectionalFepout.setChecked(
+            True
+        )  # Default selection
+        self.plotHysteresisRadioButtonGroup = QButtonGroup(self)
+        self.plotHysteresisRadioButtonGroup.addButton(
+            self.plotHysteresisRadioBidirectionalFepout
+        )
+        self.plotHysteresisRadioButtonGroup.addButton(
+            self.plotHysteresisRadioBidirectionalLog
+        )
+        self.plotHysteresisRadioButtonGroup.addButton(
+            self.plotHysteresisRadioDoubleWideFepout
+        )
+        self.plotHysteresisRadioLayout.addStretch(1)
+        self.plotHysteresisRadioLayout.addWidget(
+            self.plotHysteresisRadioBidirectionalFepout
+        )
+        self.plotHysteresisRadioLayout.addWidget(
+            self.plotHysteresisRadioBidirectionalLog
+        )
+        self.plotHysteresisRadioLayout.addWidget(
+            self.plotHysteresisRadioDoubleWideFepout
+        )
+        self.plotHysteresisRadioLayout.addStretch(1)
+        # Connect radio buttons to state change handler
+        self.plotHysteresisRadioBidirectionalFepout.toggled.connect(
+            self._changeHysteresisInputState
+        )
+        self.plotHysteresisRadioBidirectionalLog.toggled.connect(
+            self._changeHysteresisInputState
+        )
+        self.plotHysteresisRadioDoubleWideFepout.toggled.connect(
+            self._changeHysteresisInputState
+        )
+
         self.plotHysteresisForwardLayout = QHBoxLayout()
-        self.plotHysteresisForwardLabel = QLabel('Forward (fepout/log): ')
+        self.plotHysteresisForwardLabel = QLabel("Forward (fepout):")
         self.plotHysteresisForwardLineEdit = QLineEdit()
-        self.plotHysteresisForwardButton = QPushButton('Browse')
+        self.plotHysteresisForwardButton = QPushButton("Browse")
         self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardLabel)
         self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardLineEdit)
         self.plotHysteresisForwardLayout.addWidget(self.plotHysteresisForwardButton)
 
         self.plotHysteresisBackwardLayout = QHBoxLayout()
-        self.plotHysteresisBackwardLabel = QLabel('Backward (fepout/log):')
+        self.plotHysteresisBackwardLabel = QLabel("Backward (fepout):")
         self.plotHysteresisBackwardLineEdit = QLineEdit()
-        self.plotHysteresisBackwardButton = QPushButton('Browse')
+        self.plotHysteresisBackwardButton = QPushButton("Browse")
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLabel)
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardLineEdit)
         self.plotHysteresisBackwardLayout.addWidget(self.plotHysteresisBackwardButton)
 
-        self.plotHysteresisPlotButton = QPushButton('Plot')
+        self.plotHysteresisButtonLayout = QHBoxLayout()
+        self.plotHysteresisPlotButton = QPushButton("Plot")
+        self.plotHysteresisSaveButton = QPushButton("Save")
+        self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisPlotButton)
+        self.plotHysteresisButtonLayout.addWidget(self.plotHysteresisSaveButton)
 
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisRadioLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisForwardLayout)
         self.plotHysteresisLayout.addLayout(self.plotHysteresisBackwardLayout)
 
-        self.isRigidLigandCheckbox = QCheckBox('Rigid ligand (ligand RMSD restraints):')
+        self.isRigidLigandCheckbox = QCheckBox("Rigid ligand (ligand RMSD restraints):")
         self.isRigidLigandCheckbox.setChecked(False)
+        self.isRigidLigandCheckbox.setEnabled(
+            False
+        )  # Disabled by default (Bidirectional fepout)
 
         self.plotHysteresisLayout.addWidget(self.isRigidLigandCheckbox)
-        self.plotHysteresisLayout.addWidget(self.plotHysteresisPlotButton)
+        self.plotHysteresisLayout.addLayout(self.plotHysteresisButtonLayout)
 
         self.plotHysteresis.setLayout(self.plotHysteresisLayout)
 
-        self.quickPlotLayout.addWidget(self.plotPmf)
         self.quickPlotLayout.addWidget(self.mergePmf)
         self.quickPlotLayout.addWidget(self.plotPmfConvergence)
         self.quickPlotLayout.addWidget(self.plotHysteresis)
@@ -1773,50 +2360,51 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
     # slots are defined below
     # otherwise they are defined in slots.py
     def _mainSettings(self):
-        """call main settings
-        """
+        """call main settings"""
+
         def f():
             self.mainSettings.show()
+
         return f
 
     def _advancedSettings(self, comboBox):
         """call advanced settings in pre-treatment
-           the returned function is depended on the comboBox(strategy type)
+        the returned function is depended on the comboBox(strategy type)
         """
 
         def f():
-            if comboBox.currentText() == 'Geometric':
+            if comboBox.currentText() == "Geometrical":
                 self.geometricAdvancedSettings.show()
-            elif comboBox.currentText() == 'Alchemical':
+            elif comboBox.currentText() == "Alchemical":
                 self.alchemicalAdvancedSettings.show()
 
         return f
 
     def _changeFFButtonState(self):
-        """enable/disable the add and clear button of force field section
-        """
+        """enable/disable the add and clear button of force field section"""
 
-        if self.forceFieldCombobox.currentText() == 'CHARMM':
+        if self.forceFieldCombobox.currentText() == "CHARMM":
             self.forceFieldAddButton.setEnabled(True)
             self.forceFieldClearButton.setEnabled(True)
             self.forceFieldFilesBox.setEnabled(True)
-        elif self.forceFieldCombobox.currentText() == 'Amber':
+        elif self.forceFieldCombobox.currentText() == "Amber":
             self.forceFieldAddButton.setEnabled(False)
             self.forceFieldClearButton.setEnabled(False)
             self.forceFieldFilesBox.setEnabled(False)
-            
+
     def _changeStrategySettingState(self):
-        """enable/disable the alchemical route and some advanced settings based on the MD engine
-        """
-        
-        if self.selectMDEngineCombobox.currentText() == 'NAMD':
+        """enable/disable the alchemical route and some advanced settings based on the MD engine"""
+
+        if self.selectMDEngineCombobox.currentText() == "NAMD":
             self.selectStrategyCombobox.setEnabled(True)
             self.geometricAdvancedSettings.useOldCvCheckbox.setEnabled(True)
             self.geometricAdvancedSettings.OPLSMixingRuleCheckbox.setEnabled(True)
             self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(True)
-            
-        elif self.selectMDEngineCombobox.currentText() == 'Gromacs':
-            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+
+        elif self.selectMDEngineCombobox.currentText() == "Gromacs":
+            index = self.selectStrategyCombobox.findText(
+                "Geometrical", QtCore.Qt.MatchFixedString
+            )
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
             self.selectStrategyCombobox.setEnabled(False)
@@ -1829,43 +2417,204 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
 
             self.geometricAdvancedSettings.useGaWTMCheckbox.setEnabled(False)
             self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
-            
+
     def _changeStrategySettingStateForOldGromacs(self):
-        """enable/disable a lot of options for the old Gromacs tab
-        """
-        
+        """enable/disable a lot of options for the old Gromacs tab"""
+
         if self.preTreatmentMainTabs.currentWidget() == self.NAMDTab:
             self.selectStrategyAdvancedButton.setEnabled(True)
             self.selectMDEngineCombobox.setEnabled(True)
-            
+
         elif self.preTreatmentMainTabs.currentWidget() == self.GromacsTab:
-            index = self.selectMDEngineCombobox.findText('Gromacs', QtCore.Qt.MatchFixedString)
+            index = self.selectMDEngineCombobox.findText(
+                "Gromacs", QtCore.Qt.MatchFixedString
+            )
             if index >= 0:
                 self.selectMDEngineCombobox.setCurrentIndex(index)
-            
-            index = self.selectStrategyCombobox.findText('Geometric', QtCore.Qt.MatchFixedString)
+
+            index = self.selectStrategyCombobox.findText(
+                "Geometrical", QtCore.Qt.MatchFixedString
+            )
             if index >= 0:
                 self.selectStrategyCombobox.setCurrentIndex(index)
-            
+
             self.selectMDEngineCombobox.setEnabled(False)
             self.selectStrategyCombobox.setEnabled(False)
             self.selectStrategyAdvancedButton.setEnabled(False)
 
-    def _openDocFile(self):
-        """open Documentation file
-        """
+    def _changeHysteresisInputState(self):
+        """enable/disable and update labels for hysteresis input fields based on radio button selection"""
 
-        webbrowser.open('https://www.nature.com/articles/s41596-021-00676-1')
+        if self.plotHysteresisRadioBidirectionalFepout.isChecked():
+            # Bidirectional fepout: both rows enabled with fepout labels
+            self.plotHysteresisForwardLabel.setText("Forward (fepout):")
+            self.plotHysteresisBackwardLabel.setText("Backward (fepout):")
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(True)
+            self.plotHysteresisBackwardButton.setEnabled(True)
+            self.isRigidLigandCheckbox.setEnabled(False)
+        elif self.plotHysteresisRadioBidirectionalLog.isChecked():
+            # Bidirectional log: both rows enabled with log labels
+            self.plotHysteresisForwardLabel.setText("Forward (log):")
+            self.plotHysteresisBackwardLabel.setText("Backward (log):")
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(True)
+            self.plotHysteresisBackwardButton.setEnabled(True)
+            self.isRigidLigandCheckbox.setEnabled(True)
+        elif self.plotHysteresisRadioDoubleWideFepout.isChecked():
+            # Double-wide fepout: only first row enabled, second row disabled
+            self.plotHysteresisForwardLabel.setText("Double-wide (fepout):")
+            self.plotHysteresisBackwardLabel.setText("Backward (fepout):")
+            self.plotHysteresisForwardLineEdit.setEnabled(True)
+            self.plotHysteresisForwardButton.setEnabled(True)
+            self.plotHysteresisBackwardLineEdit.setEnabled(False)
+            self.plotHysteresisBackwardButton.setEnabled(False)
+            self.isRigidLigandCheckbox.setEnabled(False)
+
+    def _changeMergePmfTypeState(self):
+        """enable/disable and update labels for merge PMF based on radio button selection"""
+
+        if self.mergePmfPlainRadio.isChecked():
+            # Plain PMFs: Plot enabled, normal label
+            self.mergePmfLabel.setText(
+                "PMF files (.czar.pmf, with optional .reweightamd1.cumulant.pmf):"
+            )
+            self.mergePmfPlotButton.setEnabled(True)
+        elif self.mergePmfHistoryRadio.isChecked():
+            # History PMFs: Plot disabled, history label
+            self.mergePmfLabel.setText(
+                "History PMF files [.hist.czar.pmf, with optional .reweightamd1.cumulant(.hist).pmf]:"
+            )
+            self.mergePmfPlotButton.setEnabled(False)
+
+    def _toggleGeometricLigandFlexibility(self):
+        """enable/disable widgets based on ligand flexibility selection in geometric tab"""
+
+        enable = self.geometricFlexibleLigandRadioButton.isChecked()
+
+        # bound RMSD
+        if not enable:
+            self.rmsdBoundLineEdit.clear()
+        self.rmsdBoundLineEdit.setEnabled(enable)
+        self.rmsdBoundButton.setEnabled(enable)
+
+        # unbound RMSD
+        if not enable:
+            self.rmsdUnboundLineEdit.clear()
+        self.rmsdUnboundLineEdit.setEnabled(enable)
+        self.rmsdUnboundButton.setEnabled(enable)
+
+        # force constant RMSD
+        self.fcRMSDLineEdit.setEnabled(enable)
+
+    def _toggleGeometricPmfType(self):
+        """enable/disable and update labels for geometric PMF type based on radio button selection"""
+
+        if self.geometricPlainPmfRadioButton.isChecked():
+            # Plain PMFs: normal label
+            self.pmfInputs.setTitle("Merged PMF inputs (.czar.pmf/.UI.pmf):")
+        elif self.geometricHistoryPmfRadioButton.isChecked():
+            # History PMFs: history label
+            self.pmfInputs.setTitle("Merged history PMFs (.hist.czar.pmf/.hist.pmf):")
+
+    def _toggleAlchemicalMethod(self):
+        """enable/disable widgets and update labels based on alchemical method selection"""
+
+        if self.alchemicalBidirectionalFEPRadio.isChecked():
+            # Bidirectional FEP: all enabled, labels "Forward:", file extension ".fepout"
+            self.alchemicalBoundStateLabel.setText("Atom/Bound state (.fepout):")
+            self.alchemicalUnboundStateLabel.setText("Atom/Unbound state (.fepout):")
+            self.alchemicalForwardLabel1.setText("Forward:")
+            self.alchemicalForwardLabel3.setText("Forward:")
+            # Enable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(True)
+            self.alchemicalBackwardButton1.setEnabled(True)
+            self.alchemicalBackwardLineEdit3.setEnabled(True)
+            self.alchemicalBackwardButton3.setEnabled(True)
+            # Post-treatment type: disable PMF, default to BAR
+            self.alchemicalPostTypeBox.setCurrentText("BAR")
+            # Enable FEP and BAR, disable PMF
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == "PMF":
+                    item.setEnabled(False)
+                else:
+                    item.setEnabled(True)
+
+        elif self.alchemicalDoubleWideFEPRadio.isChecked():
+            # Double-wide FEP: Forward label becomes "Double-wide:", backward disabled
+            self.alchemicalBoundStateLabel.setText("Atom/Bound state (.fepout):")
+            self.alchemicalUnboundStateLabel.setText("Atom/Unbound state (.fepout):")
+            self.alchemicalForwardLabel1.setText("Double-wide:")
+            self.alchemicalForwardLabel3.setText("Double-wide:")
+            # Disable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(False)
+            self.alchemicalBackwardButton1.setEnabled(False)
+            self.alchemicalBackwardLineEdit3.setEnabled(False)
+            self.alchemicalBackwardButton3.setEnabled(False)
+            # Post-treatment type: disable PMF, default to BAR
+            self.alchemicalPostTypeBox.setCurrentText("BAR")
+            # Enable FEP and BAR, disable PMF
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == "PMF":
+                    item.setEnabled(False)
+                else:
+                    item.setEnabled(True)
+
+        elif self.alchemicalWTMABFRadio.isChecked():
+            # WTM-λABF: Forward label becomes "Full window:", file extension ".pmf", backward disabled
+            self.alchemicalBoundStateLabel.setText("Atom/Bound state (.hist.pmf):")
+            self.alchemicalUnboundStateLabel.setText("Atom/Unbound state (.hist.pmf):")
+            self.alchemicalForwardLabel1.setText("Full window:")
+            self.alchemicalForwardLabel3.setText("Full window:")
+            # Disable backward row
+            self.alchemicalBackwardLineEdit1.setEnabled(False)
+            self.alchemicalBackwardButton1.setEnabled(False)
+            self.alchemicalBackwardLineEdit3.setEnabled(False)
+            self.alchemicalBackwardButton3.setEnabled(False)
+            # Post-treatment type: disable FEP and BAR, default to PMF
+            self.alchemicalPostTypeBox.setCurrentText("PMF")
+            # Enable PMF, disable FEP and BAR
+            for i in range(self.alchemicalPostTypeBox.count()):
+                item = self.alchemicalPostTypeBox.model().item(i)
+                if self.alchemicalPostTypeBox.itemText(i) == "PMF":
+                    item.setEnabled(True)
+                else:
+                    item.setEnabled(False)
+
+    def _toggleAlchemicalLigandFlexibility(self):
+        """enable/disable Restraints/Unbound state (.log) inputs based on ligand flexibility selection"""
+
+        enable = self.alchemicalFlexibleLigandRadio.isChecked()
+
+        # Restraints/Unbound state (.log) - Forward row
+        if not enable:
+            self.alchemicalForwardLineEdit4.clear()
+        self.alchemicalForwardLineEdit4.setEnabled(enable)
+        self.alchemicalForwardButton4.setEnabled(enable)
+
+        # Restraints/Unbound state (.log) - Backward row
+        if not enable:
+            self.alchemicalBackwardLineEdit4.clear()
+        self.alchemicalBackwardLineEdit4.setEnabled(enable)
+        self.alchemicalBackwardButton4.setEnabled(enable)
+
+    def _openDocFile(self):
+        """open Documentation file"""
+
+        webbrowser.open("https://www.nature.com/articles/s41596-021-00676-1")
 
     def _openPythonAPIFile(self):
-        """open Python API Documentation file
-        """
+        """open Python API Documentation file"""
 
-        webbrowser.open('https://fhh2626.github.io/BFEE2APIDocs/')
+        webbrowser.open("https://fhh2626.github.io/BFEE2APIDocs/")
 
     def _showAboutBox(self):
         """the about message box
-        
+
         Returns:
             function obj: a slot function that shows that about message box
         """
@@ -1873,100 +2622,142 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         def f():
             QMessageBox.about(
                 self,
-                'About',
-                f'<center><b>{__PROGRAM_NAME__}</b></center><br>'+r'''
+                "About",
+                f"<center><b>{__PROGRAM_NAME__}</b></center><br>"
+                + r"""
                 Binding free energy estimator (BFEE) is a python-based software
                 that automates absolute binding free energy calculations through
-                either the alchemical or geometric route by molecular dynamics
+                either the alchemical or geometrical route by molecular dynamics
                 simulations.<br>
                 <b>Authors:</b><br>
                 Haohao Fu (<a href="mailto:fhh2626@gmail.com">fhh2626@gmail.com</a>)<br>
                 Haochuan Chen (<a href="mailto:summersnow9403@gmail.com">summersnow9403@gmail.com</a>)<br>
                 <b>License:</b><br>
-                BFEE2 is free software: you can redistribute it and/or modify it
+                BFEE is free software: you can redistribute it and/or modify it
                 under the terms of the GNU General Public License as published by
                 the Free Software Foundation, either version 3 of the License, or
                 (at your option) any later version.<br>
-                <b>Reference:</b><br>
-                <b>BFEE2:</b> Fu et al. Nat. Protoc. 2022, 17, 1114-1141 and Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
-                <b>Alchemical and geometric routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
+                <b>References:</b><br>
+                When possible, please consider mentioning <b>Fu et al. Nat. Protoc. 2022, 17 (4), 1114–1141</b> when BFEE is used in your project.<br>
+                <b>Additional references:</b><br>
+                <b>WTM-λABF:</b> Zhou et al. J. Phys. Chem. Lett. 2025, 16, 4419-4427 and Zhou et al. Acc. Chem. Res. 2026, 59, 90-102<br>
+                <b>The "LDDM" route:</b> Bian et al. Nat. Comput. Sci. 2025, 5, 621-626<br>
+                <b>BFEE2:</b> Fu et al. J. Chem. Inf. Model. 2021, 61, 2116-2123<br>
+                <b>BFEE2 for protein-protein binding:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
+                <b>Alchemical and geometrical routes:</b> Gumbart et al. J. Chem. Theory Comput. 2013, 9, 794-802<br>
                 <b>WTM-eABF:</b> Fu et al. Acc. Chem. Res. 2019, 52, 3254-3264 and Fu et al. J. Phys. Chem. Lett. 2018, 9, 4738-4745<br>
-                <b>GaWTM-eABF:</b> Chen et al. J. Chem. Theory Comput. 2021, 17, 3886-3894<br>
-                <b>Collective variables:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
-                <b>Streamlined geometric route:</b> Fu et al. J. Chem. Inf. Model. 2023, 63, 2512-2519<br>
-                ''')
+                <b>NAMD3:</b> Phillips et al. J. Chem. Phys. 2020, 153, 044130<br>
+                <b>Gromacs:</b> Abraham et al. SoftwareX 2015, 1, 19-25<br>
+                <b>Collective variables for restraints:</b> Fu et al. J. Chem. Theory Comput. 2017, 13, 5173-5178<br>
+                <b>Colvars module:</b> Fiorin et al. Mol. Phys. 2013, 111, 3345-3362<br>
+                <b>"Mother" of all restraint-based binding free-energy calculations:</b> Hermans et al. Isr. J. Chem. 1986, 27, 225-227<br>
+                """,
+            )
+
         return f
 
     def _showGeometricResults(self, unit):
-        ''' calculate binding from the geometric route,
-            parameters in the Geometric tab will be read.
-            Show a QMessageBox for the result
-            Inputs:
-                unit (string): 'namd' or 'gromacs' '''
-        
+        """calculate binding from the geometrical route,
+        parameters in the Geometrical tab will be read.
+        Show a QMessageBox for the result
+        Inputs:
+            unit (string): 'namd' or 'gromacs'"""
+
         pTreat = postTreatment.postTreatment(
-            float(self.postTemperatureLineEdit.text()), unit, 'geometric')
-            
+            float(self.postTemperatureLineEdit.text()), unit, "geometric"
+        )
+
         pmfs = [
-                    self.rmsdBoundLineEdit.text(), 
-                    self.ThetaLineEdit.text(), 
-                    self.PhiLineEdit.text(), 
-                    self.PsiLineEdit.text(), 
-                    self.thetaLineEdit.text(), 
-                    self.phiLineEdit.text(), 
-                    self.rLineEdit.text(), 
-                    self.rmsdUnboundLineEdit.text()
+            self.rmsdBoundLineEdit.text(),
+            self.ThetaLineEdit.text(),
+            self.PhiLineEdit.text(),
+            self.PsiLineEdit.text(),
+            self.thetaLineEdit.text(),
+            self.phiLineEdit.text(),
+            self.rLineEdit.text(),
+            self.rmsdUnboundLineEdit.text(),
         ]
-            
+
         try:
             parameters = [
-                    float(self.fcRMSDLineEdit.text()), 
-                    float(self.fcThetaLineEdit.text()), 
-                    float(self.fcPhiLineEdit.text()), 
-                    float(self.fcPsiLineEdit.text()),
-                    float(self.fcthetaLineEdit.text()), 
-                    float(self.fcphiLineEdit.text()), 
-                    float(self.postRstarLineEdit.text()), 
-                    float(self.fcRMSDLineEdit.text())
+                float(self.fcRMSDLineEdit.text()),
+                float(self.fcThetaLineEdit.text()),
+                float(self.fcPhiLineEdit.text()),
+                float(self.fcPsiLineEdit.text()),
+                float(self.fcthetaLineEdit.text()),
+                float(self.fcphiLineEdit.text()),
+                float(self.postRstarLineEdit.text()),
+                float(self.fcRMSDLineEdit.text()),
             ]
         except:
-            QMessageBox.warning(self, 'Error', f'Force constant or r* input error!')
+            QMessageBox.warning(self, "Error", f"Force constant or r* input error!")
             return
 
         # check inputs
         for index, item in enumerate(pmfs):
             if (index != 0) and (index != 7) and (not os.path.exists(item)):
-                QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
+                QMessageBox.warning(self, "Error", f"file {item} does not exist!")
                 return
             if (index == 7) and (not os.path.exists(item)):
-                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                # QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                pass
+
+        # Check if History PMFs mode is selected
+        use_history_pmf = self.geometricHistoryPmfRadioButton.isChecked()
 
         # calculate free energies
         try:
-            result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
+            if use_history_pmf:
+                result, errors = pTreat.geometricBindingFreeEnergyHistPMF(
+                    pmfs, parameters
+                )
+            else:
+                result = pTreat.geometricBindingFreeEnergy(pmfs, parameters)
         except postTreatment.RStarTooLargeError:
             QMessageBox.warning(
-                self, 
-                'Error', 
-                f'\
-r_star cannot be larger than r_max of step 7!\n'
+                self,
+                "Error",
+                f"\
+r_star cannot be larger than r_max of step 7!\n",
             )
             return
         except Exception as e:
             print(e)
             QMessageBox.warning(
-                self, 
-                'Error', 
-                f'\
+                self,
+                "Error",
+                f"\
 Unknown error! The error message is: \n\
-{e}\n'
+{e}\n",
             )
             return
 
-        QMessageBox.about(
-            self,
-            'Result',
-            f'\
+        if use_history_pmf:
+            # Display results with error bars
+            QMessageBox.about(
+                self,
+                "Result",
+                f"\
+Results:\n\
+ΔG(site,c)            = {result[0]:.2f} ± {errors[0]:.2f} kcal/mol\n\
+ΔG(site,eulerTheta)   = {result[1]:.2f} ± {errors[1]:.2f} kcal/mol\n\
+ΔG(site,eulerPhi)     = {result[2]:.2f} ± {errors[2]:.2f} kcal/mol\n\
+ΔG(site,eulerPsi)     = {result[3]:.2f} ± {errors[3]:.2f} kcal/mol\n\
+ΔG(site,polarTheta)   = {result[4]:.2f} ± {errors[4]:.2f} kcal/mol\n\
+ΔG(site,polarPhi)     = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n\
+(1/beta)*ln(S*I*C0)   = {result[6]:.2f} ± {errors[6]:.2f} kcal/mol\n\
+ΔG(bulk,c)            = {result[7]:.2f} ± {errors[7]:.2f} kcal/mol\n\
+ΔG(bulk,o)            = {result[8]:.2f} kcal/mol\n\
+\n\
+Standard Binding Free Energy:\n\
+ΔG(total)             = {result[9]:.2f} ± {errors[9]:.2f} kcal/mol\n",
+            )
+        else:
+            # Display results without error bars (original behavior)
+            QMessageBox.about(
+                self,
+                "Result",
+                f"\
 Results:\n\
 ΔG(site,c)            = {result[0]:.2f} kcal/mol\n\
 ΔG(site,eulerTheta)   = {result[1]:.2f} kcal/mol\n\
@@ -1979,8 +2770,8 @@ Results:\n\
 ΔG(bulk,o)            = {result[8]:.2f} kcal/mol\n\
 \n\
 Standard Binding Free Energy:\n\
-ΔG(total)             = {result[9]:.2f} kcal/mol\n'
-        )
+ΔG(total)             = {result[9]:.2f} kcal/mol\n",
+            )
 
     def _showAlchemicalResults(self, unit):
         """calculate binding from the alchemical route,
@@ -1990,78 +2781,93 @@ Standard Binding Free Energy:\n\
         Args:
             unit (str): 'namd' or 'gromacs'
         """
-        
+
         pTreat = postTreatment.postTreatment(
-            float(self.alchemicalPostTemperatureLineEdit.text()), unit, 'alchemical')
-        
+            float(self.alchemicalPostTemperatureLineEdit.text()), unit, "alchemical"
+        )
+
         # alchemical outputs
         files = [
-                    self.alchemicalForwardLineEdit1.text(), 
-                    self.alchemicalBackwardLineEdit1.text(), 
-                    self.alchemicalForwardLineEdit2.text(), 
-                    self.alchemicalBackwardLineEdit2.text(), 
-                    self.alchemicalForwardLineEdit3.text(), 
-                    self.alchemicalBackwardLineEdit3.text(), 
-                    self.alchemicalForwardLineEdit4.text(), 
-                    self.alchemicalBackwardLineEdit4.text()
+            self.alchemicalForwardLineEdit1.text(),
+            self.alchemicalBackwardLineEdit1.text(),
+            self.alchemicalForwardLineEdit2.text(),
+            self.alchemicalBackwardLineEdit2.text(),
+            self.alchemicalForwardLineEdit3.text(),
+            self.alchemicalBackwardLineEdit3.text(),
+            self.alchemicalForwardLineEdit4.text(),
+            self.alchemicalBackwardLineEdit4.text(),
         ]
-            
+
         try:
             parameters = [
-                    float(self.alchemicalRCThetaLineEdit.text()), 
-                    float(self.alchemicalRCthetaLineEdit.text()), 
-                    float(self.alchemicalRCRLineEdit.text()), 
-                    float(self.alchemicalfcThetaLineEdit.text()),
-                    float(self.alchemicalfcPhiLineEdit.text()), 
-                    float(self.alchemicalfcPsiLineEdit.text()), 
-                    float(self.alchemicalfcthetaLineEdit.text()), 
-                    float(self.alchemicalfcphiLineEdit.text()),
-                    float(self.alchemicalfcRLineEdit.text())
+                float(self.alchemicalRCThetaLineEdit.text()),
+                float(self.alchemicalRCthetaLineEdit.text()),
+                float(self.alchemicalRCRLineEdit.text()),
+                float(self.alchemicalfcThetaLineEdit.text()),
+                float(self.alchemicalfcPhiLineEdit.text()),
+                float(self.alchemicalfcPsiLineEdit.text()),
+                float(self.alchemicalfcthetaLineEdit.text()),
+                float(self.alchemicalfcphiLineEdit.text()),
+                float(self.alchemicalfcRLineEdit.text()),
             ]
             temperature = float(self.alchemicalPostTemperatureLineEdit.text())
         except:
-            QMessageBox.warning(self, 'Error', f'Force constant or restraint center or temperature input error!')
+            QMessageBox.warning(
+                self,
+                "Error",
+                f"Force constant or restraint center or temperature input error!",
+            )
             return
-        if self.alchemicalPostTypeBox.currentText() == 'FEP':
-                jobType = 'fep'
-        elif self.alchemicalPostTypeBox.currentText() == 'BAR':
-                jobType = 'bar'
-        elif self.alchemicalPostTypeBox.currentText() == 'PMF':
-                jobType = 'pmf'
+        if self.alchemicalPostTypeBox.currentText() == "FEP":
+            jobType = "fep"
+        elif self.alchemicalPostTypeBox.currentText() == "BAR":
+            jobType = "bar"
+        elif self.alchemicalPostTypeBox.currentText() == "PMF":
+            jobType = "pmf"
 
         # check inputs
         rigid_ligand = False
-        if jobType != 'pmf':
-            for index, item in enumerate([
-                        self.alchemicalBackwardLineEdit1.text(), 
-                        self.alchemicalBackwardLineEdit2.text(), 
-                        self.alchemicalBackwardLineEdit3.text(), 
-                        self.alchemicalBackwardLineEdit4.text()
-            ]):
+        if jobType != "pmf":
+            for index, item in enumerate(
+                [
+                    self.alchemicalBackwardLineEdit1.text(),
+                    self.alchemicalBackwardLineEdit2.text(),
+                    self.alchemicalBackwardLineEdit3.text(),
+                    self.alchemicalBackwardLineEdit4.text(),
+                ]
+            ):
                 if (not os.path.exists(item)) and (index != 3):
-                    QMessageBox.warning(self, 'Error', f'backward file {item} does not exist and is not empty!')
+                    QMessageBox.warning(
+                        self,
+                        "Error",
+                        f"backward file {item} does not exist and is not empty!",
+                    )
                     return
 
-        for index, item in enumerate([
-                    self.alchemicalForwardLineEdit1.text(), 
-                    self.alchemicalForwardLineEdit2.text(), 
-                    self.alchemicalForwardLineEdit3.text(), 
-                    self.alchemicalForwardLineEdit4.text(), 
-        ]):
+        for index, item in enumerate(
+            [
+                self.alchemicalForwardLineEdit1.text(),
+                self.alchemicalForwardLineEdit2.text(),
+                self.alchemicalForwardLineEdit3.text(),
+                self.alchemicalForwardLineEdit4.text(),
+            ]
+        ):
             if (not os.path.exists(item)) and (index != 3):
-                QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
+                QMessageBox.warning(self, "Error", f"file {item} does not exist!")
                 return
             elif (not os.path.exists(item)) and (index == 3):
-                QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
+                # QMessageBox.warning(self, 'Warning', f'Supposing dealing with a rigid ligand!')
                 rigid_ligand = True
 
         # calculate free energies
-        result, errors = pTreat.alchemicalBindingFreeEnergy(files, parameters, temperature, jobType, rigid_ligand)
+        result, errors = pTreat.alchemicalBindingFreeEnergy(
+            files, parameters, temperature, jobType, rigid_ligand
+        )
 
         QMessageBox.about(
             self,
-            'Result',
-            f'\
+            "Result",
+            f"\
 Results:\n\
 ΔG(site,couple)   = {result[0]:.2f} ± {errors[0]:.2f} kcal/mol\n\
 ΔG(site,c+o+a+r)  = {result[1]:.2f} ± {errors[1]:.2f} kcal/mol\n\
@@ -2070,7 +2876,7 @@ Results:\n\
 ΔG(bulk,o+a+r)    = {result[4]:.2f} kcal/mol\n\
 \n\
 Standard Binding Free Energy:\n\
-ΔG(total)         = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n'
+ΔG(total)         = {result[5]:.2f} ± {errors[5]:.2f} kcal/mol\n",
         )
 
     def _showLDDMResults(self, unit):
@@ -2081,39 +2887,44 @@ Standard Binding Free Energy:\n\
         Args:
             unit (str): 'namd' or 'gromacs'
         """
-        
+
         pTreat = postTreatment.postTreatment(
-            float(self.LDDMPostTemperatureLineEdit.text()), unit, 'LDDM')
-        
-        # alchemical outputs  
+            float(self.LDDMPostTemperatureLineEdit.text()), unit, "LDDM"
+        )
+
+        # alchemical outputs
         try:
             temperature = float(self.LDDMPostTemperatureLineEdit.text())
         except:
-            QMessageBox.warning(self, 'Error', f'temperature input error!')
+            QMessageBox.warning(self, "Error", f"temperature input error!")
             return
-        if self.LDDMPostTypeBox.currentText() == 'FEP':
-                jobType = 'fep'
-        elif self.LDDMPostTypeBox.currentText() == 'BAR':
-                jobType = 'bar'
+        if self.LDDMPostTypeBox.currentText() == "FEP":
+            jobType = "fep"
+        elif self.LDDMPostTypeBox.currentText() == "BAR":
+            jobType = "bar"
 
         # check inputs
         rigid_ligand = False
-        for index, item in enumerate([
-                    self.LDDMStep1ColvarsLineEdit.text(), 
-                    self.LDDMStep1ColvarsTrajLineEdit.text(), 
-                    self.LDDMStep1FepoutLineEdit.text(), 
-                    self.LDDMStep3FepoutLineEdit.text()
-        ]):
+        for index, item in enumerate(
+            [
+                self.LDDMStep1ColvarsLineEdit.text(),
+                self.LDDMStep1ColvarsTrajLineEdit.text(),
+                self.LDDMStep1FepoutLineEdit.text(),
+                self.LDDMStep3FepoutLineEdit.text(),
+            ]
+        ):
             if (not os.path.exists(item)) and (index != 3):
-                QMessageBox.warning(self, 'Error', f'{item} does not exist and is not empty!')
+                QMessageBox.warning(
+                    self, "Error", f"{item} does not exist and is not empty!"
+                )
                 return
-        
+
         try:
             int(self.LDDMStep1StepsPerWindowLineEdit.text())
             int(self.LDDMStep1EquilStepsPerWindowLineEdit.text())
             int(self.LDDMStep1WindowsLineEdit.text())
         except:
-            QMessageBox.warning(self, 'Error', f'Invalid value in LDDM parameters!')
+            QMessageBox.warning(self, "Error", f"Invalid value in LDDM parameters!")
             return
 
         # calculate free energies
@@ -2126,71 +2937,71 @@ Standard Binding Free Energy:\n\
                 int(self.LDDMStep1EquilStepsPerWindowLineEdit.text()),
                 int(self.LDDMStep1WindowsLineEdit.text()) + 1,
                 self.LDDMStep3FepoutLineEdit.text(),
-                temperature = temperature, 
-                jobType = jobType
+                temperature=temperature,
+                jobType=jobType,
             )
         except Exception as e:
             print(e)
             QMessageBox.warning(
-                self, 
-                'Error', 
-                f'\
+                self,
+                "Error",
+                f"\
 LDDM result calculation failed! The error message is: \n\
-{e}\n'
+{e}\n",
             )
 
         QMessageBox.about(
             self,
-            'Result',
-            f'\
+            "Result",
+            f"\
 Results:\n\
 ΔG(Step 1)   = {step1_result[0]:.2f} ± {step1_result[1]:.2f} kcal/mol\n\
 ΔG(Step 3)  = {step3_result[0]:.2f} ± {step3_result[1]:.2f} kcal/mol\n\
 \n\
 Standard Binding Free Energy:\n\
-ΔG(total)         = {step1_result[0] + step3_result[0]:.2f} ± {np.sqrt(step1_result[1]**2 + step3_result[1]**2):.2f} kcal/mol\n'
+ΔG(total)         = {step1_result[0] + step3_result[0]:.2f} ± {np.sqrt(step1_result[1] ** 2 + step3_result[1] ** 2):.2f} kcal/mol\n",
         )
 
     def _showFinalResults(self):
         """calculate binding free energy and show the final results
-        
+
         Returns:
             function obj: a slot function that calculates binding free energy and show the final results
         """
 
         def f():
-            if self.postPMFTypeBox.currentText() == 'NAMD':
-                unit = 'namd'
-            elif self.postPMFTypeBox.currentText() == 'Gromacs':
-                unit = 'gromacs'
+            if self.postPMFTypeBox.currentText() == "NAMD":
+                unit = "namd"
+            elif self.postPMFTypeBox.currentText() == "Gromacs":
+                unit = "gromacs"
 
             if self.postTreatmentMainTabs.currentIndex() == 0:
-                jobType = 'geometric'
+                jobType = "geometric"
             elif self.postTreatmentMainTabs.currentIndex() == 1:
-                jobType = 'alchemical'
+                jobType = "alchemical"
             elif self.postTreatmentMainTabs.currentIndex() == 2:
-                jobType = 'LDDM'
+                jobType = "LDDM"
 
-            if jobType == 'geometric':
+            if jobType == "geometric":
                 self._showGeometricResults(unit)
-            elif jobType == 'alchemical':
+            elif jobType == "alchemical":
                 self._showAlchemicalResults(unit)
-            elif jobType == 'LDDM':
+            elif jobType == "LDDM":
                 self._showLDDMResults(unit)
-            
+
         return f
 
     def _generateInputFiles(self):
         """generate input files for binding free energy simulation
-        
+
         Returens:
             function obj: a slot function that generates input files for binding free energy simulation
         """
-        
+
         def f():
-            path = QFileDialog.getExistingDirectory(None, 'Select a directory')
+            path = QFileDialog.getExistingDirectory(None, "Select a directory")
             # cancel
-            if path == '':
+            if path == "":
                 return
 
             iGenerator = inputGenerator.inputGenerator()
@@ -2198,102 +3009,141 @@ Standard Binding Free Energy:\n\
             # third-party softwares and user-provided solvation boxes
             for item in [
                 self.mainSettings.vmdLineEdit.text(),
-                #self.mainSettings.gromacsLineEdit.text(),
-                #self.mainSettings.tleapLineEdit.text(),
+                # self.mainSettings.gromacsLineEdit.text(),
+                # self.mainSettings.tleapLineEdit.text(),
                 self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text(),
-                self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text()
+                self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
             ]:
-                if ((not os.path.exists(item)) and item != ''):
-                    QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
+                if (not os.path.exists(item)) and item != "":
+                    QMessageBox.warning(self, "Error", f"file {item} does not exist!")
                     return
 
             if self.preTreatmentMainTabs.currentIndex() == 0:
                 # force fields
-                forceFieldFiles = [self.forceFieldFilesBox.item(i).text() for i in range(self.forceFieldFilesBox.count())]
+                forceFieldFiles = [
+                    self.forceFieldFilesBox.item(i).text()
+                    for i in range(self.forceFieldFilesBox.count())
+                ]
 
                 # NAMD files
-                for item in [self.psfLineEdit.text(), self.coorLineEdit.text()] + forceFieldFiles:
+                for item in [
+                    self.psfLineEdit.text(),
+                    self.coorLineEdit.text(),
+                ] + forceFieldFiles:
                     if not os.path.exists(item):
-                        QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
+                        QMessageBox.warning(
+                            self, "Error", f"file {item} does not exist!"
+                        )
                         return
 
                 # check inputs
                 try:
                     float(self.temperatureLineEdit.text())
                     stratification = [
-                        int(self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationThetaLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationPhiLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationPsiLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationthetaLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationphiLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationRLineEdit.text()),
-                        int(self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.text())
+                        int(
+                            self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationThetaLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationPhiLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationPsiLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationthetaLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationphiLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationRLineEdit.text()
+                        ),
+                        int(
+                            self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.text()
+                        ),
                     ]
                     alchemicalStratification = [
                         int(self.alchemicalAdvancedSettings.boundLigandLineEdit.text()),
-                        int(self.alchemicalAdvancedSettings.boundRestraintsLineEdit.text()),
-                        int(self.alchemicalAdvancedSettings.unboundLigandLineEdit.text()),
-                        int(self.alchemicalAdvancedSettings.unboundRestraintsLineEdit.text())
+                        int(
+                            self.alchemicalAdvancedSettings.boundRestraintsLineEdit.text()
+                        ),
+                        int(
+                            self.alchemicalAdvancedSettings.unboundLigandLineEdit.text()
+                        ),
+                        int(
+                            self.alchemicalAdvancedSettings.unboundRestraintsLineEdit.text()
+                        ),
                     ]
                 except:
-                    QMessageBox.warning(self, 'Error', f'Force constant or r* input error!')
+                    QMessageBox.warning(
+                        self, "Error", f"Force constant or r* input error!"
+                    )
                     return
 
                 # job type
-                if self.forceFieldCombobox.currentText() == 'CHARMM':
-                    forceFieldType = 'charmm'
-                elif self.forceFieldCombobox.currentText() == 'Amber':
-                    forceFieldType = 'amber'
+                if self.forceFieldCombobox.currentText() == "CHARMM":
+                    forceFieldType = "charmm"
+                elif self.forceFieldCombobox.currentText() == "Amber":
+                    forceFieldType = "amber"
 
                 # make sure there are CHARMM FF files
-                if forceFieldFiles == [] and forceFieldType == 'charmm':
+                if forceFieldFiles == [] and forceFieldType == "charmm":
                     QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
-CHARMM force field files must be specified!'
-                        )
+                        self,
+                        "Error",
+                        f"\
+CHARMM force field files must be specified!",
+                    )
                     return
-                
-                if self.selectStrategyCombobox.currentText() == 'Geometric':
-                    
-                    if self.selectMDEngineCombobox.currentText().lower() == 'gromacs':
+
+                if self.selectStrategyCombobox.currentText() == "Geometrical":
+                    if self.selectMDEngineCombobox.currentText().lower() == "gromacs":
                         QMessageBox.warning(
-                            self, 'Warning', f'Please pay attention if you use the new Gromacs interface: \n\
+                            self,
+                            "Warning",
+                            f"Please pay attention if you use the new Gromacs interface: \n\
 1. Occationally, the atom number in complex.ndx do not correct. If so, just modify it manually; \n\
 2. Make sure in complex.gro, the center of box is approximately at (x/2, y/2, z/2) rather than (0, 0, 0);  \n\
-3. Gromacs patched by the latest (master branch) version of Colvars is needed.'
-                )
+3. Gromacs patched by the latest (master branch) version of Colvars is needed.",
+                        )
 
                     # for the amber force field, files of large box must be provided
-                    if forceFieldType == 'amber':
-
-                        if self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text() == '' or \
-                            self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text() == '':
+                    if forceFieldType == "amber":
+                        if (
+                            self.geometricAdvancedSettings.nonStandardSolventPdbLineEdit.text()
+                            == ""
+                            or self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text()
+                            == ""
+                        ):
                             QMessageBox.warning(
-                                self, 
-                                'Error', 
+                                self,
+                                "Error",
                                 f'\
 Coordinate and topology files of large box must be \
 provided in "Advanced Settings"when using the Amber \
-force fields!'
+force fields!',
                             )
                             return
-                    
+
                     if self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked():
-
                         if self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked():
-                            QMessageBox.warning(self, 'Error', 
-                                f'\
-GaWTM-eABF is not compatible with CUDASOAIntegrator in NAMD! \n'
+                            QMessageBox.warning(
+                                self,
+                                "Error",
+                                f"\
+GaWTM-eABF is not compatible with CUDASOAIntegrator in NAMD! \n",
                             )
                             return
 
-                        QMessageBox.warning(self, 'Warning', 
-                                f'\
+                        QMessageBox.warning(
+                            self,
+                            "Warning",
+                            f"\
 The feature of using GaWTM-eABF as the workhorse engine is \
-experimental! Please always use the latest devel version of NAMD!\n'
+experimental! Please always use the latest devel version of NAMD!\n",
                         )
 
                     try:
@@ -2304,7 +3154,7 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             forceFieldType,
                             forceFieldFiles,
                             float(self.temperatureLineEdit.text()),
-                            self.selectProteineLineEdit.text(),
+                            self.selectProteinLineEdit.text(),
                             self.selectLigandLineEdit.text(),
                             self.geometricAdvancedSettings.userDefinedDirectionLineEdit.text(),
                             self.geometricAdvancedSettings.nonStandardSolventPsfLineEdit.text(),
@@ -2314,7 +3164,9 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             self.geometricAdvancedSettings.neutralizeLigOnlyCombobox.currentText(),
                             self.geometricAdvancedSettings.pinDownProCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useOldCvCheckbox.isChecked(),
-                            int(self.geometricAdvancedSettings.parallelRunsLineEdit.text()),
+                            int(
+                                self.geometricAdvancedSettings.parallelRunsLineEdit.text()
+                            ),
                             self.mainSettings.vmdLineEdit.text(),
                             self.geometricAdvancedSettings.reflectingBoundaryCheckbox.isChecked(),
                             self.selectMDEngineCombobox.currentText().lower(),
@@ -2322,58 +3174,59 @@ experimental! Please always use the latest devel version of NAMD!\n'
                             self.geometricAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useGaWTMCheckbox.isChecked(),
                             self.geometricAdvancedSettings.useCUDASOAIntegrator.isChecked(),
-                            float(self.geometricAdvancedSettings.timestepLineEdit.text())
+                            float(
+                                self.geometricAdvancedSettings.timestepLineEdit.text()
+                            ),
                         )
                     except fileParser.SelectionError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Selection corresponding to nothing!\n\
-Check your selection again!'
+Check your selection again!",
                         )
-                        if os.path.exists(f'{path}/BFEE'):
-                            shutil.rmtree(f'{path}/BFEE')
+                        if os.path.exists(f"{path}/BFEE"):
+                            shutil.rmtree(f"{path}/BFEE")
                         return
                     except inputGenerator.DirectoryExistError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
-./BFEE* directory already exists!'
+                            self,
+                            "Error",
+                            f"\
+./BFEE* directory already exists!",
                         )
                         return
                     except inputGenerator.FileTypeUnknownError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Unkwn input file types! The following file types are supported:\n\
-psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd '
+psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd ",
                         )
                         return
                     except PermissionError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Cannot read input files due to the permission reason!\n\
-Restart the program or check the authority of the files!'
+Restart the program or check the authority of the files!",
                         )
                         return
                     except Exception as e:
                         print(e)
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Unknown error! The error message is: \n\
-{e}\n'
+{e}\n",
                         )
                         return
 
-                elif self.selectStrategyCombobox.currentText() == 'Alchemical':
-
+                elif self.selectStrategyCombobox.currentText() == "Alchemical":
                     try:
                         iGenerator.generateNAMDAlchemicalFiles(
                             path,
@@ -2382,7 +3235,7 @@ Unknown error! The error message is: \n\
                             forceFieldType,
                             forceFieldFiles,
                             float(self.temperatureLineEdit.text()),
-                            self.selectProteineLineEdit.text(),
+                            self.selectProteinLineEdit.text(),
                             self.selectLigandLineEdit.text(),
                             alchemicalStratification,
                             self.alchemicalAdvancedSettings.doubleWideCheckbox.isChecked(),
@@ -2395,83 +3248,91 @@ Unknown error! The error message is: \n\
                             self.alchemicalAdvancedSettings.OPLSMixingRuleCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.useCUDASOAIntegrator.isChecked(),
-                            float(self.alchemicalAdvancedSettings.timestepLineEdit.text()),
+                            float(
+                                self.alchemicalAdvancedSettings.timestepLineEdit.text()
+                            ),
                             self.alchemicalAdvancedSettings.reEqCheckbox.isChecked(),
                             self.alchemicalAdvancedSettings.LDDMCheckbox.isChecked(),
-                            self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.isChecked()
+                            self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.isChecked(),
                         )
                     except PermissionError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Cannot read input files due to the permission reason!\n\
-Restart the program or check the authority of the files!'
+Restart the program or check the authority of the files!",
                         )
                         return
                     except fileParser.SelectionError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Selection corresponding to nothing!\n\
-Check your selection again!'
+Check your selection again!",
                         )
-                        if os.path.exists(f'{path}/BFEE'):
-                            shutil.rmtree(f'{path}/BFEE')
+                        if os.path.exists(f"{path}/BFEE"):
+                            shutil.rmtree(f"{path}/BFEE")
                         return
                     except inputGenerator.DirectoryExistError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
-./BFEE directory already exists!'
+                            self,
+                            "Error",
+                            f"\
+./BFEE directory already exists!",
                         )
                         return
                     except inputGenerator.FileTypeUnknownError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Unkwn input file types! The following file types are supported:\n\
-psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd '
+psf, parm, prm7, parm7, prmtop, pdb, coor, rst, rst7, inpcrd ",
                         )
                         return
                     except Exception as e:
                         print(e)
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Unknown error! The error message is: \n\
-{e}\n'
+{e}\n",
                         )
                         return
 
             # gromacs
             if self.preTreatmentMainTabs.currentIndex() == 1:
-                
                 QMessageBox.warning(
-                    self, 'Warning', ('<ol>\
-                  <li>Any setting in "Advanced settings" is not supported\
+                    self,
+                    "Warning",
+                    (
+                        "<ol>\
+                  <li>Any setting in \"Advanced settings\" is not supported\
                       when using Gromacs-formatted files as inputs!</li>\
                    <li>C-rescale pressure coupling (pcoupl) is used for all simulations, \
                       GROMACS version >= 2021 with Colvars module is required. \
                       You may need to download it from the \
-                      <a href=\'https://github.com/Colvars/colvars/\'>Colvars website</a>.</li></ol>'))
+                      <a href='https://github.com/Colvars/colvars/'>Colvars website</a>.</li></ol>"
+                    ),
+                )
 
                 for item in [
-                        self.topLineEdit.text(), 
-                        self.gromacsPdbLineEdit.text(),
-                        self.gromacsLigandOnlyPdbLineEdit.text(),
-                        self.gromacsLigandOnlyTopLineEdit.text()
-                    ]:
+                    self.topLineEdit.text(),
+                    self.gromacsPdbLineEdit.text(),
+                    self.gromacsLigandOnlyPdbLineEdit.text(),
+                    self.gromacsLigandOnlyTopLineEdit.text(),
+                ]:
                     if not os.path.exists(item):
-                        QMessageBox.warning(self, 'Error', f'file {item} does not exist!')
+                        QMessageBox.warning(
+                            self, "Error", f"file {item} does not exist!"
+                        )
                         return
 
-                if self.selectStrategyCombobox.currentText() == 'Geometric':
-                    try:              
+                if self.selectStrategyCombobox.currentText() == "Geometrical":
+                    try:
                         iGenerator.generateGromacsGeometricFiles(
                             path=path,
                             topFile=self.topLineEdit.text(),
@@ -2480,195 +3341,638 @@ Unknown error! The error message is: \n\
                             ligandOnlyTopFile=self.gromacsLigandOnlyTopLineEdit.text(),
                             ligandOnlyPdbFile=self.gromacsLigandOnlyPdbLineEdit.text(),
                             ligandOnlyPdbFileFormat=self.gromacsLigandOnlyStructureFileFormatCombobox.currentText(),
-                            selectionPro=self.selectProteineLineEdit.text(),
+                            selectionPro=self.selectProteinLineEdit.text(),
                             selectionLig=self.selectLigandLineEdit.text(),
-                            temperature=float(self.temperatureLineEdit.text())
+                            temperature=float(self.temperatureLineEdit.text()),
                         )
                     except inputGenerator.DirectoryExistError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
-./BFEE directory already exists!'
+                            self,
+                            "Error",
+                            f"\
+./BFEE directory already exists!",
                         )
                         return
                     except BFEEGromacs.SelectionError:
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
+                            self,
+                            "Error",
+                            f"\
 Selection corresponding to nothing!\n\
-Check your selection again!'
+Check your selection again!",
                         )
-                        if os.path.exists(f'{path}/BFEE'):
-                            shutil.rmtree(f'{path}/BFEE')
+                        if os.path.exists(f"{path}/BFEE"):
+                            shutil.rmtree(f"{path}/BFEE")
                         return
                     except Exception as e:
                         print(e)
                         QMessageBox.warning(
-                                self, 
-                                'Error', 
-                                f'\
-Unknown error!'
+                            self,
+                            "Error",
+                            f"\
+Unknown error!",
                         )
                         return
-                elif self.selectStrategyCombobox.currentText() == 'Alchemical':
-                    QMessageBox.warning(self, 'Error', f'Alchemical route is not supported using Gromacs!')
+                elif self.selectStrategyCombobox.currentText() == "Alchemical":
+                    QMessageBox.warning(
+                        self,
+                        "Error",
+                        f"Alchemical route is not supported using Gromacs!",
+                    )
                     return
 
-            QMessageBox.information(self, 'Input generation', f'Input files have been generated successfully!')
-            
+            QMessageBox.information(
+                self,
+                "Input generation",
+                f"Input files have been generated successfully!",
+            )
+
             del iGenerator
 
-        return f 
+        return f
 
-    def _mergePMFs(self):
-        """merge a series of overlapped pmfs
-        
+    def _getMergedPMF(self):
+        """Read PMF files from mergePmfBox and return the merged PMF.
+
+        For GaWTM simulations, the user should add both .czar.pmf files and their
+        corresponding .reweightamd1.cumulant.pmf correction files. The function will
+        automatically pair them by matching base names (e.g., 001.czar.pmf with
+        001.reweightamd1.cumulant.pmf).
+
         Returns:
-            function obj: a slot function that merges a series of overlapped pmfs
+            numpy.ndarray or None: The merged PMF array, or None if an error occurred.
         """
-        
-        def f():
-            if self.mergePmfBox.count() == 0:
-                QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
-                return
+        if self.mergePmfBox.count() == 0:
+            QMessageBox.warning(self, "Warning", f"Warning, no PMF selected!")
+            return None
 
-            path, _ = QFileDialog.getSaveFileName(None, 'Set the name of merged PMF')
+        pmfFiles = [
+            self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())
+        ]
 
-            pmfFiles = [self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())]
+        if not ploter.isGaWTM(pmfFiles):
+            # No GaWTM correction files found, read PMFs directly
+            pmfs = [ploter.readPMF(item) for item in pmfFiles]
+        else:
+            # GaWTM simulation: pair czar.pmf files with their corrections
+            (
+                paired,
+                unpaired_czar,
+                orphan_corrections,
+                other_files,
+                wrong_correction_files,
+            ) = ploter.pairGaWTMFiles(pmfFiles)
 
-            if not ploter.isGaWTM(pmfFiles):
-                pmfs = [ploter.readPMF(item) for item in pmfFiles]
-            else:
-                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
+            # Check for wrong correction file type first
+            if wrong_correction_files:
+                fileNames = [pathlib.Path(f).name for f in wrong_correction_files]
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    f"The following correction files are not precise enough:\n"
+                    f"{chr(10).join(fileNames)}\n\n"
+                    f"Please use *.reweightamd1.cumulant.pmf instead of *.reweightamd1.reweight.pmf!",
+                )
+                return None
+
+            # Only show error if there's a mismatch (some czar.pmf missing correction or orphan corrections)
+            # Don't show error if:
+            # - No correction files at all (handled by isGaWTM returning False)
+            # - All czar.pmf files have corresponding corrections (perfect pairing)
+            has_mismatch = (unpaired_czar and paired) or orphan_corrections
+
+            if has_mismatch:
+                error_messages = []
+
+                # Error about unpaired czar.pmf files (missing correction)
+                if unpaired_czar:
+                    fileNames = [pathlib.Path(f).name for f in unpaired_czar]
+                    error_messages.append(
+                        f"The following .czar.pmf files do not have corresponding correction files:\n"
+                        f"{chr(10).join(fileNames)}"
+                    )
+
+                # Error about orphan correction files (missing czar.pmf)
+                if orphan_corrections:
+                    fileNames = [pathlib.Path(f).name for f in orphan_corrections]
+                    error_messages.append(
+                        f"The following correction files do not have corresponding .czar.pmf files:\n"
+                        f"{chr(10).join(fileNames)}"
+                    )
+
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "\n\n".join(error_messages) + "\n\nPlease add the missing files!",
+                )
+                return None
+
+            pmfs = []
+            # Process paired files (with correction)
+            for pmfFile, correctionFile in paired:
                 try:
-                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
-                except ploter.NoCorrectionFileError:
-                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
+                    pmfs.append(ploter.correctGaWTM(pmfFile, correctionFile))
+                except ploter.NoCorrectionFileError as e:
+                    QMessageBox.warning(self, "Error", str(e))
+                    return None
+
+            # Process other PMF files (non-GaWTM format)
+            for pmfFile in other_files:
+                pmfs.append(ploter.readPMF(pmfFile))
+
+        return ploter.mergePMF(pmfs)
+
+    def _getMergedHistPMF(self):
+        """Read History PMF files from mergePmfBox and return the merged History PMF.
+
+        For GaWTM simulations, the user should add both .hist.czar.pmf files and their
+        corresponding correction files (.reweightamd1.cumulant.hist.pmf or
+        .reweightamd1.cumulant.pmf). The function will automatically pair them.
+
+        Returns:
+            list[np.array] or None: The merged History PMF (list of frames), or None if error.
+        """
+        if self.mergePmfBox.count() == 0:
+            QMessageBox.warning(self, "Warning", f"Warning, no History PMF selected!")
+            return None
+
+        pmfFiles = [
+            self.mergePmfBox.item(i).text() for i in range(self.mergePmfBox.count())
+        ]
+
+        if not ploter.isGaWTMHist(pmfFiles):
+            # No GaWTM correction files found, read History PMFs directly
+            all_hist_pmfs = [ploter.readHistPMF(item) for item in pmfFiles]
+        else:
+            # GaWTM simulation: pair hist.czar.pmf files with their corrections
+            (
+                paired,
+                unpaired_czar,
+                orphan_corrections,
+                other_files,
+                wrong_correction_files,
+            ) = ploter.pairGaWTMHistFiles(pmfFiles)
+
+            # Check for wrong correction file type first
+            if wrong_correction_files:
+                fileNames = [pathlib.Path(f).name for f in wrong_correction_files]
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    f"The following files have wrong correction file type:\n"
+                    f"{chr(10).join(fileNames)}\n\n"
+                    f"Please use *.reweightamd1.cumulant.pmf instead of *.reweightamd1.reweight.pmf!",
+                )
+                return None
+
+            # Only show error if there's a mismatch
+            has_mismatch = (unpaired_czar and paired) or orphan_corrections
+
+            if has_mismatch:
+                error_messages = []
+
+                if unpaired_czar:
+                    fileNames = [pathlib.Path(f).name for f in unpaired_czar]
+                    error_messages.append(
+                        f"The following .hist.czar.pmf files do not have corresponding correction files:\n"
+                        f"{chr(10).join(fileNames)}"
+                    )
+
+                if orphan_corrections:
+                    fileNames = [pathlib.Path(f).name for f in orphan_corrections]
+                    error_messages.append(
+                        f"The following correction files do not have corresponding .hist.czar.pmf files:\n"
+                        f"{chr(10).join(fileNames)}"
+                    )
+
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "\n\n".join(error_messages) + "\n\nPlease add the missing files!",
+                )
+                return None
+
+            all_hist_pmfs = []
+            # Process paired files (with correction)
+            for pmfFile, correctionFile, is_hist_correction in paired:
+                try:
+                    all_hist_pmfs.append(
+                        ploter.correctGaWTMHist(
+                            pmfFile, correctionFile, is_hist_correction
+                        )
+                    )
+                except ploter.NoCorrectionFileError as e:
+                    QMessageBox.warning(self, "Error", str(e))
+                    return None
+
+            # Process other History PMF files (non-GaWTM format)
+            for pmfFile in other_files:
+                all_hist_pmfs.append(ploter.readHistPMF(pmfFile))
+
+        return ploter.mergeHistPMF(all_hist_pmfs)
+
+    def _savePMFs(self):
+        """Save merged PMFs to a file.
+
+        Returns:
+            function obj: a slot function that saves the merged PMFs
+        """
+
+        def f():
+            if self.mergePmfHistoryRadio.isChecked():
+                # History PMF mode
+                mergedHistPMF = self._getMergedHistPMF()
+                if mergedHistPMF is None:
                     return
 
-            mergedPMF = ploter.mergePMF(pmfs)
-            ploter.writePMF(path, mergedPMF)
-            QMessageBox.information(self, 'Merge PMFs', f'PMF merged successfully!')
+                path, _ = QFileDialog.getSaveFileName(
+                    None,
+                    "Set the name of merged History PMF",
+                    "",
+                    "History PMF files (*.hist.pmf);;All Files (*)",
+                )
+                if not path:
+                    return
+
+                ploter.writeHistPMF(path, mergedHistPMF)
+                QMessageBox.information(
+                    self,
+                    "Save History PMFs",
+                    f"History PMF saved successfully!\n{len(mergedHistPMF)} frames written.",
+                )
+            else:
+                # Plain PMF mode
+                mergedPMF = self._getMergedPMF()
+                if mergedPMF is None:
+                    return
+
+                path, _ = QFileDialog.getSaveFileName(
+                    None,
+                    "Set the name of merged PMF",
+                    "",
+                    "PMF files (*.pmf);;All Files (*)",
+                )
+                if not path:
+                    return
+
+                ploter.writePMF(path, mergedPMF)
+                QMessageBox.information(self, "Save PMFs", f"PMF saved successfully!")
+
         return f
 
     def _plotPMFs(self):
-        """plot a series of overlapped pmfs
-        
+        """Plot merged PMFs.
+
         Returns:
-            function obj: a slot function that plots a series of overlapped pmfs
+            function obj: a slot function that plots the merged PMFs
         """
-        
+
         def f():
-            if self.plotPmfBox.count() == 0:
-                QMessageBox.warning(self, 'Warning', f'Warning, no PMF selected!')
+            # History PMF mode does not support plotting (button should be disabled)
+            # but check anyway for safety
+            if self.mergePmfHistoryRadio.isChecked():
+                QMessageBox.warning(
+                    self,
+                    "Warning",
+                    "Plotting is not available for History PMFs. Please use Save instead.",
+                )
                 return
 
-            pmfFiles = [self.plotPmfBox.item(i).text() for i in range(self.plotPmfBox.count())]
+            mergedPMF = self._getMergedPMF()
+            if mergedPMF is None:
+                return
 
-            if not ploter.isGaWTM(pmfFiles):
-                pmfs = [ploter.readPMF(item) for item in pmfFiles]
-            else:
-                pmfFiles = [item for item in pmfFiles if not item.endswith('.reweightamd1.cumulant.pmf')]
-                try:
-                    pmfs = [ploter.correctGaWTM(item) for item in pmfFiles]
-                except ploter.NoCorrectionFileError:
-                    QMessageBox.warning(self, 'Error', f'A PMF file does not have corresponding correction!')
-                    return
-            
-            mergedPMF = ploter.mergePMF(pmfs)
             ploter.plotPMF(mergedPMF)
+
         return f
 
     def _plotRMSDConvergence(self):
         """plot time evolution of PMF rmsd with respect to zero array
-        
+
         Returns:
             function obj: a slot function that plots time evolution of PMF rmsd with respect to zero array
         """
-        
+
         def f():
             path = self.plotPmfConvergenceBox.text()
             if not os.path.exists(path):
-                QMessageBox.warning(self, 'Error', f'file {path} does not exist!')
+                QMessageBox.warning(self, "Error", f"file {path} does not exist!")
                 return
-            
+
             rmsds = ploter.parseHistFile(path)
             ploter.plotConvergence(rmsds)
+
         return f
-    
+
+    def _saveRMSDConvergence(self):
+        """save PMF RMSD convergence data to a file
+
+        Returns:
+            function obj: a slot function that saves PMF RMSD convergence data to a file
+        """
+
+        def f():
+            path = self.plotPmfConvergenceBox.text()
+            if not os.path.exists(path):
+                QMessageBox.warning(self, "Error", f"file {path} does not exist!")
+                return
+
+            savePath, _ = QFileDialog.getSaveFileName(
+                None,
+                "Save PMF RMSD convergence data",
+                "",
+                "Data files (*.dat *.txt);;All Files (*)",
+            )
+            if not savePath:
+                return
+
+            rmsds = ploter.parseHistFile(path)
+            ploter.saveConvergence(rmsds, savePath)
+            QMessageBox.information(self, "Save", f"Data saved successfully!")
+
+        return f
+
+    def _getHysteresisProfiles(self):
+        """Parse input files and return forward and backward hysteresis profiles.
+
+        Returns:
+            tuple: (forwardProfile, backwardProfile) as np.arrays, or (None, None) on error
+        """
+        forwardFilePath = self.plotHysteresisForwardLineEdit.text()
+        backwardFilePath = self.plotHysteresisBackwardLineEdit.text()
+
+        # Check forward file exists
+        if not os.path.exists(forwardFilePath):
+            QMessageBox.warning(
+                self, "Error", f"file {forwardFilePath} does not exist!"
+            )
+            return None, None
+
+        forwardPostfix = os.path.splitext(forwardFilePath)[-1]
+
+        # Validate file type
+        if forwardPostfix not in [".fepout", ".log"]:
+            QMessageBox.warning(
+                self,
+                "Error",
+                "File type not correct! Only .fepout and .log files are supported.",
+            )
+            return None, None
+
+        # Check backward file if provided
+        hasBackwardFile = backwardFilePath.strip() != "" and os.path.exists(
+            backwardFilePath
+        )
+        if backwardFilePath.strip() != "" and not hasBackwardFile:
+            QMessageBox.warning(
+                self, "Error", f"file {backwardFilePath} does not exist!"
+            )
+            return None, None
+
+        if hasBackwardFile:
+            backwardPostfix = os.path.splitext(backwardFilePath)[-1]
+            if forwardPostfix != backwardPostfix:
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "File types of forward and backward simulations are not the same!",
+                )
+                return None, None
+
+        try:
+            if forwardPostfix == ".fepout":
+                # Use py_bar.NAMDParser to handle both double-wide and separate files
+                backward = backwardFilePath if hasBackwardFile else ""
+                try:
+                    parser = py_bar.NAMDParser(forwardFilePath, backward)
+                    windows, deltaU_data = parser.get_data()
+                except RuntimeError as e:
+                    if "Forward and backward data do not match" in str(e):
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            "Cannot parse fepout file!\n\n"
+                            "If you only provide one file, please make sure it is a double-wide format.\n"
+                            "Otherwise, please provide both forward and backward files.",
+                        )
+                        return None, None
+                    raise
+
+                # Get temperature for free energy calculation
+                try:
+                    temperature = float(self.alchemicalPostTemperatureLineEdit.text())
+                except ValueError:
+                    temperature = 300.0
+
+                # Calculate free energy profiles using FEPAnalyzer
+                analyzer = py_bar.FEPAnalyzer(windows, deltaU_data, temperature)
+                window_boundaries, free_energies, errors = analyzer.FEP_free_energy()
+
+                # Build forward and backward profiles from bidirectional FEP data
+                # Extract lambda values and cumulative free energies
+                lambdas = [w[0] for w in window_boundaries]
+                lambdas.append(window_boundaries[-1][1])  # Add final lambda
+
+                # Calculate forward cumulative sum
+                forward_cumsum = [0.0]
+                backward_cumsum = [0.0]
+
+                for i, (dU_forward, dU_backward) in enumerate(deltaU_data):
+                    # Forward: exponential average of forward deltaU
+                    beta = 1.0 / (py_bar.BOLTZMANN * temperature)
+                    dG_forward = (
+                        -py_bar.BOLTZMANN
+                        * temperature
+                        * np.log(np.mean(np.exp(-dU_forward * beta)))
+                    )
+                    dG_backward = (
+                        -py_bar.BOLTZMANN
+                        * temperature
+                        * np.log(np.mean(np.exp(-dU_backward * beta)))
+                    )
+
+                    forward_cumsum.append(forward_cumsum[-1] + dG_forward)
+                    backward_cumsum.append(backward_cumsum[-1] - dG_backward)
+
+                forwardProfile = np.column_stack([lambdas, forward_cumsum])
+                backwardProfile = np.column_stack([lambdas, backward_cumsum])
+
+            elif forwardPostfix == ".log":
+                # For .log files, require both forward and backward files
+                if not hasBackwardFile:
+                    QMessageBox.warning(
+                        self,
+                        "Error",
+                        "For .log files, both forward and backward files are required.",
+                    )
+                    return None, None
+
+                pTreat = postTreatment.postTreatment(
+                    float(self.alchemicalPostTemperatureLineEdit.text()),
+                    "namd",
+                    "alchemical",
+                )
+                forwardProfile = np.transpose(
+                    pTreat._tiLogFile(
+                        forwardFilePath, self.isRigidLigandCheckbox.isChecked()
+                    )
+                )
+                backwardProfile = np.transpose(
+                    pTreat._tiLogFile(
+                        backwardFilePath, self.isRigidLigandCheckbox.isChecked()
+                    )
+                )
+
+            return forwardProfile, backwardProfile
+
+        except Exception as e:
+            QMessageBox.warning(
+                self, "Error", f"Failed to parse hysteresis data:\n{str(e)}"
+            )
+            return None, None
+
     def _plotHysteresis(self):
         """plot hysteresis between forward and backward alchemical transformations
-        
+
+        For .fepout files: uses py_bar.NAMDParser to handle both double-wide and
+        separate forward/backward files.
+        For .log files: uses the original TI log parsing method.
+
         Returns:
             function obj: a slot function that plot hysteresis between forward and backward alchemical transformations
         """
-        
+
         def f():
-            forwardFilePath = self.plotHysteresisForwardLineEdit.text()
-            backwardFilePath = self.plotHysteresisBackwardLineEdit.text() 
-            if not os.path.exists(forwardFilePath):
-                QMessageBox.warning(self, 'Error', f'file {forwardFilePath} does not exist!')
-                return
-            if not os.path.exists(backwardFilePath):
-                QMessageBox.warning(self, 'Error', f'file {backwardFilePath} does not exist!')
+            forwardProfile, backwardProfile = self._getHysteresisProfiles()
+            if forwardProfile is None:
                 return
 
-            forwardPostfix = os.path.splitext(forwardFilePath)[-1]
-            backwardPostfix = os.path.splitext(backwardFilePath)[-1]
-
-            if forwardPostfix != '.fepout' and forwardPostfix != '.log' \
-                and backwardPostfix != '.fepout' and forwardPostfix != '.log':
-                QMessageBox.warning(self, 'Error', f'File type not correct!')
-                return
-
-            if forwardPostfix != backwardPostfix:
-                QMessageBox.warning(self, 'Error', f'File types of forward and backward simulations are not the same!')
-                return
-            
-            pTreat = postTreatment.postTreatment(float(self.alchemicalPostTemperatureLineEdit.text()), 'namd', 'alchemical')
-            if forwardPostfix == '.fepout':
-                forwardProfile = np.transpose(pTreat._fepoutFile(forwardFilePath))
-                backwardProfile = np.transpose(pTreat._fepoutFile(backwardFilePath))
-                backwardProfile[:,1] *= -1
-            elif forwardPostfix == '.log':
-                forwardProfile = np.transpose(pTreat._tiLogFile(forwardFilePath, self.isRigidLigandCheckbox.isChecked()))
-                backwardProfile = np.transpose(pTreat._tiLogFile(backwardFilePath, self.isRigidLigandCheckbox.isChecked()))
             ploter.plotHysteresis(forwardProfile, backwardProfile)
+
         return f
-    
-    def _quickSetProteinProteinGeometric(self):
-        """quick setting for protein-protein binding free energy calculations through the geometrical route
+
+    def _saveHysteresis(self):
+        """save hysteresis data to a file
+
+        Returns:
+            function obj: a slot function that saves hysteresis data to a file
         """
 
+        def f():
+            forwardProfile, backwardProfile = self._getHysteresisProfiles()
+            if forwardProfile is None:
+                return
+
+            savePath, _ = QFileDialog.getSaveFileName(
+                None,
+                "Save hysteresis data",
+                "",
+                "Data files (*.dat *.txt);;All Files (*)",
+            )
+            if not savePath:
+                return
+
+            ploter.saveHysteresis(forwardProfile, backwardProfile, savePath)
+            QMessageBox.information(self, "Save", f"Data saved successfully!")
+
+        return f
+
+    def _showLigandTypeDialog(self):
+        """Show a dialog asking the user to select between Flexible ligand and Rigid ligand.
+
+        Returns:
+            str or None: 'flexible', 'rigid', or None if cancelled
+        """
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select Ligand Type")
+        layout = QVBoxLayout(dialog)
+
+        # Add explanatory label
+        label = QLabel("Please select the ligand type:")
+        layout.addWidget(label)
+
+        # Create radio buttons
+        flexibleRadio = QRadioButton("Flexible ligand")
+        rigidRadio = QRadioButton("Rigid ligand")
+        flexibleRadio.setChecked(True)  # Default to flexible
+
+        # Add radio buttons to layout
+        layout.addWidget(flexibleRadio)
+        layout.addWidget(rigidRadio)
+
+        # Add button box
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.rejected.connect(dialog.reject)
+        layout.addWidget(buttonBox)
+
+        # Show dialog and get result
+        if dialog.exec() == QDialog.Accepted:
+            if flexibleRadio.isChecked():
+                return "flexible"
+            else:
+                return "rigid"
+        return None
+
+    def _quickSetProteinProteinGeometric(self):
+        """quick setting for protein-protein binding free energy calculations through the geometrical route"""
+
         self.selectMDEngineCombobox.setCurrentText("NAMD")
-        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.selectStrategyCombobox.setCurrentText("Geometrical")
         self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
         self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(False)
         self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
         self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(True)
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-protein binding free-energy calculations \
-                                                    through the geometrical route!')
-        
+        QMessageBox.information(
+            self,
+            "Settings",
+            f"Changed settings for protein-protein binding free-energy calculations \
+through the geometrical route!",
+        )
+
     def _quickSetProteinLigandGeometric(self):
-        """quick setting for protein-ligand binding free energy calculations through the geometrical route
-        """
+        """quick setting for protein-ligand binding free energy calculations through the geometrical route"""
+
+        # Ask user to select ligand type
+        ligandType = self._showLigandTypeDialog()
+        if ligandType is None:
+            return  # User cancelled
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
-        self.selectStrategyCombobox.setCurrentText("Geometric")
+        self.selectStrategyCombobox.setCurrentText("Geometrical")
         self.geometricAdvancedSettings.stratificationRMSDBoundLineEdit.setText("3")
         self.geometricAdvancedSettings.stratificationRMSDUnboundLineEdit.setText("3")
         self.geometricAdvancedSettings.stratificationRLineEdit.setText("5")
         self.geometricAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
-        self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
         self.geometricAdvancedSettings.useGaWTMCheckbox.setChecked(False)
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the geometrical route!')
-        
+
+        # Set RMSD CV checkbox based on ligand type for both Advanced Settings
+        if ligandType == "flexible":
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            QMessageBox.information(
+                self,
+                "Settings",
+                f"Changed settings for protein-ligand (flexible) binding free-energy calculations \
+through the geometrical route!",
+            )
+        else:  # rigid
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            QMessageBox.information(
+                self,
+                "Settings",
+                f"Changed settings for protein-ligand (rigid) binding free-energy calculations \
+through the geometrical route!",
+            )
+
     def _quickSetProteinLigandAlchemical(self):
-        """quick setting for protein-ligand binding free energy calculations through the alchemical route
-        """
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route"""
+
+        # Ask user to select ligand type
+        ligandType = self._showLigandTypeDialog()
+        if ligandType is None:
+            return  # User cancelled
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
         self.selectStrategyCombobox.setCurrentText("Alchemical")
@@ -2681,88 +3985,176 @@ Unknown error!'
         self.alchemicalAdvancedSettings.reEqCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(False)
         self.alchemicalAdvancedSettings.useWTMLambdaABFCheckbox.setChecked(False)
-        self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the alchemical route!')
-    
+
+        # Set RMSD CV checkbox based on ligand type for both Advanced Settings
+        if ligandType == "flexible":
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(True)
+            QMessageBox.information(
+                self,
+                "Settings",
+                f"Changed settings for protein-ligand (flexible) binding free-energy calculations \
+through the alchemical route!",
+            )
+        else:  # rigid
+            self.geometricAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            self.alchemicalAdvancedSettings.considerRMSDCVCheckbox.setChecked(False)
+            QMessageBox.information(
+                self,
+                "Settings",
+                f"Changed settings for protein-ligand (rigid) binding free-energy calculations \
+through the alchemical route!",
+            )
+
     def _quickSetProteinLigandLDDM(self):
-        """quick setting for protein-ligand binding free energy calculations through the alchemical route
-        """
+        """quick setting for protein-ligand binding free energy calculations through the alchemical route"""
 
         self.selectMDEngineCombobox.setCurrentText("NAMD")
         self.selectStrategyCombobox.setCurrentText("Alchemical")
-        
+
         self.alchemicalAdvancedSettings.pinDownProCheckbox.setChecked(True)
         self.alchemicalAdvancedSettings.useCUDASOAIntegrator.setChecked(True)
 
         self.alchemicalAdvancedSettings.LDDMCheckbox.setChecked(True)
 
-        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText('200')
-        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText('100')
+        self.alchemicalAdvancedSettings.boundLigandLineEdit.setText("200")
+        self.alchemicalAdvancedSettings.unboundLigandLineEdit.setText("100")
 
-        self.alchemicalAdvancedSettings.timestepLineEdit.setText('2.0')
-        QMessageBox.information(self, 'Settings', f'Changed settings for protein-ligand binding free-energy calculations \
-                                                    through the LDDM!')
-        
+        self.alchemicalAdvancedSettings.timestepLineEdit.setText("2.0")
+        QMessageBox.information(
+            self,
+            "Settings",
+            f"Changed settings for protein-ligand binding free-energy calculations \
+through the LDDM!",
+        )
+
     def _quickSetAI(self):
-        """AI-assisted setting for binding free energy calculations
-        """
-        if self.mainSettings.openRouterAPILineEdit.text() == '' or self.mainSettings.openRouterModelLineEdit.text() == '':
-            QMessageBox.warning(self, 'Warning', 'Please set both the OpenRouter API and model paths before using the AI assistance.')
+        """AI-assisted setting for binding free energy calculations"""
+        if (
+            self.mainSettings.openAICompatibleAPIAddressLineEdit.text().strip() == ""
+            or self.mainSettings.openAICompatibleKeyLineEdit.text().strip() == ""
+            or self.mainSettings.openAICompatibleModelLineEdit.text().strip() == ""
+        ):
+            QMessageBox.warning(
+                self,
+                "Warning",
+                "Please set the OpenAI-compatible API address, key, and model before using the AI assistance.",
+            )
             return
         self.aiAssistantDialog.show()
 
     def _initSingalsSlots(self):
-        """initialize (connect) singals and slots
-        """
+        """initialize (connect) singals and slots"""
 
         # pre-treatment tab
-        self.selectStrategyAdvancedButton.clicked.connect(self._advancedSettings(self.selectStrategyCombobox))
-        self.preTreatmentMainTabs.currentChanged.connect(self._changeStrategySettingStateForOldGromacs)
+        self.selectStrategyAdvancedButton.clicked.connect(
+            self._advancedSettings(self.selectStrategyCombobox)
+        )
+        self.preTreatmentMainTabs.currentChanged.connect(
+            self._changeStrategySettingStateForOldGromacs
+        )
 
         # NAMD tab
-        self.psfButton.clicked.connect(commonSlots.openFileDialog('psf/parm', self.psfLineEdit))
-        self.coorButton.clicked.connect(commonSlots.openFileDialog('pdb/rst', self.coorLineEdit))
+        self.psfButton.clicked.connect(
+            commonSlots.openFileDialog("psf/parm", self.psfLineEdit)
+        )
+        self.coorButton.clicked.connect(
+            commonSlots.openFileDialog("pdb/rst", self.coorLineEdit)
+        )
 
         # force field selection
         self.forceFieldCombobox.currentTextChanged.connect(self._changeFFButtonState)
-        self.forceFieldAddButton.clicked.connect(commonSlots.openFilesDialog('prm', self.forceFieldFilesBox))
+        self.forceFieldAddButton.clicked.connect(
+            commonSlots.openFilesDialog("prm", self.forceFieldFilesBox)
+        )
         self.forceFieldClearButton.clicked.connect(self.forceFieldFilesBox.clear)
-        
+
         # MD engine
-        self.selectMDEngineCombobox.currentTextChanged.connect(self._changeStrategySettingState)
+        self.selectMDEngineCombobox.currentTextChanged.connect(
+            self._changeStrategySettingState
+        )
 
         # gromacs tab
-        self.gromacsPdbButton.clicked.connect(commonSlots.openFileDialog('pdb', self.gromacsPdbLineEdit))
-        self.topButton.clicked.connect(commonSlots.openFileDialog('top', self.topLineEdit))
-        self.gromacsLigandOnlyPdbButton.clicked.connect(commonSlots.openFileDialog('pdb', self.gromacsLigandOnlyPdbLineEdit))
-        self.gromacsLigandOnlyTopButton.clicked.connect(commonSlots.openFileDialog('top', self.gromacsLigandOnlyTopLineEdit))
+        self.gromacsPdbButton.clicked.connect(
+            commonSlots.openFileDialog("pdb", self.gromacsPdbLineEdit)
+        )
+        self.topButton.clicked.connect(
+            commonSlots.openFileDialog("top", self.topLineEdit)
+        )
+        self.gromacsLigandOnlyPdbButton.clicked.connect(
+            commonSlots.openFileDialog("pdb", self.gromacsLigandOnlyPdbLineEdit)
+        )
+        self.gromacsLigandOnlyTopButton.clicked.connect(
+            commonSlots.openFileDialog("top", self.gromacsLigandOnlyTopLineEdit)
+        )
 
         # geometric tab
-        self.rmsdBoundButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.rmsdBoundLineEdit))
-        self.rmsdUnboundButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.rmsdUnboundLineEdit))
-        self.ThetaButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.ThetaLineEdit))
-        self.PhiButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.PhiLineEdit))
-        self.PsiButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.PsiLineEdit))
-        self.thetaButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.thetaLineEdit))
-        self.phiButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.phiLineEdit))
-        self.rButton.clicked.connect(commonSlots.openFileDialog('czar.pmf/UI.pmf', self.rLineEdit))
+        self.rmsdBoundButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.rmsdBoundLineEdit)
+        )
+        self.rmsdUnboundButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.rmsdUnboundLineEdit)
+        )
+        self.ThetaButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.ThetaLineEdit)
+        )
+        self.PhiButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.PhiLineEdit)
+        )
+        self.PsiButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.PsiLineEdit)
+        )
+        self.thetaButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.thetaLineEdit)
+        )
+        self.phiButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.phiLineEdit)
+        )
+        self.rButton.clicked.connect(
+            commonSlots.openFileDialog("czar.pmf/UI.pmf", self.rLineEdit)
+        )
 
         # alchemical tab
-        self.alchemicalForwardButton1.clicked.connect(commonSlots.openFileDialog('log', self.alchemicalForwardLineEdit1))
-        self.alchemicalBackwardButton1.clicked.connect(commonSlots.openFileDialog('log', self.alchemicalBackwardLineEdit1))
-        self.alchemicalForwardButton2.clicked.connect(commonSlots.openFileDialog('log', self.alchemicalForwardLineEdit2))
-        self.alchemicalBackwardButton2.clicked.connect(commonSlots.openFileDialog('log', self.alchemicalBackwardLineEdit2))
-        self.alchemicalForwardButton3.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalForwardLineEdit3))
-        self.alchemicalBackwardButton3.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalBackwardLineEdit3))
-        self.alchemicalForwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalForwardLineEdit4))
-        self.alchemicalBackwardButton4.clicked.connect(commonSlots.openFileDialog('fepout', self.alchemicalBackwardLineEdit4))
+        self.alchemicalForwardButton1.clicked.connect(
+            commonSlots.openFileDialog("log", self.alchemicalForwardLineEdit1)
+        )
+        self.alchemicalBackwardButton1.clicked.connect(
+            commonSlots.openFileDialog("log", self.alchemicalBackwardLineEdit1)
+        )
+        self.alchemicalForwardButton2.clicked.connect(
+            commonSlots.openFileDialog("log", self.alchemicalForwardLineEdit2)
+        )
+        self.alchemicalBackwardButton2.clicked.connect(
+            commonSlots.openFileDialog("log", self.alchemicalBackwardLineEdit2)
+        )
+        self.alchemicalForwardButton3.clicked.connect(
+            commonSlots.openFileDialog("fepout", self.alchemicalForwardLineEdit3)
+        )
+        self.alchemicalBackwardButton3.clicked.connect(
+            commonSlots.openFileDialog("fepout", self.alchemicalBackwardLineEdit3)
+        )
+        self.alchemicalForwardButton4.clicked.connect(
+            commonSlots.openFileDialog("fepout", self.alchemicalForwardLineEdit4)
+        )
+        self.alchemicalBackwardButton4.clicked.connect(
+            commonSlots.openFileDialog("fepout", self.alchemicalBackwardLineEdit4)
+        )
 
         # LDDM tab
-        self.LDDMStep1ColvarsButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep1ColvarsLineEdit))
-        self.LDDMStep1ColvarsTrajButton.clicked.connect(commonSlots.openFileDialog('colvars.traj', self.LDDMStep1ColvarsTrajLineEdit))
-        self.LDDMStep1FepoutButton.clicked.connect(commonSlots.openFileDialog('fepout', self.LDDMStep1FepoutLineEdit))
-        self.LDDMStep3FepoutButton.clicked.connect(commonSlots.openFileDialog('in.tmp', self.LDDMStep3FepoutLineEdit))
+        self.LDDMStep1ColvarsButton.clicked.connect(
+            commonSlots.openFileDialog("in.tmp", self.LDDMStep1ColvarsLineEdit)
+        )
+        self.LDDMStep1ColvarsTrajButton.clicked.connect(
+            commonSlots.openFileDialog(
+                "colvars.traj", self.LDDMStep1ColvarsTrajLineEdit
+            )
+        )
+        self.LDDMStep1FepoutButton.clicked.connect(
+            commonSlots.openFileDialog("fepout", self.LDDMStep1FepoutLineEdit)
+        )
+        self.LDDMStep3FepoutButton.clicked.connect(
+            commonSlots.openFileDialog("in.tmp", self.LDDMStep3FepoutLineEdit)
+        )
 
         # generate input files
         self.generateInputButton.clicked.connect(self._generateInputFiles())
@@ -2771,15 +4163,24 @@ Unknown error!'
         self.calculateButton.clicked.connect(self._showFinalResults())
 
         # quick-plot tab
-        self.plotPmfAddButton.clicked.connect(commonSlots.openFilesDialog('pmf', self.plotPmfBox))
-        self.plotPmfClearButton.clicked.connect(self.plotPmfBox.clear)
-        self.plotPmfPlotButton.clicked.connect(self._plotPMFs())
-        self.mergePmfAddButton.clicked.connect(commonSlots.openFilesDialog('pmf', self.mergePmfBox))
+        self.mergePmfAddButton.clicked.connect(
+            commonSlots.openFilesDialog("pmf", self.mergePmfBox)
+        )
         self.mergePmfClearButton.clicked.connect(self.mergePmfBox.clear)
-        self.mergePmfmergeButton.clicked.connect(self._mergePMFs())
-        self.plotPmfConvergenceBrowseButton.clicked.connect(commonSlots.openFileDialog('pmf', self.plotPmfConvergenceBox))
+        self.mergePmfPlotButton.clicked.connect(self._plotPMFs())
+        self.mergePmfSaveButton.clicked.connect(self._savePMFs())
+        self.plotPmfConvergenceBrowseButton.clicked.connect(
+            commonSlots.openFileDialog("pmf", self.plotPmfConvergenceBox)
+        )
         self.plotPmfConvergencePlotButton.clicked.connect(self._plotRMSDConvergence())
-        self.plotHysteresisForwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisForwardLineEdit))
-        self.plotHysteresisBackwardButton.clicked.connect(commonSlots.openFileDialog('fepout/log', self.plotHysteresisBackwardLineEdit))
+        self.plotPmfConvergenceSaveButton.clicked.connect(self._saveRMSDConvergence())
+        self.plotHysteresisForwardButton.clicked.connect(
+            commonSlots.openFileDialog("fepout/log", self.plotHysteresisForwardLineEdit)
+        )
+        self.plotHysteresisBackwardButton.clicked.connect(
+            commonSlots.openFileDialog(
+                "fepout/log", self.plotHysteresisBackwardLineEdit
+            )
+        )
         self.plotHysteresisPlotButton.clicked.connect(self._plotHysteresis())
-        
+        self.plotHysteresisSaveButton.clicked.connect(self._saveHysteresis())

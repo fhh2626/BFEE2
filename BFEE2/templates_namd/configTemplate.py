@@ -284,7 +284,6 @@ alchOutFile {outputPrefix}.fepout               \n\
 alchOutFreq 50                                  \n\
 alchVdwLambdaEnd 0.7                            \n\
 alchElecLambdaStart 0.5                         \n\
-alchDecouple   on                               \n\
 alchEquilSteps 100000                           \n'
 
             if fepForward:
@@ -668,7 +667,7 @@ colvar {{                                   \n\
             string += f'\
     customFunction atan2(i3, i1) * 180 / 3.1415926\n\
     period  360                             \n\
-    wrapAround 0.0                          \n'
+    wrapAround {int((lowerBoundary + upperBoundary) / 2)}                          \n'
 
         if setBoundary:
             string += f'\
@@ -806,7 +805,7 @@ colvar {{                                   \n\
             string += f'\
     customFunction atan2(cos(t / 180 * 3.1415926), cos(p / 180 * 3.1415926) * sin(t / 180 * 3.1415926)) * 180 / 3.1415926\n\
     period  360                             \n\
-    wrapAround 0.0                          \n'
+    wrapAround {int((lowerBoundary + upperBoundary) / 2)}                          \n'
 
         if setBoundary:
             string += f'\
@@ -1058,7 +1057,7 @@ metadynamics {{                   \n\
     hillWidth         3.0         \n\
     hillWeight        {0.05 * scaleFactor:.2f}        \n\
     wellTempered      on          \n\
-    biasTemperature   4000        \n\
+    biasTemperature   3000        \n\
 }}                                \n'
         return string
     
@@ -1092,7 +1091,8 @@ histogram {{                     \n\
         
         string = f'\
 reweightamd {{                  \n\
-  colvars  {cv}                 \n\
+  colvars        {cv}           \n\
+  historyfreq    50000          \n\
 }}                              \n'
         return string
 

@@ -1,0 +1,277 @@
+/* Global Styles - Candy Pop (High Em) */
+/* Palette: Very Dark Gray #212121, Vibrant Pink #ff007a, Bright Cyan #00e5ff, Purple #d500f9 */
+
+QWidget {
+    background-color: #212121;
+    color: #eeeeee;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Backgrounds */
+QMainWindow, QDialog {
+    background-color: #212121;
+}
+
+QLabel, QCheckBox, QRadioButton, QSlider {
+    background-color: transparent;
+}
+
+/* GroupBox - Neon Cyan Border */
+QGroupBox {
+    background-color: #2c2c2c; 
+    border: 0.06em solid #00e5ff;
+    border-radius: 0.25em;
+    margin-top: 0.6em;
+    padding-top: 0.5em;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 0 0.4em;             
+    color: #00e5ff;               /* Bright Cyan */
+    background-color: #212121;
+    border-radius: 0.2em;
+}
+
+/* List Widgets - Dark Cards */
+QListWidget, QListView, QTreeWidget, QTreeView {
+    background-color: #2c2c2c;
+    border: 0.06em solid #424242;
+    border-radius: 0.2em;         
+    padding: 0.12em;              
+    color: #ffffff;
+    outline: none; 
+}
+
+QListWidget::item, QTreeWidget::item {
+    padding: 0.1em 0.2em;
+    border: none;
+    border-radius: 0.2em;
+}
+
+QListWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #d500f9; /* Vibrant Purple selection */
+    color: #ffffff;
+}
+
+QListWidget::item:hover, QTreeWidget::item:hover {
+    background-color: #424242;
+}
+
+/* Tabs */
+QTabWidget::pane {
+    border: 0.06em solid #424242;
+    background-color: #2c2c2c;
+    border-radius: 0.4em;
+}
+
+QTabBar::tab {
+    background: #212121;
+    border: 0.06em solid #424242;
+    padding: 0.25em 0.75em;
+    border-bottom: none;
+    border-top-left-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    color: #bdbdbd;
+    margin-right: 0.1em;
+}
+
+QTabBar::tab:selected {
+    background: #2c2c2c;
+    color: #ff007a; /* Pink Text */
+    border-bottom: 0.12em solid #ff007a;
+    font-weight: bold;
+}
+
+QTabBar::tab:hover {
+    background: #333333;
+    color: #ffffff;
+}
+
+/* Buttons - Colorful Gradient-like solid colors */
+QPushButton {
+    background-color: #3d3d3d;
+    border: none;
+    border-radius: 0.2em;
+    padding: 0.2em 0.6em;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #ff007a; /* Vibrant Pink on Hover */
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #d500f9; /* Purple on press */
+}
+
+QPushButton:disabled {
+    background-color: #424242;
+    color: #757575;
+}
+
+/* Special Button Style for "OK" / Action buttons if distinguishable by object name (not guaranteed here)
+   So we just make all buttons pop.
+*/
+
+/* Inputs */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #2c2c2c;
+    border: 0.06em solid #424242;
+    border-radius: 0.2em;
+    padding: 0.15em;
+    color: #ffffff;
+    selection-background-color: #ff007a;
+}
+
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 0.06em solid #ff007a; /* Pink focus border */
+    background-color: #333333;
+}
+
+QLineEdit:disabled {
+    background-color: #212121;
+    color: #757575;
+}
+
+/* ComboBox */
+QComboBox {
+    background-color: #3d3d3d;
+    border: none;
+    border-radius: 0.2em;
+    padding: 0.15em 0.4em;
+    color: #ffffff;
+}
+
+QComboBox:hover {
+    background-color: #424242; /* Subtle change */
+    border: 0.06em solid #00e5ff; /* Cyan border on hover */
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 1.5em;
+    border-left-width: 0.06em;
+    border-left-color: #616161;
+    border-left-style: solid; 
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2c2c2c;
+    border: 0.06em solid #424242;
+    selection-background-color: #d500f9;
+    color: #ffffff;
+}
+
+/* Check/Radio */
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 1em;
+    height: 1em;
+    background-color: #2c2c2c;
+    border: 0.06em solid #757575;
+    border-radius: 0.2em;
+}
+
+QRadioButton::indicator {
+    border-radius: 0.5em;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #00e5ff; /* Cyan check */
+    border: 0.06em solid #00e5ff;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #ff007a; /* Pink radio */
+    border: 0.06em solid #ff007a;
+}
+
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border: 0.06em solid #ffffff;
+}
+
+/* Menus */
+QMenuBar {
+    background-color: #212121;
+    border-bottom: 0.06em solid #424242;
+}
+
+QMenuBar::item {
+    padding: 0.3em 0.8em;
+    background: transparent;
+}
+
+QMenuBar::item:selected {
+    background: #3d3d3d;
+    color: #00e5ff;
+}
+
+QMenu {
+    background-color: #2c2c2c;
+    border: 0.06em solid #424242;
+}
+
+QMenu::item {
+    padding: 0.3em 1.5em;
+}
+
+QMenu::item:selected {
+    background-color: #ff007a;
+    color: #ffffff;
+}
+
+/* ScrollBars - Fun and bright */
+QScrollBar:vertical {
+    border: none;
+    background: #212121;
+    width: 0.6em;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #616161;
+    min-height: 1.5em; 
+    border-radius: 0.3em;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #ff007a; /* Pink scrollbar handle on hover */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0em;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #212121;
+    height: 0.6em;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: #616161;
+    min-width: 1.5em;
+    border-radius: 0.3em;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #ff007a;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0em;
+}
+
+QToolTip {
+    border: 0.06em solid #ff007a;
+    background-color: #212121;
+    color: #00e5ff;
+    padding: 0.2em;
+    font-weight: bold;
+}
