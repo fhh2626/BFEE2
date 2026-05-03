@@ -1329,7 +1329,7 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.helpAction.triggered.connect(self._openDocFile)
 
         # python API
-        self.pythonAPIAction = QAction("&Python API", self)
+        self.pythonAPIAction = QAction("&Python API Docs", self)
         self.pythonAPIAction.setStatusTip("Open Python API Documentation")
         self.pythonAPIAction.triggered.connect(self._openPythonAPIFile)
 
@@ -1369,10 +1369,10 @@ Please use the same or a later version of NAMD or GROMACS if you have any proble
         self.quickSettingsMenu.addAction(self.quickAISettingAction)
 
         self.helpMenu = menubar.addMenu("&Help")
-        # Temporarily hidden - to be restored later
+        # User manual is temporarily hidden - to be restored later
         # self.helpMenu.addAction(self.helpAction)
-        # self.helpMenu.addAction(self.pythonAPIAction)
-        # self.helpMenu.addSeparator()
+        self.helpMenu.addAction(self.pythonAPIAction)
+        self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.aboutAction)
 
         # main layout

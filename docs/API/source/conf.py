@@ -22,9 +22,9 @@ with open(os.path.join('../../../BFEE2', 'version.py')) as version_file:
 
 # -- Project information -----------------------------------------------------
 
-project = 'BFEE2'
-copyright = '2021, Haohao Fu, Haochuan Chen'
-author = 'Haohao Fu, Haochuan Chen'
+project = 'BFEE3'
+copyright = '2021, Haohao Fu, Haochuan Chen, Hengwei Bian, Wensheng Cai, Chris Chipot'
+author = 'Haohao Fu, Haochuan Chen, Hengwei Bian, Wensheng Cai, Chris Chipot'
 
 
 # -- General configuration ---------------------------------------------------
