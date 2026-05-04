@@ -328,7 +328,6 @@ alchOutFile {outputPrefix}.fepout               \n\
 alchOutFreq 5000                                \n\
 alchVdwLambdaEnd 0.7                            \n\
 alchElecLambdaStart 0.5                         \n\
-alchDecouple   on                               \n\
 alchlambda     0                                \n\
 run    {numSteps}                               \n'
 
