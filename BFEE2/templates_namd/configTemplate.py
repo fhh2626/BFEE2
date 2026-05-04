@@ -144,9 +144,8 @@ ExtendedSystem    {NAMDRestartXsc}                           \n'
             # error
             return ''
         
-        if lambdaABF:
-            configString += f'\
-computeEnergies      1                          \n'   # required by WTM-lambda ABF
+        computeEnergiesConfig = f'\
+computeEnergies      1                          \n' if lambdaABF else ''
 
         # other parameters
         configString += f'\
@@ -154,6 +153,7 @@ binaryoutput         yes                        \n\
 binaryrestart        yes                        \n\
 outputname           {outputPrefix}             \n\
 dcdUnitCell          yes                        \n\
+{computeEnergiesConfig}\
 outputenergies       5000                       \n\
 outputtiming         5000                       \n\
 outputpressure       5000                       \n\
