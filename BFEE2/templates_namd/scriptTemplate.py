@@ -301,3 +301,4 @@ def generateColvarsFiles(template_file, windows, prefix):
 
 updateAllForceConstants(TEMPERATURE)
 generateColvarsFiles("colvars.in.tmp", WINDOWS, "colvars_files")
+''')
