@@ -3,7 +3,7 @@ import string
 removeProteinTemplate = string.Template('''
 mol new ${path}.psf
 mol addfile ${path}.pdb
-set aa [atomselect top "not $selectionPro"]
+set aa [atomselect top "not ($selectionPro)"]
 $$aa writepsf ${outputPath}.psf
 $$aa writepdb ${outputPath}.pdb
 exit
