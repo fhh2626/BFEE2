@@ -821,9 +821,10 @@ class postTreatment:
                                         error, and contribution of the restraints
         """
         force_contants, centers = self._LDDMReadColvarsTmp(colvars_tmp_path)
-        colvars_parser = py_bar.ColvarsParser(cvtrj_path, steps_per_window, equilbration_steps_per_window, 
+        colvars_parser = py_bar.ColvarsParser(cvtrj_path, steps_per_window, equilbration_steps_per_window,
                                     force_contants, centers,
-                                    np.linspace(0, 1, num_windows))
+                                    np.linspace(0, 1, num_windows),
+                                    temperature)
         window, deltaU = colvars_parser.get_data()
         b = py_bar.FEPAnalyzer(window, deltaU, temperature)
 
