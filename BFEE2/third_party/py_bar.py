@@ -572,11 +572,11 @@ class FEPAnalyzer:
 
         for i in range(n_bootstrap):
             forward_bootstrap = np.zeros(bootstrap_samples * block_size, dtype=int)
-            for idx, j in enumerate(np.random.randint(0, forward_size - block_size - 1, bootstrap_samples)):
+            for idx, j in enumerate(np.random.randint(0, forward_size - block_size + 1, bootstrap_samples)):
                 forward_bootstrap[idx*block_size:idx*block_size+block_size] = j + np.arange(block_size)
                     
             backward_bootstrap = np.zeros(bootstrap_samples * block_size, dtype=int)
-            for idx, j in enumerate(np.random.randint(0, backward_size - block_size - 1, bootstrap_samples)):
+            for idx, j in enumerate(np.random.randint(0, backward_size - block_size + 1, bootstrap_samples)):
                 backward_bootstrap[idx*block_size:idx*block_size+block_size] = j + np.arange(block_size)
             
             estimates[i] = self._BAR_estimator(
