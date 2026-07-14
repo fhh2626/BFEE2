@@ -32,7 +32,7 @@ Supports both rigid ligands and protein-protein complexes, which exclude the RMS
 ...<br>
 
 ## Requirements
-Python 3.6+, PySide 2, numpy, scipy, matplotlib, parmed, and MDAnalysis.<br>
+Python 3.6+, PySide6, numpy, scipy, matplotlib, parmed, and MDAnalysis.<br>
 [NAMD 3.0 or later](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=NAMD) / [GROMACS 2024 or later](https://manual.gromacs.org/).<br>
 **Note: Since both NAMD and GROMACS have incorporated Colvars into their latest binaries, each release of BFEE3 corresponds to a specific version of NAMD/GROMACS. Please always use the corresponding or later versions of the MD engines for free-energy calculations!**
 
