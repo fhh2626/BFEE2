@@ -35,7 +35,7 @@ abf {
 
 metadynamics {
     colvars             RMSD
-    hillWidth           $rmsd_bin_width
+    hillWidth           3.0
     hillWeight          0.2092
     wellTempered        on
     biasTemperature     4000
