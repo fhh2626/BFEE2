@@ -111,17 +111,21 @@ Alchemical Route (protein-ligand):
    1.2. (Optional) Run `000_eq/000.3_updateCenters.py` to refine restraint centers.
    1.3. (Optional, if 1.2 was done) Run `000_eq/000.1_eq2_re-eq.conf` for re-equilibration. Steps 1.2 and 1.3 accelerate convergence.
 2. Free Energy Calculations (these steps can be run in parallel):
-   - Note: With double-wide sampling, run the single `*_doubleWide.conf` file instead of separate `_forward.conf` and `_backward.conf` files.
-   - Note: With WTM-λABF, run the single `*_lambdaABF.conf` file instead of separate `_forward.conf` and `_backward.conf` files.
-   2.1. Decouple in bound state: e.g., run `001_MoleculeBound/001_fep_doubleWide.conf` (or 001_fep_forward.conf and 001_fep_backward.conf).
-   2.2. Release restraints in bound state: e.g., run `002_RestraintBound/002.1_ti_backward.conf` and `002.2_ti_forward.conf`.
+   2.1. Decouple in bound state (run ONE of the following depending on the sampling method):
+        - Double-wide sampling: run `001_MoleculeBound/001_fep_doubleWide.conf`.
+        - WTM-λABF: run `001_MoleculeBound/001_lambdaABF.conf`.
+        - Bidirectional FEP: run both `001_MoleculeBound/001_fep_forward.conf` and `001_MoleculeBound/001_fep_backward.conf`.
+   2.2. Release restraints in bound state: run `002_RestraintBound/002.1_ti_backward.conf` and `002_RestraintBound/002.2_ti_forward.conf`.
    2.3. Decouple in unbound state:
         - Create protein-stripped system:
           - CHARMM (if VMD not linked): Run `002.3.1_removeProtein.tcl` and `002.3.2_neutrilize.tcl` with VMD.
           - Amber: Run `002.3.1_removeProtein.cpptraj` with cpptraj.
-        - Equilibrate ligand-only system: `000_eq/000.2_eq_ligandOnly.conf`.
-        - Run FEP: e.g., `003_MoleculeUnbound/003_fep_doubleWide.conf`.
-   2.4. (Flexible ligands) Release restraints in unbound state: e.g., run `004_RestraintUnbound/004.1_ti_backward.conf` and `004.2_ti_forward.conf`.
+        - Equilibrate ligand-only system: run `000_eq/000.2_eq_ligandOnly.conf`.
+        - Run decoupling (run ONE of the following depending on the sampling method):
+          - Double-wide sampling: run `003_MoleculeUnbound/003_fep_doubleWide.conf`.
+          - WTM-λABF: run `003_MoleculeUnbound/003_lambdaABF.conf`.
+          - Bidirectional FEP: run both `003_MoleculeUnbound/003_fep_forward.conf` and `003_MoleculeUnbound/003_fep_backward.conf`.
+   2.4. (Flexible ligands) Release restraints in unbound state: run `004_RestraintUnbound/004.1_ti_backward.conf` and `004_RestraintUnbound/004.2_ti_forward.conf`.
 3. Post-treatment: Use BFEE3 for analysis.
 LDDM (protein-ligand):
 1. Initial Equilibration:
@@ -167,9 +171,9 @@ Calculate PMF RMSD convergence:
 Takes a `.hist.pmf` file as input and plots the PMF's root-mean-square deviation (vs. zero vector) over time. A plateau indicates convergence.
 Plot hysteresis between bidirectional simulations:
 Plots forward and backward ΔG vs. λ. Non-overlapping curves indicate hysteresis. Select the input type:
-- "Bidirectional fepout": Provide forward and backward `fepout` files.
-- "Bidirectional log": Provide forward and backward `.log` files.
-- "Double-wide fepout": Provide a single double-wide `fepout` file.
+- "Bidirectional fepout": Provide forward and backward `*.fepout` files.
+- "Bidirectional log": Provide forward and backward `*.log` files.
+- "Double-wide fepout": Provide a single double-wide `*.fepout` file.
 """
 
 BFEEControl = """
