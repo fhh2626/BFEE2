@@ -20,6 +20,25 @@ class RStarTooLargeError(RuntimeError):
     def __init__(self, arg):
         self.args = arg
 
+
+def _numberAfterLabel(tokens, index, tokenLower, label):
+    """Return the number after a label such as 'lambda=' or 'dA/dlambda='.
+
+    The value may be the next token ('lambda= 0.20') or glued to the label
+    ('lambda=0.20'). Return None if this token is not the given label.
+    """
+
+    if tokenLower == label:
+        if index + 1 >= len(tokens):
+            return None
+        return float(tokens[index + 1])
+
+    if tokenLower.startswith(label) and len(tokenLower) > len(label):
+        return float(tokens[index].split('=', 1)[1])
+
+    return None
+
+
 class postTreatment:
     """the post-treatment of BFEE outputs
     """
@@ -532,11 +551,27 @@ class postTreatment:
 
         with open(filePath, 'r', encoding='utf-8') as fepoutFile:
             for line in fepoutFile.readlines():
-                if not ('dA/dLambda' in line):
-                    continue
+                lambdaValue = None
+                dA_dLambdaValue = None
                 splitedLine = line.strip().split()
-                Lambda.append(float(splitedLine[4]))
-                dA_dLambda.append(float(splitedLine[6]))
+                for i, token in enumerate(splitedLine):
+                    tokenLower = token.lower()
+                    parsedDA_dLambda = _numberAfterLabel(
+                        splitedLine, i, tokenLower, 'da/dlambda='
+                    )
+                    if parsedDA_dLambda is not None:
+                        dA_dLambdaValue = parsedDA_dLambda
+                        continue
+                    parsedLambda = _numberAfterLabel(
+                        splitedLine, i, tokenLower, 'lambda='
+                    )
+                    if parsedLambda is not None:
+                        lambdaValue = parsedLambda
+
+                if lambdaValue is None or dA_dLambdaValue is None:
+                    continue
+                Lambda.append(lambdaValue)
+                dA_dLambda.append(dA_dLambdaValue)
                 
         # seven CVs in total with the same Lambda in the step 2
         if Lambda[0] == Lambda[1]:
