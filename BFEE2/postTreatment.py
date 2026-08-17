@@ -536,6 +536,8 @@ class postTreatment:
         Args:
             filePath (str): path of the fepout file
             rigidLigand (bool): whether dealing with a rigid ligand. Default to False.
+                Kept for compatibility; the number of CVs is inferred from
+                consecutive rows that share the same lambda.
         
         Returns:
             tuple (2D np.array): lambda-free energy relationship
@@ -544,10 +546,12 @@ class postTreatment:
         Lambda = []
         dA_dLambda = []
 
-        if rigidLigand:
-            numCVs = 6
-        else:
-            numCVs = 7
+        # rigidLigand used to select 6 vs 7 CVs. Kept in the signature for
+        # compatibility; numCVs is now inferred from the log itself.
+        # if rigidLigand:
+        #     numCVs = 6
+        # else:
+        #     numCVs = 7
 
         with open(filePath, 'r', encoding='utf-8') as fepoutFile:
             for line in fepoutFile.readlines():
@@ -573,8 +577,13 @@ class postTreatment:
                 Lambda.append(lambdaValue)
                 dA_dLambda.append(dA_dLambdaValue)
                 
-        # seven CVs in total with the same Lambda in the step 2
+        # Multiple CVs at the same lambda (step 2) print one dA/dLambda row each.
+        # Infer numCVs from the first run of identical lambda values.
         if Lambda[0] == Lambda[1]:
+            numCVs = 1
+            while numCVs < len(Lambda) and Lambda[numCVs] == Lambda[0]:
+                numCVs += 1
+
             correctedLambda = []
             correctedDA_dLambda = []
             
